@@ -1,4 +1,5 @@
-import { prisma } from '@/libs/prisma';
+const { PrismaClient } = require('@prisma/client')
+const prisma = new PrismaClient()
 
 async function rawSql() {
   const rol = await prisma.$executeRaw`INSERT INTO "Rol" ("name") VALUES ('Admin'),('User'),('Operador'),('client') ON CONFLICT DO NOTHING;`

@@ -9,12 +9,20 @@ export async function POST(request) {
     const cookieStore = await cookies()
 
     const Auth = await prisma.user.findUnique({
-        where: {
-            email: form.email,
+        where: { email: form.email },
+        select: {
+            name: true,
+            email: true,
+            password: true,
+            roles: {
+                select: {
+                    name: true
+                },
+            },
         },
     });
     
-    if(form.email == '' && form.password == '') return NextResponse.json({ status: false, message: 'Enter data' })
+    if (form.email == '' && form.password == '') return NextResponse.json({ status: false, message: 'Enter data' })
 
     if (Auth) {
         const match = bcrypt.compareSync(form.password, Auth.password);
@@ -31,8 +39,8 @@ export async function POST(request) {
                 path: '/',
             });
 
-            return NextResponse.json({ status: true, message: 'login successfully' })   
-        }else{
+            return NextResponse.json({ status: true, message: 'login successfully' })
+        } else {
             return NextResponse.json({ status: false, message: 'not match password' })
         }
     } else {

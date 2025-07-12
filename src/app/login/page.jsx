@@ -1,6 +1,7 @@
 'use client'
 import { useState } from "react"
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Login() {
 
@@ -26,8 +27,8 @@ export default function Login() {
             body: JSON.stringify({ form })
         });
 
-        const registerAdmin = await res.json();
-        if (registerAdmin.status) {
+        const register = await res.json();
+        if (register.status) {
             router.push('/dashboard/admin')
         } else {
             alert(registerAdmin.message)
@@ -55,7 +56,10 @@ export default function Login() {
             </div>
             <label htmlFor="remember" className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Remember me</label>
           </div> */}
-                <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
+                <div className="flex justify-between">
+                    <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
+                    <Link className="underline underline-offset-1" href={'/register'}>Register !!!</Link>
+                </div>
             </form>
         </div>
     )
