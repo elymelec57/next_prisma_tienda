@@ -27,11 +27,11 @@ export default function Login() {
             body: JSON.stringify({ form })
         });
 
-        const register = await res.json();
-        if (register.status) {
+        const login = await res.json();
+        if (login.status) {
             router.push('/dashboard/admin')
         } else {
-            alert(registerAdmin.message)
+            alert(login.message)
         }
     }
 

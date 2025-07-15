@@ -29,7 +29,7 @@ export default function AdminRegister() {
 
       const registerAdmin = await res.json();
       if (registerAdmin.status) {
-        router.push('/login')
+        router.push('/dashboard/admin')
       } else {
         alert(registerAdmin.message)
       }

@@ -1,9 +1,17 @@
 import NavBar from "@/components/NavBar";
-export default function LayoutDashboard({ children }) {
+import { cookies } from 'next/headers'
+import jwt from "jsonwebtoken";
+
+export default async function LayoutDashboard({ children }) {
+
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')
+  const decoded = jwt.verify(token.value, process.env.JWT_TOKEN);
+  
   return (
     <>
       <div>
-        <NavBar />
+        <NavBar auth={decoded.data} />
       </div>
       {children}
     </>
