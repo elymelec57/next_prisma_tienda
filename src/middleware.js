@@ -34,7 +34,7 @@ export async function middleware(request) {
                     return NextResponse.redirect(new URL('/dashboard', request.url))
                 }
             }else{
-                return NextResponse.next()   
+                return NextResponse.redirect(new URL('/login', request.url))  
             }
         }else{
            return NextResponse.redirect(new URL('/login', request.url))
@@ -52,7 +52,7 @@ export async function middleware(request) {
                     return NextResponse.redirect(new URL('/store', request.url))
                 }
             }else{
-                return NextResponse.next()   
+                return NextResponse.redirect(new URL('/login', request.url))
             }
         }else{
            return NextResponse.redirect(new URL('/login', request.url))

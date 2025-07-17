@@ -11,6 +11,7 @@ export async function POST(request) {
     const Auth = await prisma.user.findUnique({
         where: { email: form.email },
         select: {
+            id: true,
             name: true,
             email: true,
             password: true,
@@ -29,6 +30,7 @@ export async function POST(request) {
         if (match) {
 
             let data = {
+                id: Auth.id,
                 name: Auth.name,
                 email: Auth.email,
                 role: Auth.roles[0].name

@@ -22,6 +22,7 @@ model User {
   roles Rol[]
   products Product[]
   pedidos Pedido[]
+  business Business?
 }
 
 model Rol {
@@ -54,6 +55,30 @@ model Product {
   createdAt DateTime @default(now())
 }
 
+model Business {
+  id     Int  @id @default(autoincrement())
+  slug String
+  name String
+  slogan String
+  phone String
+  direcction String
+  logo String
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @unique // relation scalar field (used in the `@relation` attribute above)
+  client Client[]
+}
+
+model Client {
+  id Int @id @default(autoincrement())
+  name String
+  email String
+  phone String
+  business   Business @relation(fields: [businessId], references: [id])
+  businessId Int
+  pedido   Pedido @relation(fields: [pedidoId], references: [id])
+  pedidoId Int  @unique // relation scalar field (used in the `@relation` attribute above)
+}
+
 model Pedido {
   id       Int  @id @default(autoincrement())
   order Json
@@ -61,6 +86,7 @@ model Pedido {
   status Boolean
   user   User @relation(fields: [userId], references: [id])
   userId Int
+  client Client?
   createdAt DateTime @default(now())
 }
 

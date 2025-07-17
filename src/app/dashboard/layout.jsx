@@ -11,7 +11,7 @@ export default async function LayoutDashboard({ children }) {
   return (
     <>
       <div>
-        <NavBar auth={decoded.data} />
+        <NavBar data={decoded.data} />
       </div>
       {children}
     </>

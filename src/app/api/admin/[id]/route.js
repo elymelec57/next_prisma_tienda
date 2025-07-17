@@ -21,7 +21,7 @@ export async function PUT(request, segmentData) {
         const match = bcrypt.compareSync(form.current_password, Admin.password);
 
         if (!match) return NextResponse.json({ status: false, message: 'the password current is incorrect' })
-        console.log(form.password,form.confirm_password)
+        
         if (form.password !== form.confirm_password) return NextResponse.json({ status: false, message: 'the passwords not match' })
 
         const salt = bcrypt.genSaltSync(10);
