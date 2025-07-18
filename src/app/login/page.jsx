@@ -29,7 +29,7 @@ export default function Login() {
 
         const login = await res.json();
         if (login.status) {
-            router.push('/dashboard/admin')
+            router.push('/dashboard')
         } else {
             alert(login.message)
         }

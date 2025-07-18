@@ -19,7 +19,7 @@ export async function PUT(request, segmentData) {
     const { form } = await request.json()
     let product = ''
 
-    if (form.image != '') {
+    if (form.image) {
 
         const nameImg = Date.now() + '.jpg';
         let imageData = form.image;

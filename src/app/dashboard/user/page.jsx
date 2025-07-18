@@ -2,6 +2,7 @@ import { prisma } from '@/libs/prisma'
 import ButtomEdit from '@/components/buttomEdit';
 import Link from 'next/link';
 import ButtomDelete from '@/components/buttomdelete';
+import ButtomProdcut from '@/components/buttomProdcut';
 
 export default async function ListUser() {
 
@@ -54,6 +55,7 @@ export default async function ListUser() {
                   <td className="px-6 py-4">
                     <ButtomEdit path='/dashboard/user/edit/' id={u.id} />
                     <ButtomDelete path='/api/user/' id={u.id} />
+                    <ButtomProdcut id={u.id} />
                   </td>
                 </tr>
               ))

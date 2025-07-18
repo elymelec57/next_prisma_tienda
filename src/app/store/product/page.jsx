@@ -4,20 +4,27 @@ import Link from 'next/link';
 import ButtomDelete from '@/components/buttomdelete';
 import { useAppSelector } from "@/lib/hooks";
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 
 export default function ListProduct() {
 
+    const params = useParams()
     const id = useAppSelector((state) => state.auth.auth.id)
     const [product, setProduct] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-
         productt();
     }, [])
 
     const productt = async () => {
-        const res = await fetch(`/api/product/user/${id}`)
+        let res = ''
+        if(params.id){
+            res = await fetch(`/api/product/user/${params.id}`)
+        }else{
+            res = await fetch(`/api/product/user/${id}`)
+        }
+        
         const { product } = await res.json()
         setProduct(product);
         setLoading(false);
