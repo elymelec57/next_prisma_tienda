@@ -24,7 +24,7 @@ export default function Cart({ products }) {
         }
     }, []);
 
-    const ProductOrder = useAppSelector((state)=> state.order.order)
+    const ProductOrder = useAppSelector((state) => state.order.order)
     const [productos, setProductos] = useState(products)
 
     return (

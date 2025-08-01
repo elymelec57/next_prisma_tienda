@@ -9,7 +9,7 @@ export const orderSlice = createAppSlice({
   name: 'order',
   initialState,
   reducers: {
-    addCart: (state,action) => {
+    addCart: (state, action) => {
       // Redux Toolkit allows us to write "mutating" logic in reducers. It
       // doesn't actually mutate the state because it uses the Immer library,
       // which detects changes to a "draft state" and produces a brand new
@@ -17,16 +17,25 @@ export const orderSlice = createAppSlice({
       state.order.push(action.payload);
       state.count += 1
 
-      localStorage.setItem('order',JSON.stringify(state.order))
-      localStorage.setItem('count',JSON.stringify(state.count))
+      localStorage.setItem('order', JSON.stringify(state.order))
+      localStorage.setItem('count', JSON.stringify(state.count))
     },
-    subCart: (state) => {
-      state.value -= 1
+    subCart: (state,action) => {
+      const id = action.payload
+      state.order.forEach((e, index) => {
+        if (e.id == id) {
+          state.count = state.count - e.count;
+          state.order.splice(index, 1);
+          localStorage.setItem('order', JSON.stringify(state.order));
+          localStorage.setItem('count', JSON.stringify(state.count));
+        }
+      });
+
     },
-    order: (state,action) => {
+    order: (state, action) => {
       state.order = action.payload;
     },
-    inialityCount: (state,action) => {
+    inialityCount: (state, action) => {
       state.count = action.payload
     }
   },
