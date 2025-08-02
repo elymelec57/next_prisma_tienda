@@ -1,13 +1,21 @@
 'use client'
 import Link from "next/link"
-import Cookies from 'js-cookie';
 import { useAppSelector } from "@/lib/hooks";
 import Image from 'next/image'
 import { FaShoppingBasket } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 export default function NavBarBusiness({ business }) {
 
+    const router = useRouter()
     const count = useAppSelector((state) => state.order.count)
+
+    function buy(){
+        if(count > 0){
+            router.push(`/${business.slug}/order`)
+        }
+    }
+
     return (
         <div>
             <nav className="bg-white dark:bg-gray-900 fixed w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600">
@@ -38,7 +46,9 @@ export default function NavBarBusiness({ business }) {
                                 )
                             }
                             
-                            <a className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"><FaShoppingBasket /></a>
+                            <a onClick={()=>{
+                                buy()
+                            }} className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"><FaShoppingBasket /></a>
                         </div>
 
                         <button data-collapse-toggle="navbar-sticky" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600" aria-controls="navbar-sticky" aria-expanded="false">

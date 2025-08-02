@@ -1,8 +1,8 @@
 import { createAppSlice } from '../../createAppSlice'
 
 const initialState = {
-  count: 0, //localStorage.getItem('count') || 0,
-  order: [] //localStorage.getItem('order') || [],
+  count: 0,
+  order: []
 }
 
 export const orderSlice = createAppSlice({
@@ -20,7 +20,7 @@ export const orderSlice = createAppSlice({
       localStorage.setItem('order', JSON.stringify(state.order))
       localStorage.setItem('count', JSON.stringify(state.count))
     },
-    subCart: (state,action) => {
+    subCart: (state, action) => {
       const id = action.payload
       state.order.forEach((e, index) => {
         if (e.id == id) {
@@ -32,17 +32,43 @@ export const orderSlice = createAppSlice({
       });
 
     },
+    sumarProduct: (state,action) => {
+      const id = action.payload
+      state.order.forEach((e) => {
+        if (e.id == id) {
+          e.count++;
+        }
+      });
+      localStorage.setItem('order', JSON.stringify(state.order))
+      localStorage.setItem('count', JSON.stringify(state.count++))
+
+    },
+    restarProduct: (state,action) => {
+      const id = action.payload
+      state.order.forEach((e) => {
+        if (e.id == id) {
+          e.count--;
+        }
+      });
+      localStorage.setItem('order', JSON.stringify(state.order))
+      localStorage.setItem('count', JSON.stringify(state.count--))
+
+    },
     order: (state, action) => {
       state.order = action.payload;
     },
     inialityCount: (state, action) => {
       state.count = action.payload
+    },
+    reset: (state)=>{
+      state.order = []
+      state.count = 0
     }
   },
 
 })
 
 // Action creators are generated for each case reducer function
-export const { addCart, subCart, order, inialityCount } = orderSlice.actions
+export const { addCart, subCart, order, inialityCount, sumarProduct, restarProduct, reset } = orderSlice.actions
 //export const { selectCount, selectStatus } = counterSlice.selectors;
 export default orderSlice.reducer;

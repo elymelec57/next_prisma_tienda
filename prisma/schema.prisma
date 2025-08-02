@@ -84,6 +84,7 @@ model Pedido {
   order Json
   priceFull Decimal
   status Boolean
+  comprobante String
   user   User @relation(fields: [userId], references: [id])
   userId Int
   client Client?
