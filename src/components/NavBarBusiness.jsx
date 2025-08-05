@@ -30,7 +30,7 @@ export default function NavBarBusiness({ business }) {
 
                         <Link href={`/${business.slug}`} className="flex items-center space-x-3 rtl:space-x-reverse">
                             {/* <img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Flowbite Logo"> */}
-                            <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">{business.name}</span>
+                            <span className="self-center text-2xl ml-5 font-semibold whitespace-nowrap dark:text-white">{business.name}</span>
                             {/* <span className="self-center text-1xl font-semibold whitespace-nowrap dark:text-white">{auth.email}</span> */}
                         </Link>
                     </div>

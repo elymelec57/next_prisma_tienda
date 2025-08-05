@@ -95,7 +95,7 @@ export default function Buy() {
     return (
         <>
             <div className="container">
-                <h1 className="text-center font-bold uppercase p-4">{params.slug}</h1>
+                <h1 className="text-center font-bold uppercase p-4 cursor-pointer"><Link href={`/${params.slug}`}>{params.slug}</Link></h1>
             </div>
             <div className="flex flex-row container mx-auto">
                 <div className="basis-2/3 m-2">

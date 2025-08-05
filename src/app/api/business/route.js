@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { prisma } from "@/libs/prisma";
 import slugify from 'slugify';
+import sharp from 'sharp';
 
 export async function POST(request) {
 
@@ -12,7 +13,20 @@ export async function POST(request) {
     let imageData = form.logo;
     let pathImage = path.join(process.cwd(), 'public/images/business/');
     let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
-    fs.writeFileSync(pathImage + nameImg, base64Data, { encoding: 'base64' });
+
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    sharp(buffer)
+        .resize(500, 500)
+        .jpeg({ mozjpeg: true })
+        .toBuffer()
+        .then(data => {
+            fs.writeFileSync(pathImage + nameImg, data);
+        })
+        .catch(err => {
+            console.log(err, 'errors')
+        });
+    // fs.writeFileSync(pathImage + nameImg, base64Data, { encoding: 'base64' });
 
     const slug = slugify(form.name, {
         lower: true,      // Convierte a minúsculas
@@ -43,5 +57,5 @@ export async function POST(request) {
         return NextResponse.json({ status: true, message: 'Business created' })
     }
 
-    return NextResponse.json({ status: false, message: 'Business created error'  })
+    return NextResponse.json({ status: false, message: 'Business created error' })
 }

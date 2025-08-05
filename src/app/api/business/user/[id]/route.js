@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import slugify from 'slugify';
 import path from 'path';
 import fs from 'fs';
+import sharp from 'sharp';
 
 export async function GET(request, segmentData) {
     const params = await segmentData.params;
@@ -34,7 +35,19 @@ export async function PUT(request, segmentData) {
         let imageData = form.logo;
         let pathImage = path.join(process.cwd(), 'public/images/business/');
         let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
-        fs.writeFileSync(pathImage + nameImg, base64Data, { encoding: 'base64' });
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        sharp(buffer)
+            .resize(500, 500)
+            .jpeg({ mozjpeg: true })
+            .toBuffer()
+            .then(data => {
+                fs.writeFileSync(pathImage + nameImg, data);
+            })
+            .catch(err => {
+                console.log(err, 'errors')
+            });
+        //fs.writeFileSync(pathImage + nameImg, base64Data, { encoding: 'base64' });
 
         // delete imagen file
         fs.unlinkSync(pathImage + form.logoCurrent)
@@ -71,5 +84,5 @@ export async function PUT(request, segmentData) {
         return NextResponse.json({ status: true, message: 'Business updated' })
     }
 
-    return NextResponse.json({ status: false, message: 'Business updated error'})
+    return NextResponse.json({ status: false, message: 'Business updated error' })
 }

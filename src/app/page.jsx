@@ -1,39 +1,25 @@
-'use client'
+import NavBarIndex from '@/components/NavBarIndex';
+import { prisma } from '@/libs/prisma';
+import CartBusiness from '@/components/cartBusiness';
 
-import Link from "next/link";
-import {
-  increment,
-  incrementByAmount
-} from "../lib/features/auth/authSlice";
-import { useAppSelector, useAppDispatch, useAppStore } from '../lib/hooks'
-import { useState } from "react";
-
-export default function Home() {
-
-  const [numero, setNumero] = useState()
-
-  const sumar = () => {
-    dispatch(increment())
+export async function generateMetadata() {
+  return {
+    title: "APP STORE",
+    description: "Las mejeres tiendas las encuetras aqui",
   }
+}
 
-  const sumar2 = () => {
-    dispatch(incrementByAmount(numero))
-  }
-
-  const count = useAppSelector((state) => state.auth.value)
-  const dispatch = useAppDispatch()
+export default async function page() {
+  const business = await prisma.business.findMany()
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <div>
-        <p>{count}</p>
-
-        <button className="bg-red-500 text-white p-4" onClick={sumar}>aumentar</button>
-        <input type="number" onChange={(e) => setNumero(e.target.value) }  />
-
-        <button className="bg-red-500 text-white p-4" onClick={sumar2}>sumar cantidad</button>
-        <Link href={'/login'}>login</Link>
+    <div>
+      <NavBarIndex />
+      <div className='container mt-30 mx-auto'>
+        <div className='flex flex-wrap justify-center space-x-2'>
+          <CartBusiness business={business} />
+        </div>
       </div>
     </div>
-  );
+  )
 }
