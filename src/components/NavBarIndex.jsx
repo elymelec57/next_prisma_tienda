@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 
 export default function NavBar() {
     const pathname = usePathname();
-    const [nav, setNav] = useState(false)
+    const [nav, setNav] = useState(true)
 
     function change() {
         setNav(!nav)
