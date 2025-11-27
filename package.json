@@ -10,11 +10,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "flowbite-react patch"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
     "@reduxjs/toolkit": "^2.8.2",
+    "@vercel/blob": "^1.1.1",
     "bcryptjs": "^3.0.2",
     "cookies-next": "^6.1.0",
     "flowbite-react": "^0.11.8",

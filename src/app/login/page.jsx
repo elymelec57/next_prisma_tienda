@@ -29,7 +29,11 @@ export default function Login() {
 
         const login = await res.json();
         if (login.status) {
-            router.push('/dashboard')
+            if(login.auth.role == 'User'){
+                router.push('/store')
+            }else{
+                router.push('/dashboard')
+            }
         } else {
             alert(login.message)
         }

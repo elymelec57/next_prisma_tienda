@@ -6,31 +6,31 @@ import { prisma } from '@/libs/prisma';
 
 export async function POST(request) {
 
-    const { form } = await request.json()
+    const { form, image } = await request.json()
 
-    const nameImg = Date.now() + '.jpg';
-    let imageData = form.image;
-    let pathImage = path.join(process.cwd(), 'public/images/');
-    let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
+    // const nameImg = Date.now() + '.jpg';
+    // let imageData = form.image;
+    // let pathImage = path.join(process.cwd(), 'public/images/');
+    // let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
+    // const buffer = Buffer.from(base64Data, 'base64');
     
-    sharp(buffer)
-        .resize(500,500)
-        .jpeg({ mozjpeg: true })
-        .toBuffer()
-        .then(data => {
-            fs.writeFileSync(pathImage + nameImg, data);
-        })
-        .catch(err => {
-            console.log(err, 'errors')
-        });
+    // sharp(buffer)
+    //     .resize(500,500)
+    //     .jpeg({ mozjpeg: true })
+    //     .toBuffer()
+    //     .then(data => {
+    //         fs.writeFileSync(pathImage + nameImg, data);
+    //     })
+    //     .catch(err => {
+    //         console.log(err, 'errors')
+    //     });
 
     const product = await prisma.product.create({
         data: {
             name: form.name,
             description: form.description,
             price: form.price,
-            image: nameImg,
+            image: image,
             user: {
                 connect: {
                     id: form.userId,

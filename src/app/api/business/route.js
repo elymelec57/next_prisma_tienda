@@ -7,25 +7,25 @@ import sharp from 'sharp';
 
 export async function POST(request) {
 
-    const { form, userId } = await request.json()
+    const { form, userId, logo } = await request.json()
 
-    const nameImg = Date.now() + '.jpg';
-    let imageData = form.logo;
-    let pathImage = path.join(process.cwd(), 'public/images/business/');
-    let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
+    // const nameImg = Date.now() + '.jpg';
+    // let imageData = form.logo;
+    // let pathImage = path.join(process.cwd(), 'public/images/business/');
+    // let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
 
-    const buffer = Buffer.from(base64Data, 'base64');
+    // const buffer = Buffer.from(base64Data, 'base64');
 
-    sharp(buffer)
-        .resize(500, 500)
-        .jpeg({ mozjpeg: true })
-        .toBuffer()
-        .then(data => {
-            fs.writeFileSync(pathImage + nameImg, data);
-        })
-        .catch(err => {
-            console.log(err, 'errors')
-        });
+    // sharp(buffer)
+    //     .resize(500, 500)
+    //     .jpeg({ mozjpeg: true })
+    //     .toBuffer()
+    //     .then(data => {
+    //         fs.writeFileSync(pathImage + nameImg, data);
+    //     })
+    //     .catch(err => {
+    //         console.log(err, 'errors')
+    //     });
     // fs.writeFileSync(pathImage + nameImg, base64Data, { encoding: 'base64' });
 
     const slug = slugify(form.name, {
@@ -40,7 +40,7 @@ export async function POST(request) {
             slogan: form.slogan,
             direcction: form.direcction,
             phone: form.phone,
-            logo: nameImg,
+            logo: logo,
             slug: slug,
             user: {
                 connect: {

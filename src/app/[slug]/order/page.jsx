@@ -31,16 +31,20 @@ export default function Buy() {
     }
 
     const onFileChange = (e) => {
-        let files = e.target.files;
-        let fileReader = new FileReader();
-        fileReader.readAsDataURL(files[0]);
+        let files = e.target.files[0];
+        // let fileReader = new FileReader();
+        // fileReader.readAsDataURL(files[0]);
 
-        fileReader.onload = (event) => {
-            setForm({
-                ...form,
-                comprobante: event.target.result,
-            })
-        }
+        // fileReader.onload = (event) => {
+        //     setForm({
+        //         ...form,
+        //         comprobante: event.target.result,
+        //     })
+        // }
+        setForm({
+            ...form,
+            comprobante: files,
+        })
     }
 
     const order = useAppSelector((state) => state.order.order)
@@ -67,28 +71,42 @@ export default function Buy() {
         return total
     }
 
-    const buy = async (e)=> {
+    const buy = async (e) => {
         e.preventDefault()
         form.order = order
-        const OrderSolicitud = await fetch('/api/buy/',{
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json' 
+
+        const response = await fetch(
+            `/api/avatar/upload?filename=${form.comprobante.name}`,
+            {
+                method: 'POST',
+                body: form.comprobante,
             },
-            body: JSON.stringify({form})
-        })
+        );
+        const newPago = await response.json();
 
-        const res = await OrderSolicitud.json()
-        if(res.status){
-            alert(res.message)
+        if (newPago.pathname) {
+            const OrderSolicitud = await fetch('/api/buy/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ form, pago: newPago.pathname })
+            })
 
-            dispatch(reset())
-            localStorage.removeItem('order');
-            localStorage.removeItem('count');
-            router.push(`/${params.slug}`)
-            
-        }else{
-            alert(res.message)
+            const res = await OrderSolicitud.json()
+            if (res.status) {
+                alert(res.message)
+
+                dispatch(reset())
+                localStorage.removeItem('order');
+                localStorage.removeItem('count');
+                router.push(`/${params.slug}`)
+
+            } else {
+                alert(res.message)
+            }
+        } else {
+            alert('Error al procesar el pago')
         }
     }
 
@@ -140,7 +158,7 @@ export default function Buy() {
                     </div>
                 </div>
                 <div className="basis-2/3">
-                        <h2 className="text-center font-bold">Formulario de Pago</h2>
+                    <h2 className="text-center font-bold">Formulario de Pago</h2>
                     <form onSubmit={buy} className="max-w-sm mx-auto">
                         <div className="mb-5">
                             <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>

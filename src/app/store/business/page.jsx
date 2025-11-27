@@ -28,16 +28,11 @@ export default function Business() {
     });
 
     const onFileChange = (e) => {
-        let files = e.target.files;
-        let fileReader = new FileReader();
-        fileReader.readAsDataURL(files[0]);
-
-        fileReader.onload = (event) => {
-            setForm({
-                ...form,
-                logo: event.target.result,
-            })
-        }
+        let files = e.target.files[0];
+        setForm({
+            ...form,
+            logo: files,
+        })
     }
 
     async function consultProduct() {
@@ -66,7 +61,7 @@ export default function Business() {
         })
     }
 
-    const irPage = ()=> {
+    const irPage = () => {
         router.push(`/${form.slug}`)
     }
 
@@ -74,28 +69,41 @@ export default function Business() {
         e.preventDefault()
         let res = ''
 
-        if (form.id != '') {
-            res = await fetch(`/api/business/user/${userId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form })
-            });
-        } else {
-            res = await fetch(`/api/business`, {
+        const response = await fetch(
+            `/api/avatar/upload?filename=${form.logo.name}`,
+            {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form, userId })
-            });
-        }
+                body: form.logo,
+            },
+        );
+        const newLogo = await response.json();
 
-        const businessUpdate = await res.json();
-        if (businessUpdate.status) {
-            router.refresh()
-            alert(businessUpdate.message)
-            setShowImg(true)
-            consultProduct()
+        if (newLogo.pathname) {
+            if (form.id != '') {
+                res = await fetch(`/api/business/user/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form })
+                });
+            } else {
+                res = await fetch(`/api/business`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form, userId, logo: newLogo.pathname })
+                });
+            }
+
+            const businessUpdate = await res.json();
+            if (businessUpdate.status) {
+                router.refresh()
+                alert(businessUpdate.message)
+                setShowImg(true)
+                consultProduct()
+            } else {
+                alert(businessUpdate.message)
+            }
         } else {
-            alert(businessUpdate.message)
+            alert('Error al subir el logo')
         }
     }
 
@@ -138,7 +146,7 @@ export default function Business() {
                     logoCurrent != '' && showImg ? (
                         <>
                             <div className="">
-                                <img src={`http://localhost:3000/images/business/${logoCurrent}`} alt="" />
+                                <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${logoCurrent}`} alt="" />
                                 <button onClick={() => {
                                     setShowImg(false)
                                 }} className="p-2 text-center underline underline-offset-1">Subir otro logo</button>

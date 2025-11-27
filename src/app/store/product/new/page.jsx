@@ -27,16 +27,20 @@ export default function Product() {
     });
 
     const onFileChange = (e) => {
-        let files = e.target.files;
-        let fileReader = new FileReader();
-        fileReader.readAsDataURL(files[0]);
+        let files = e.target.files[0];
+        // let fileReader = new FileReader();
+        // fileReader.readAsDataURL(files[0]);
 
-        fileReader.onload = (event) => {
-            setForm({
-                ...form,
-                image: event.target.result,
-            })
-        }
+        // fileReader.onload = (event) => {
+        //     setForm({
+        //         ...form,
+        //         image: event.target.result,
+        //     })
+        // }
+        setForm({
+            ...form,
+            image: files,
+        })
     }
 
     async function consultProduct() {
@@ -61,28 +65,43 @@ export default function Product() {
     const product = async (e) => {
         e.preventDefault()
         let res = ''
-        if (params.id) {
-            res = await fetch(`/api/product/${params.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form })
-            });
-        } else {
-            res = await fetch('/api/product/new', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form })
-            });
-        }
 
-        const product = await res.json();
-        if (product.status) {
-            router.refresh()
-            router.push('/store/product')
+        const response = await fetch(
+            `/api/avatar/upload?filename=${form.image.name}`,
+            {
+                method: 'POST',
+                body: form.image,
+            },
+        );
+        const newBlob = await response.json();
+
+        if (newBlob.pathname) {
+            if (params.id) {
+                res = await fetch(`/api/product/${params.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form })
+                });
+            } else {
+                res = await fetch('/api/product/new', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form, image: newBlob.pathname })
+                });
+            }
+
+            const product = await res.json();
+            if (product.status) {
+                router.refresh()
+                router.push('/store/product')
+            } else {
+                alert(product.message)
+            }
         } else {
-            alert(product.message)
+            alert('Error al crear el producto')
         }
     }
+
 
     return (
         <div className="mt-10">
@@ -107,7 +126,7 @@ export default function Product() {
                     form.imageCurrent != '' && showImg ? (
                         <>
                             <div className="">
-                                <img src={`http://localhost:3000/images/${form.imageCurrent}`} alt="" />
+                                <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${form.imageCurrent}`} alt="" />
                                 <button onClick={() => {
                                     setShowImg(false)
                                 }} className="p-2 text-center underline underline-offset-1">Subir otra imagen</button>

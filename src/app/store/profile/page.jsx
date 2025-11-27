@@ -16,7 +16,16 @@ export default function Profile() {
     }, [])
 
     async function consultUser() {
-        const {auth} = await verify(token)
+        // const { auth } = await verify(token)
+        const res = await fetch(`/api/verifyToken2`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json' // Important for JSON data
+            },
+            body: JSON.stringify({ token }),
+        })
+        const { auth } = await res.json()
+        
         setForm({
             id: auth.id,
             name: auth.name,

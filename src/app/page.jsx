@@ -11,7 +11,7 @@ export async function generateMetadata() {
 
 export default async function page() {
   const business = await prisma.business.findMany()
-
+  console.log(process.env.JWT_TOKEN)
   return (
     <div>
       <NavBarIndex />

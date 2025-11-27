@@ -32,7 +32,7 @@ export default function Cart({ products }) {
             {
                 productos.map((p) => (
                     <div key={p.id} className="max-w-sm bg-white border m-1 border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-                        <img className="rounded-t-lg" src={`/images/${p.image}`} alt="" />
+                        <img className="rounded-t-lg" src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.image}`} alt="" />
                         <div className="p-5">
                             <a href="#">
                                 <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{p.name}</h5>

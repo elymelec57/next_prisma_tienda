@@ -6,32 +6,32 @@ import { BusinessData } from '@/libs/BusinessData';
 import sharp from 'sharp';
 
 export async function POST(request) {
-    const { form } = await request.json()
+    const { form, pago } = await request.json()
     const business = await BusinessData(form.slug)
 
-    const nameImg = Date.now() + '.jpg';
-    let imageData = form.comprobante;
-    let pathImage = path.join(process.cwd(), 'public/images/pagos/');
-    let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
+    // const nameImg = Date.now() + '.jpg';
+    // let imageData = form.comprobante;
+    // let pathImage = path.join(process.cwd(), 'public/images/pagos/');
+    // let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
+    // const buffer = Buffer.from(base64Data, 'base64');
 
-    sharp(buffer)
-        .resize(500, 500)
-        .jpeg({ mozjpeg: true })
-        .toBuffer()
-        .then(data => {
-            fs.writeFileSync(pathImage + nameImg, data);
-        })
-        .catch(err => {
-            console.log(err, 'errors')
-        });
+    // sharp(buffer)
+    //     .resize(500, 500)
+    //     .jpeg({ mozjpeg: true })
+    //     .toBuffer()
+    //     .then(data => {
+    //         fs.writeFileSync(pathImage + nameImg, data);
+    //     })
+    //     .catch(err => {
+    //         console.log(err, 'errors')
+    //     });
 
     const order = await prisma.pedido.create({
         data: {
             order: form.order,
             priceFull: form.total,
             status: false,
-            comprobante: nameImg,
+            comprobante: pago,
             user: {
                 connect: {
                     id: business.userId,
