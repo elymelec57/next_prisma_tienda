@@ -115,75 +115,78 @@ export default function Buy() {
             <div className="container">
                 <h1 className="text-center font-bold uppercase p-4 cursor-pointer"><Link href={`/${params.slug}`}>{params.slug}</Link></h1>
             </div>
-            <div className="flex flex-row container mx-auto">
-                <div className="basis-2/3 m-2">
+            <div className="container mx-auto p-4 md:p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
+                <div className="w-full lg:w-2/3">
                     <div className="w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        {order.map((o) => (
-                            <div key={o.id} className="block w-full px-4 py-2 text-white bg-blue-700 border-b border-gray-200 rounded-t-lg cursor-pointer dark:bg-gray-800 dark:border-gray-600">
-                                <div className="flex justify-between">
-                                    <div>
-                                        <p><strong className="fond-bold">{o.name}</strong> {o.price}$</p>
-                                        <p><strong className="fond-bold">Cantidad:</strong> {o.count}</p>
-                                    </div>
-                                    <div className="flex ">
-                                        <div>{o.price * o.count} $</div>
-                                        <div>
-                                            <FaPlus title="Sumar Producto" onClick={() => {
-                                                sumar(o.id)
-                                            }} className="mx-2 mb-3" />
-                                            {
-                                                o.count > 0 ? (
-                                                    <>
-                                                        <FaMinus title="Restar producto" onClick={() => {
-                                                            restar(o.id)
-                                                        }} className="mx-2" />
-                                                    </>
+                        {order.length === 0 ? (
+                            <p className="p-4 text-center text-gray-500 dark:text-gray-400">No hay productos en el carrito.</p>
+                        ) : (
+                            order.map((o) => (
+                                <div key={o.id} className="block w-full px-4 py-2 text-gray-900 bg-white border-b border-gray-200 cursor-pointer dark:bg-gray-800 dark:border-gray-600 dark:text-white first:rounded-t-lg last:rounded-b-lg">
+                                    <div className="flex flex-col sm:flex-row justify-between items-center">
+                                        <div className="mb-2 sm:mb-0">
+                                            <p className="font-bold text-lg">{o.name} - {o.price}$</p>
+                                            <p className="text-sm">Cantidad: {o.count}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-lg font-semibold">{o.price * o.count} $</div>
+                                            <div className="flex items-center space-x-2">
+                                                <button type="button" title="Sumar Producto" onClick={() => sumar(o.id)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                                    <FaPlus className="text-green-500" />
+                                                </button>
+                                                {o.count > 0 ? (
+                                                    <button type="button" title="Restar producto" onClick={() => restar(o.id)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                                        <FaMinus className="text-yellow-500" />
+                                                    </button>
                                                 ) : (
-                                                    <>
-                                                        <FiXSquare title="Eliminar del carrito" onClick={() => {
-                                                            deleteP(o.id)
-                                                        }} className="mx-2" />
-                                                    </>
-                                                )
-                                            }
+                                                    <button type="button" title="Eliminar del carrito" onClick={() => deleteP(o.id)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                                        <FiXSquare className="text-red-500 text-xl" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
-                    <p className="text-center p-2">Cantidad: {count} Total: {total()}$</p>
-                    <div className="flex justify-center">
-                        <Link href={`/${params.slug}`} className="bg-red-500 text-white p-2 rounded-lg">Atras</Link>
+                    {order.length > 0 && (
+                        <p className="text-center p-4 text-lg font-semibold bg-white dark:bg-gray-700 rounded-b-lg shadow-md">
+                            Cantidad: <span className="font-bold">{count}</span> Total: <span className="font-bold">{total()}$</span>
+                        </p>
+                    )}
+                    <div className="flex justify-center mt-4">
+                        <Link href={`/${params.slug}`} className="bg-red-500 text-white p-3 rounded-lg hover:bg-red-600 transition-colors text-lg">Atras</Link>
                     </div>
                 </div>
-                <div className="basis-2/3">
-                    <h2 className="text-center font-bold">Formulario de Pago</h2>
-                    <form onSubmit={buy} className="max-w-sm mx-auto">
-                        <div className="mb-5">
-                            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
-                            <input type="text" id="name" name="name" value={form.name} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
+                    <h2 className="text-center text-2xl font-bold mb-4">Formulario de Pago</h2>
+                    <form onSubmit={buy} className="w-full">
+                        <div className="mb-4">
+                            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nombre Completo</label>
+                            <input type="text" id="name" name="name" value={form.name} onChange={changeImput} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" placeholder="Tu nombre" required />
                         </div>
-                        <div className="mb-5">
-                            <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
-                            <input type="email" id="email" name="email" value={form.email} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" required />
+                        <div className="mb-4">
+                            <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                            <input type="email" id="email" name="email" value={form.email} onChange={changeImput} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" placeholder="nombre@ejemplo.com" required />
                         </div>
-                        <div className="mb-5">
-                            <label htmlFor="phone" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Phone</label>
-                            <input type="text" id="phone" name="phone" onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                        <div className="mb-4">
+                            <label htmlFor="phone" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono</label>
+                            <input type="text" id="phone" name="phone" onChange={changeImput} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" placeholder="Ej: +58 412-1234567" required />
                         </div>
-                        <div className="mb-5">
-                            <label htmlFor="comprobante" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Comprobante de pago</label>
+                        <div className="mb-6">
+                            <label htmlFor="comprobante" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Comprobante de pago</label>
                             <input type="file"
                                 id="comprobante"
                                 name="comprobante"
-                                onChange={onFileChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                onChange={onFileChange}
+                                className="w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                 required
                             />
                         </div>
 
-                        <div className="flex justify-between">
-                            <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Comprar</button>
+                        <div className="flex justify-center">
+                            <button type="submit" className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 transition-colors text-lg">Comprar</button>
                         </div>
                     </form>
                 </div>
