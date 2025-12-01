@@ -10,11 +10,15 @@ export default function Product() {
     const router = useRouter()
     const params = useParams()
 
+    const [categories, setCategories] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('');
+
     useEffect(() => {
+        fetchCategories();
         if (params.id) {
-            consultProduct()
+            consultProduct();
         }
-    }, [])
+    }, []);
 
     const [showImg, setShowImg] = useState(true)
     const [form, setForm] = useState({
@@ -23,6 +27,7 @@ export default function Product() {
         price: '',
         image: '',
         imageCurrent: '',
+        categoryId: '',
         userId: useAppSelector((state) => state.auth.auth.id)
     });
 
@@ -51,8 +56,16 @@ export default function Product() {
             name: product.name,
             description: product.description,
             price: product.price,
-            imageCurrent: product.image
+            imageCurrent: product.image,
+            categoryId: product.categoryId
         })
+        setSelectedCategory(product.categoryId)
+    }
+
+    async function fetchCategories() {
+        const res = await fetch('/api/category');
+        const categories = await res.json();
+        setCategories(categories);
     }
 
     const changeImput = (e) => {
@@ -61,6 +74,14 @@ export default function Product() {
             [e.target.name]: e.target.value
         })
     }
+
+    const changeCategory = (e) => {
+        setSelectedCategory(e.target.value);
+        setForm({
+            ...form,
+            categoryId: e.target.value
+        });
+    };
 
     const product = async (e) => {
         e.preventDefault()
@@ -80,7 +101,7 @@ export default function Product() {
                 res = await fetch(`/api/product/${params.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form })
+                    body: JSON.stringify({ ...form })
                 });
             } else {
                 res = await fetch('/api/product/new', {
@@ -121,6 +142,24 @@ export default function Product() {
                 <div className="mb-5">
                     <label htmlFor="price" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Price</label>
                     <input type="number" id="price" name="price" value={form.price} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                </div>
+                <div className="mb-5">
+                    <label htmlFor="category" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category</label>
+                    <select
+                        id="category"
+                        name="category"
+                        value={selectedCategory}
+                        onChange={changeCategory}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required
+                    >
+                        <option value="">Select a category</option>
+                        {categories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                                {category.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 {
                     form.imageCurrent != '' && showImg ? (

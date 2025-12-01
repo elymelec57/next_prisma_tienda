@@ -9,6 +9,9 @@ export async function GET(request, segmentData) {
         where: {
             id: Number(params.id)
         },
+        include: {
+            category: true,
+        },
     });
 
     return NextResponse.json({ product })
@@ -37,6 +40,7 @@ export async function PUT(request, segmentData) {
                 name: form.name,
                 description: form.description,
                 price: form.price,
+                categoryId: Number(form.categoryId),
                 image: nameImg
             }
         });
@@ -48,7 +52,8 @@ export async function PUT(request, segmentData) {
             data: {
                 name: form.name,
                 description: form.description,
-                price: form.price
+                price: form.price,
+                categoryId: Number(form.categoryId),
             }
         });
     }

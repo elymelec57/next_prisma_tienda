@@ -36,11 +36,17 @@ export async function POST(request) {
                     id: form.userId,
                 },
             },
+            category: {
+                connect:{
+                    id: Number(form.categoryId),
+                }
+            }
         },
         include: {
             user: true,
+            category: true,
         },
-    })
+    });
 
     if (product) {
         return NextResponse.json({ status: true, message: 'Product created' })
