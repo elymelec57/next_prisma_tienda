@@ -1,11 +1,10 @@
 import { prisma } from "@/libs/prisma";
 import { NextResponse } from 'next/server';
 
-export async function GET(request,segmentData) {
-  try {
+export async function GET(request, segmentData) {
+  try { 
+    const params = await segmentData.params;
     
-    const params  = await segmentData.params;
-    //return NextResponse.json(phone)
     if (!params.phone) {
       return NextResponse.json({ message: 'Phone parameter is missing' }, { status: 400 });
     }
@@ -20,19 +19,43 @@ export async function GET(request,segmentData) {
     if (!business) {
       return NextResponse.json({ message: 'Business not found for the given phone number' }, { status: 404 });
     }
-    
-    //Find categories that have at least one product belonging to this business
-    const categories = await prisma.category.findMany({
+
+    //categorias en uso por la tienda, no mostraremos categorias que no posea producto por la tienda
+    const categoriesCurrent = await prisma.category.findMany({
       where: {
         products: {
           some: {
-              userId: Number(business.userId), // Products associated with the user linked to this business
+            userId: Number(business.userId), // Products associated with the user linked to this business
           },
         },
       },
     });
 
-    return NextResponse.json(categories, { status: 200 });
+    //Find categories that have at least one product belonging to this business
+    const product = await prisma.category.findMany({
+      where: {
+        products: {
+          some: {
+            userId: Number(business.userId), // Products associated with the user linked to this business
+          },
+        },
+      },
+      include: {
+        products: {
+          select: {
+            id: true,
+            name: true,
+            price: true
+          },
+        }
+      }
+    });
+
+    product.forEach(element => {
+        element.url = request.nextUrl.origin + `/${business.slug}/${element.name}`
+    });
+
+    return NextResponse.json({categorias: categoriesCurrent, productos: product}, { status: 200 });
 
   } catch (error) {
     console.error('Error fetching categories:', error);
