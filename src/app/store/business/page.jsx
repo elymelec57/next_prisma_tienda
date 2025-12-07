@@ -37,20 +37,20 @@ export default function Business() {
 
     async function consultProduct() {
         const data = await fetch(`/api/business/user/${userId}`)
-        const { business } = await data.json()
+        const { rest } = await data.json()
 
-        if (business) {
+        if (rest) {
             setForm({
                 ...form,
-                id: business.id,
-                name: business.name,
-                slogan: business.slogan,
-                phone: business.phone,
-                direcction: business.direcction,
-                logoCurrent: business.logo,
-                slug: business.slug
+                id: rest.id,
+                name: rest.name,
+                slogan: rest.slogan,
+                phone: rest.phone,
+                direcction: rest.direcction,
+                logoCurrent: rest.logo,
+                slug: rest.slug
             })
-            setLogourrent(business.logo)
+            setLogourrent(rest.logo)
         }
     }
 

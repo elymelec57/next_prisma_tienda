@@ -1,55 +1,45 @@
 import { NextResponse } from 'next/server'
-import path from 'path';
-import fs from 'fs';
-import sharp from 'sharp';
-import { prisma } from '@/libs/prisma';
+import { prisma } from '@/libs/prisma'
+import upload from '@/libs/upload'
 
 export async function POST(request) {
 
-    const { form, image } = await request.json()
-
-    // const nameImg = Date.now() + '.jpg';
-    // let imageData = form.image;
-    // let pathImage = path.join(process.cwd(), 'public/images/');
-    // let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
-    // const buffer = Buffer.from(base64Data, 'base64');
+    const { form } = await request.json()
     
-    // sharp(buffer)
-    //     .resize(500,500)
-    //     .jpeg({ mozjpeg: true })
-    //     .toBuffer()
-    //     .then(data => {
-    //         fs.writeFileSync(pathImage + nameImg, data);
-    //     })
-    //     .catch(err => {
-    //         console.log(err, 'errors')
-    //     });
+    const rest = await prisma.restaurant.findUnique({
+        where: {
+            userId: Number(form.userId)
+        },
+        select: {
+            id: true
+        }
+    })
 
-    const product = await prisma.product.create({
+    const plato = await prisma.plato.create({
         data: {
-            name: form.name,
-            description: form.description,
-            price: form.price,
-            image: image,
-            user: {
+            nombre: form.name,
+            descripcion: form.description,
+            precio: Number(form.price),
+            disponible: true,
+            restaurant: {
                 connect: {
-                    id: form.userId,
+                    id: rest.id,
                 },
             },
-            category: {
-                connect:{
+            categoria: {
+                connect: {
                     id: Number(form.categoryId),
                 }
             }
         },
         include: {
-            user: true,
-            category: true,
+            restaurant: true,
+            categoria: true,
         },
     });
 
-    if (product) {
-        return NextResponse.json({ status: true, message: 'Product created' })
+    if(plato){
+        return NextResponse.json({ status: true, message: 'Plato creado con exito', id: plato.id })
     }
-    return NextResponse.json({ status: false, message: 'Product Error' })
+    return NextResponse.json({ status: false, message: 'Ocurrio en error inesperado' })
 }

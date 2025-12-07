@@ -5,16 +5,28 @@ import path from 'path';
 
 export async function GET(request, segmentData) {
     const params = await segmentData.params
-    const product = await prisma.product.findUnique({
+    const plato = await prisma.plato.findUnique({
         where: {
             id: Number(params.id)
-        },
-        include: {
-            category: true,
-        },
+        }
     });
 
-    return NextResponse.json({ product })
+    if (plato.mainImageId != null) {
+        const image = await prisma.image.findUnique({
+            where: {
+                id: plato.mainImageId
+            },
+            select: {
+                id: true,
+                url: true
+            }
+        });
+        plato.url = image.url
+    }else{
+         plato.url = null
+    }
+   
+    return NextResponse.json({ plato })
 }
 
 export async function PUT(request, segmentData) {
@@ -71,11 +83,11 @@ export async function DELETE(request, segmentData) {
         where: {
             id: Number(params.id)
         },
-        select:{
+        select: {
             image: true
         }
     });
-    
+
     let pathImage = path.join(process.cwd(), 'public/images/');
     // delete imagen file
     fs.unlinkSync(pathImage + productDelete.image)
@@ -85,10 +97,10 @@ export async function DELETE(request, segmentData) {
             id: Number(params.id)
         },
     });
-    
+
     if (product) {
         return NextResponse.json({ status: true, product })
-    }else{
+    } else {
         return NextResponse.json({ status: false, message: 'Error delete image' })
     }
 }

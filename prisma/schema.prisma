@@ -10,57 +10,49 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql" //"postgresql"
   url      = env("DATABASE_URL")
 }
 
+// La clave 'id' es el campo polimórfico
+model Image {
+  id          String   @id @default(cuid())
+  url         String   // URL del servicio de almacenamiento (Vercel Blob/S3/Cloudinary)
+  altText     String?  // Texto alternativo para accesibilidad
+  uploadedAt  DateTime @default(now())
+
+  // --- Campos Polimórficos ---
+  // 1. Clave Foránea al Modelo 'Padre'
+  modelId     String
+
+  // 2. Tipo del Modelo 'Padre'
+  modelType   String
+
+  // Índices para mejorar el rendimiento de búsqueda
+  @@index([modelId, modelType])
+}
 model User {
   id      Int      @id @default(autoincrement())
   email   String   @unique
   name    String
   password String 
-  roles Rol[]
-  products Product[]
-  pedidos Pedido[]
-  business Business?
+  roles RolUser[]
+  empleados Empleado[]
+  business Restaurant?
+
+  // Campo para almacenar el ID de la Imagen Principal.
+  // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
+  mainImageId String?
 }
 
-model Rol {
+model RolUser {
   id        Int     @id @default(autoincrement())
   name     String
   users User[]
   createdAt DateTime @default(now())
 }
 
-model Category {
-  id    Int                 @id @default(autoincrement())
-  name  String
-  products Product[]
-}
-// model RolesOnUsers {
-//   user       User     @relation(fields: [userId], references: [id])
-//   userId     Int // relation scalar field (used in the `@relation` attribute above)
-//   rol        Rol @relation(fields: [rolId], references: [id])
-//   rolId      Int // relation scalar field (used in the `@relation` attribute above)
-//   assignedAt DateTime @default(now())
-//   assignedBy String
-
-//   @@id([userId, rolId])
-// }
-model Product {
-  id       Int  @id @default(autoincrement())
-  name String
-  description String
-  price Decimal
-  image String
-  user   User @relation(fields: [userId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
-  userId Int
-  categoryId Int
-  createdAt DateTime @default(now())
-}
-
-model Business {
+model Restaurant {
   id     Int  @id @default(autoincrement())
   slug String
   name String
@@ -70,39 +62,150 @@ model Business {
   logo String
   user   User @relation(fields: [userId], references: [id])
   userId Int  @unique // relation scalar field (used in the `@relation` attribute above)
-  client Client[]
+  cliente Cliente[]
+  pedidos Pedido[]
+  platos Plato[]
+
+  // Campo para almacenar el ID de la Imagen Principal.
+  // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
+  mainImageId String?
 }
 
-model Client {
-  id Int @id @default(autoincrement())
-  name String
-  email String
-  phone String
-  business   Business @relation(fields: [businessId], references: [id])
-  businessId Int
-  pedido   Pedido @relation(fields: [pedidoId], references: [id])
-  pedidoId Int  @unique // relation scalar field (used in the `@relation` attribute above)
+// --- Entidades del Menú y Platos ---
+
+model Categoria {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  platos Plato[] // Relación: Una categoría tiene muchos platos
 }
+
+model Plato {
+  id           Int        @id @default(autoincrement())
+  nombre       String     @unique
+  descripcion  String?
+  precio       Float
+  disponible   Boolean    @default(true)
+  categoriaId  Int
+  categoria    Categoria  @relation(fields: [categoriaId], references: [id])
+  restaurantId  Int
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  itemsPedido  ItemPedido[] // Relación: Un plato puede estar en muchos items de pedido
+
+  // Campo para almacenar el ID de la Imagen Principal.
+  // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
+  mainImageId String?
+}
+
+// --- Entidades de Mesas y Clientes ---
+
+model Mesa {
+  id         Int     @id @default(autoincrement())
+  numero     Int     @unique
+  capacidad  Int
+  estado     String  @default("Libre") // Ej: "Libre", "Ocupada", "Reservada"
+  pedidos    Pedido[] // Relación: Una mesa puede tener muchos pedidos a lo largo del tiempo
+  reservas   Reserva[] // Relación: Una mesa puede tener muchas reservas
+}
+
+model Cliente {
+  id         Int      @id @default(autoincrement())
+  nombre     String
+  telefono   String?  @unique
+  email      String?  @unique
+  pedidos    Pedido[] // Relación: Un cliente puede realizar muchos pedidos
+  reservas   Reserva[] // Relación: Un cliente puede realizar muchas reservas
+  restaurant Restaurant[]
+
+  // Campo para almacenar el ID de la Imagen Principal.
+  // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
+  mainImageId String?
+}
+
+// --- Entidades de Pedidos ---
 
 model Pedido {
-  id       Int  @id @default(autoincrement())
-  order Json
-  priceFull Decimal
-  status Boolean
-  comprobante String
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
-  client Client?
-  createdAt DateTime @default(now())
+  id         Int          @id @default(autoincrement())
+  fechaHora  DateTime     @default(now())
+  estado     String       @default("Pendiente") // Ej: "Pendiente", "Preparando", "Servido", "Pagado", "Cancelado"
+  total      Float        @default(0.0)
+  clienteId  Int?         // El pedido puede ser de un cliente registrado o no
+  cliente    Cliente?     @relation(fields: [clienteId], references: [id])
+  restaurantId  Int?         // El pedido tambien pertenece a un restaurante
+  restaurant    Restaurant?     @relation(fields: [restaurantId], references: [id])
+  mesaId     Int
+  mesa       Mesa         @relation(fields: [mesaId], references: [id])
+  empleadoId Int?         // Quién tomó el pedido (opcional)
+  empleado   Empleado?    @relation(fields: [empleadoId], references: [id])
+  items      ItemPedido[] // Relación: Un pedido tiene muchos items
+  pago       Pago?        // Relación 1:1 con Pago
 }
 
-// model CategoriesOnProduct {
-//   product       Product     @relation(fields: [productId], references: [id])
-//   productId     Int // relation scalar field (used in the `@relation` attribute above)
-//   category   Category @relation(fields: [categoryId], references: [id])
-//   categoryId Int // relation scalar field (used in the `@relation` attribute above)
-//   assignedAt DateTime @default(now())
-//   assignedBy String
+model ItemPedido {
+  id        Int    @id @default(autoincrement())
+  cantidad  Int
+  nota      String?
+  precioUnitario Float
+  
+  pedidoId  Int
+  pedido    Pedido @relation(fields: [pedidoId], references: [id])
+  
+  platoId   Int
+  plato     Plato  @relation(fields: [platoId], references: [id])
+  
+  @@unique([pedidoId, platoId]) // Un plato solo puede estar una vez en el mismo pedido
+}
 
-//   @@id([productId, categoryId])
-// }
+// --- Entidades de Pago y Reserva ---
+
+model Pago {
+  id          Int      @id @default(autoincrement())
+  monto       Float
+  metodo      String   // Ej: "Efectivo", "Tarjeta", "Transferencia"
+  fechaHora   DateTime @default(now())
+  
+  pedidoId    Int      @unique // Relación 1:1 con Pedido
+  pedido      Pedido   @relation(fields: [pedidoId], references: [id])
+}
+
+model Reserva {
+  id            Int      @id @default(autoincrement())
+  fechaHora     DateTime
+  numPersonas   Int
+  estado        String   @default("Pendiente") // Ej: "Pendiente", "Confirmada", "Cancelada"
+  
+  clienteId     Int
+  cliente       Cliente  @relation(fields: [clienteId], references: [id])
+  
+  mesaId        Int
+  mesa          Mesa     @relation(fields: [mesaId], references: [id])
+  
+  @@unique([fechaHora, mesaId]) // Una mesa solo puede estar reservada una vez a una hora específica
+}
+
+// --- Entidades de Empleados y Roles ---
+
+model Rol {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique // Ej: "Mesero", "Cocinero", "Administrador"
+  empleados   Empleado[] // Relación: Un rol tiene muchos empleados
+}
+
+model Empleado {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  apellido    String
+  telefono    String?  @unique
+  fechaContrato DateTime @default(now())
+  
+  rolId       Int
+  rol         Rol      @relation(fields: [rolId], references: [id])
+
+  userId     Int
+  user       User  @relation(fields: [userId], references: [id])
+  
+  pedidosTomados Pedido[] // Relación: Un empleado puede tomar muchos pedidos
+
+  // Campo para almacenar el ID de la Imagen Principal.
+  // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
+  mainImageId String?
+}

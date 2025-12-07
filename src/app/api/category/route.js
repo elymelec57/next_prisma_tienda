@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const categories = await prisma.category.findMany();
+    const categories = await prisma.categoria.findMany();
     return NextResponse.json(categories);
   } catch (error) {
     return NextResponse.json({ message: "Error fetching categories", error }, { status: 500 });
@@ -13,7 +13,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const { name } = await request.json();
-    const newCategory = await prisma.category.create({
+    const newCategory = await prisma.categoria.create({
       data: { name },
     });
     return NextResponse.json(newCategory, { status: 201 });

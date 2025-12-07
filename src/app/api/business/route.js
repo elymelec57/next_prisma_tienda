@@ -34,7 +34,7 @@ export async function POST(request) {
         remove: /[*+~.()'"!:@]/g // Elimina caracteres especiales
     });
 
-    const businessCreate = await prisma.business.create({
+    const businessCreate = await prisma.restaurant.create({
         data: {
             name: form.name,
             slogan: form.slogan,

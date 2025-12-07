@@ -8,13 +8,13 @@ import sharp from 'sharp';
 export async function GET(request, segmentData) {
     const params = await segmentData.params;
 
-    const business = await prisma.business.findUnique({
+    const rest = await prisma.restaurant.findUnique({
         where: {
             userId: Number(params.id)
         }
     })
 
-    return NextResponse.json({ status: true, business })
+    return NextResponse.json({ status: true, rest })
 }
 
 export async function PUT(request, segmentData) {
