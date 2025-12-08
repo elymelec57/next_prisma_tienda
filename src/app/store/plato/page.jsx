@@ -1,10 +1,11 @@
 'use client'
 import ButtomEdit from '@/components/buttomEdit';
 import Link from 'next/link';
-import ButtomDelete from '@/components/buttomdelete';
 import { useAppSelector } from "@/lib/hooks";
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { toast } from 'react-toastify';
+import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 
 export default function ListProduct() {
 
@@ -12,6 +13,8 @@ export default function ListProduct() {
     const id = useAppSelector((state) => state.auth.auth.id)
     const [product, setProduct] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+    const [productToDelete, setProductToDelete] = useState(null); // State to hold product to delete
 
     useEffect(() => {
         platos();
@@ -19,19 +22,28 @@ export default function ListProduct() {
 
     const platos = async () => {
         let res = ''
-        if(params.id){
+        if (params.id) {
             res = await fetch(`/api/product/user/${params.id}`)
-        }else{
+        } else {
             res = await fetch(`/api/product/user/${id}`)
         }
-        
+
         const { dataPlatos } = await res.json()
-        
+
         setProduct(dataPlatos);
         setLoading(false);
     }
 
-    async function deleteProduct(id) {
+    const handleDeleteClick = (p) => {
+        setProductToDelete(p);
+        setIsModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        setIsModalOpen(false);
+        if (!productToDelete) return;
+
+        const id = productToDelete.id;
         const res = await fetch(`/api/product/${id}`, {
             method: 'DELETE'
         })
@@ -40,11 +52,19 @@ export default function ListProduct() {
         if (eliminado.status) {
             setLoading(true)
             platos()
+            toast.success(eliminado.message);
         } else {
-            alert(eliminado.message)
+            toast.error(eliminado.message);
         }
-    }
 
+        setProductToDelete(null); // Clear product after deletion attempt
+    };
+
+    const handleCancelDelete = () => {
+        setIsModalOpen(false);
+        setProductToDelete(null);
+    };
+ 
     if (loading) {
         return <div className='container mx-auto mt-20'>Cargando...</div>;
     }
@@ -87,7 +107,7 @@ export default function ListProduct() {
                             product.map((p) => (
                                 <tr key={p.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td className="px-6 py-4">
-                                        {p.mainImage && <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`} className="w-16 h-16 object-cover rounded-full border border-gray-200" alt="" /> }
+                                        {p.mainImage && <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`} className="w-16 h-16 object-cover rounded-full border border-gray-200" alt="" />}
                                     </td>
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                         {p.nombre}
@@ -108,9 +128,7 @@ export default function ListProduct() {
                                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.38-2.827-2.828z"></path></svg>
                                             Editar
                                         </ButtomEdit>
-                                        <button type="button" onClick={() => {
-                                            deleteProduct(p.id)
-                                        }} className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition ease-in-out duration-150">
+                                        <button type="button" onClick={() => handleDeleteClick(p)} className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition ease-in-out duration-150">
                                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z" clipRule="evenodd"></path></svg>
                                             Eliminar
                                         </button>
@@ -121,6 +139,13 @@ export default function ListProduct() {
                     </tbody>
                 </table>
             </div>
+            
+            <DeleteConfirmationModal
+                isOpen={isModalOpen}
+                onClose={handleCancelDelete}
+                onConfirm={handleConfirmDelete}
+                productName={productToDelete?.nombre}
+            />
         </div>
     )
 }

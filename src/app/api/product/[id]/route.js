@@ -1,7 +1,6 @@
 import { prisma } from "@/libs/prisma";
 import { NextResponse } from "next/server";
-import fs from 'fs';
-import path from 'path';
+import deleteImage from "@/libs/deleteImage";
 
 export async function GET(request, segmentData) {
     const params = await segmentData.params
@@ -22,85 +21,61 @@ export async function GET(request, segmentData) {
             }
         });
         plato.url = image.url
-    }else{
-         plato.url = null
+    } else {
+        plato.url = null
     }
-   
+
     return NextResponse.json({ plato })
 }
 
 export async function PUT(request, segmentData) {
     const params = await segmentData.params
     const { form } = await request.json()
-    let product = ''
 
-    if (form.image) {
-
-        const nameImg = Date.now() + '.jpg';
-        let imageData = form.image;
-        let pathImage = path.join(process.cwd(), 'public/images/');
-        let base64Data = imageData.replace(/^data:([A-Za-z-+/]+);base64,/, '');
-        fs.writeFileSync(pathImage + nameImg, base64Data, { encoding: 'base64' });
-
-        // delete imagen file
-        fs.unlinkSync(pathImage + form.imageCurrent)
-        product = await prisma.product.update({
-            where: {
-                id: Number(params.id)
-            },
-            data: {
-                name: form.name,
-                description: form.description,
-                price: form.price,
-                categoryId: Number(form.categoryId),
-                image: nameImg
-            }
-        });
-    } else {
-        product = await prisma.product.update({
-            where: {
-                id: Number(params.id)
-            },
-            data: {
-                name: form.name,
-                description: form.description,
-                price: form.price,
-                categoryId: Number(form.categoryId),
-            }
-        });
-    }
-
-    if (product) {
-        return NextResponse.json({ status: true, product })
-    }
-    return NextResponse.json({ status: false, product })
-}
-
-export async function DELETE(request, segmentData) {
-    const params = await segmentData.params
-
-    const productDelete = await prisma.product.findUnique({
+    const plato = await prisma.plato.update({
         where: {
             id: Number(params.id)
         },
-        select: {
-            image: true
+        data: {
+            nombre: form.name,
+            descripcion: form.description,
+            precio: Number(form.price),
+            categoriaId: Number(form.categoryId),
         }
     });
 
-    let pathImage = path.join(process.cwd(), 'public/images/');
-    // delete imagen file
-    fs.unlinkSync(pathImage + productDelete.image)
+    if (plato) {
+        return NextResponse.json({ status: true, message: "Plato editado correctamente", id: plato.id })
+    }
+    return NextResponse.json({ status: false, message: "Error al editar" })
+}
 
-    const product = await prisma.product.delete({
-        where: {
-            id: Number(params.id)
-        },
-    });
+export async function DELETE(request, segmentData) {
+    try {
+        const params = await segmentData.params
 
-    if (product) {
-        return NextResponse.json({ status: true, product })
-    } else {
-        return NextResponse.json({ status: false, message: 'Error delete image' })
+        const platoDelete = await prisma.plato.delete({
+            where: {
+                id: Number(params.id)
+            },
+        });
+
+        if (platoDelete) {
+            const image = await prisma.image.delete({
+                where:{
+                    id: platoDelete.mainImageId
+                }
+            })
+
+            const blog = await deleteImage(image.url)
+
+            if(blog.status){
+                return NextResponse.json({ status: true, message: "Eliminado correctamente" })
+            }
+        }
+
+    } catch (error) {
+        console.log("Error:", error)
+        return NextResponse.json({ status: false, message: error, })
     }
 }

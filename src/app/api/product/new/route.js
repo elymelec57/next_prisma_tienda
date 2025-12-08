@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/libs/prisma'
-import upload from '@/libs/upload'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/libs/prisma';
 
 export async function POST(request) {
 

@@ -1,6 +1,7 @@
 import NavBar from "@/components/NavBar";
 import { cookies } from 'next/headers'
 import jwt from "jsonwebtoken";
+import { ToastContainer } from 'react-toastify';
 
 export default async function LayoutDashboard({ children }) {
 
@@ -14,6 +15,7 @@ export default async function LayoutDashboard({ children }) {
         <NavBar data={decoded.data} />
       </div>
       {children}
+      <ToastContainer />
     </>
   );
 }

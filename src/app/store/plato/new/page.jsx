@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAppSelector } from "@/lib/hooks";
+import { toast } from 'react-toastify';
 
 export default function Product() {
 
@@ -11,7 +12,6 @@ export default function Product() {
     const params = useParams()
 
     const [categories, setCategories] = useState([]);
-    const [filename, setFilename] = useState()
     const [selectedCategory, setSelectedCategory] = useState('');
 
     useEffect(() => {
@@ -27,7 +27,7 @@ export default function Product() {
         description: '',
         price: '',
         image: '',
-        mainImageId: '',
+        mainImageId: null,
         url: '',
         categoryId: '',
         userId: useAppSelector((state) => state.auth.auth.id)
@@ -36,7 +36,6 @@ export default function Product() {
 
     const onFileChange = (e) => {
         let file = e.target.files[0]; // Changed 'files' to 'file' for clarity
-        //setFilename(file.name)
         setForm({
             ...form,
             image: file,
@@ -53,7 +52,7 @@ export default function Product() {
     async function consultProduct() {
         const data = await fetch(`/api/product/${params.id}`)
         const { plato } = await data.json()
-        console.log(plato)
+
         setForm({
             name: plato.nombre,
             description: plato.descripcion,
@@ -86,23 +85,20 @@ export default function Product() {
         });
     };
 
-    const product = async (e) => {
+    const savePlato = async (e) => {
         e.preventDefault()
-        let res = ''
+        let res;
 
         if (params.id) {
-            res = await fetch(`/api/product/${params.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form })
-            });
-        } else {
-            res = await fetch(`/api/product/new`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form })
-            });
+            return updatePlato()
         }
+
+        res = await fetch(`/api/product/new`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ form })
+        });
+
 
         const plato = await res.json();
         if (plato.status) {
@@ -114,21 +110,48 @@ export default function Product() {
                     body: form.image,
                 },
             );
+
             const newBlob = await response.json();
 
-            if(newBlob.status){
+            if (newBlob.status) {
+                toast.success(plato.message);
                 router.refresh()
                 router.push('/store/plato')
-            }else{
+            } else {
                 alert(newBlob.message)
                 router.refresh()
                 router.push('/store/plato')
             }
-            
+
         } else {
-            alert(product.message)
+            alert(plato.message)
         }
 
+    }
+
+    const updatePlato = async () => {
+        const update = await fetch(`/api/product/${params.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ form })
+        });
+
+        const platoUpdate = await update.json()
+        if (platoUpdate.status) {
+            if (form.image) {
+                const response = await fetch(
+                    `/api/avatar/upload?filename=${form.image.name}&id=${platoUpdate.id}`,
+                    {
+                        method: 'POST',
+                        body: form.image,
+                    },
+                );
+            }
+
+            toast.success(platoUpdate.message);
+            router.refresh()
+            router.push('/store/plato')
+        }
     }
 
 
@@ -138,7 +161,7 @@ export default function Product() {
                 <h1 className="text-2xl font-bold mb-1">Registo de platos</h1>
             </div>
 
-            <form onSubmit={product} className="max-w-sm mx-auto p-4 sm:max-w-md md:max-w-lg">
+            <form onSubmit={savePlato} className="max-w-sm mx-auto p-4 sm:max-w-md md:max-w-lg">
                 <div className="mb-5">
                     <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre</label>
                     <input type="text" id="name" name="name" value={form.name} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
@@ -170,7 +193,7 @@ export default function Product() {
                     </select>
                 </div>
                 {
-                    form.mainImageId != null ? (
+                    form.mainImageId != null && showImg ? (
                         <>
                             <div className="">
                                 <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${form.url}`} alt="" />

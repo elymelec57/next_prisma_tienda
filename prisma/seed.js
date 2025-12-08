@@ -100,33 +100,33 @@ async function main() {
   });
 
   // --- 3. Seeders para Platos ---
-  console.log('Creando platos de ejemplo...');
-  await prisma.plato.createMany({
-    data: [
-      {
-        nombre: 'Sopa del Día',
-        precio: 5.50,
-        descripcion: 'Deliciosa sopa fresca de temporada.',
-        categoriaId: categoriaEntrada.id,
-        restaurantId: 1
-      },
-      {
-        nombre: 'Filete de Res a la Parrilla',
-        precio: 18.99,
-        descripcion: 'Servido con papas rústicas y vegetales.',
-        categoriaId: categoriaPrincipal.id,
-        restaurantId: 1
-      },
-      {
-        nombre: 'Limonada de Menta',
-        precio: 3.50,
-        descripcion: 'Refrescante limonada natural con hojas de menta.',
-        categoriaId: categoriaBebida.id,
-        restaurantId: 1
-      },
-    ],
-    skipDuplicates: true, // Esto evita errores si intentamos insertar platos con el mismo nombre
-  });
+  // console.log('Creando platos de ejemplo...');
+  // await prisma.plato.createMany({
+  //   data: [
+  //     {
+  //       nombre: 'Sopa del Día',
+  //       precio: 5.50,
+  //       descripcion: 'Deliciosa sopa fresca de temporada.',
+  //       categoriaId: categoriaEntrada.id,
+  //       restaurantId: 1
+  //     },
+  //     {
+  //       nombre: 'Filete de Res a la Parrilla',
+  //       precio: 18.99,
+  //       descripcion: 'Servido con papas rústicas y vegetales.',
+  //       categoriaId: categoriaPrincipal.id,
+  //       restaurantId: 1
+  //     },
+  //     {
+  //       nombre: 'Limonada de Menta',
+  //       precio: 3.50,
+  //       descripcion: 'Refrescante limonada natural con hojas de menta.',
+  //       categoriaId: categoriaBebida.id,
+  //       restaurantId: 1
+  //     },
+  //   ],
+  //   skipDuplicates: true, // Esto evita errores si intentamos insertar platos con el mismo nombre
+  // });
 
   // --- 4. Seeders para Mesas ---
   console.log('Creando mesas...');

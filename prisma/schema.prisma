@@ -60,7 +60,7 @@ model Restaurant {
   phone String
   direcction String
   logo String
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId Int  @unique // relation scalar field (used in the `@relation` attribute above)
   cliente Cliente[]
   pedidos Pedido[]
@@ -81,14 +81,14 @@ model Categoria {
 
 model Plato {
   id           Int        @id @default(autoincrement())
-  nombre       String     @unique
+  nombre       String
   descripcion  String?
   precio       Float
   disponible   Boolean    @default(true)
   categoriaId  Int
-  categoria    Categoria  @relation(fields: [categoriaId], references: [id])
+  categoria    Categoria  @relation(fields: [categoriaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   restaurantId  Int
-  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   itemsPedido  ItemPedido[] // Relación: Un plato puede estar en muchos items de pedido
 
   // Campo para almacenar el ID de la Imagen Principal.
@@ -129,13 +129,13 @@ model Pedido {
   estado     String       @default("Pendiente") // Ej: "Pendiente", "Preparando", "Servido", "Pagado", "Cancelado"
   total      Float        @default(0.0)
   clienteId  Int?         // El pedido puede ser de un cliente registrado o no
-  cliente    Cliente?     @relation(fields: [clienteId], references: [id])
+  cliente    Cliente?     @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   restaurantId  Int?         // El pedido tambien pertenece a un restaurante
-  restaurant    Restaurant?     @relation(fields: [restaurantId], references: [id])
+  restaurant    Restaurant?     @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   mesaId     Int
-  mesa       Mesa         @relation(fields: [mesaId], references: [id])
+  mesa       Mesa         @relation(fields: [mesaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   empleadoId Int?         // Quién tomó el pedido (opcional)
-  empleado   Empleado?    @relation(fields: [empleadoId], references: [id])
+  empleado   Empleado?    @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   items      ItemPedido[] // Relación: Un pedido tiene muchos items
   pago       Pago?        // Relación 1:1 con Pago
 }
@@ -147,10 +147,10 @@ model ItemPedido {
   precioUnitario Float
   
   pedidoId  Int
-  pedido    Pedido @relation(fields: [pedidoId], references: [id])
+  pedido    Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   
   platoId   Int
-  plato     Plato  @relation(fields: [platoId], references: [id])
+  plato     Plato  @relation(fields: [platoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   
   @@unique([pedidoId, platoId]) // Un plato solo puede estar una vez en el mismo pedido
 }
@@ -164,7 +164,7 @@ model Pago {
   fechaHora   DateTime @default(now())
   
   pedidoId    Int      @unique // Relación 1:1 con Pedido
-  pedido      Pedido   @relation(fields: [pedidoId], references: [id])
+  pedido      Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Reserva {
@@ -174,10 +174,10 @@ model Reserva {
   estado        String   @default("Pendiente") // Ej: "Pendiente", "Confirmada", "Cancelada"
   
   clienteId     Int
-  cliente       Cliente  @relation(fields: [clienteId], references: [id])
+  cliente       Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   
   mesaId        Int
-  mesa          Mesa     @relation(fields: [mesaId], references: [id])
+  mesa          Mesa     @relation(fields: [mesaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   
   @@unique([fechaHora, mesaId]) // Una mesa solo puede estar reservada una vez a una hora específica
 }
@@ -198,10 +198,10 @@ model Empleado {
   fechaContrato DateTime @default(now())
   
   rolId       Int
-  rol         Rol      @relation(fields: [rolId], references: [id])
+  rol         Rol      @relation(fields: [rolId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   userId     Int
-  user       User  @relation(fields: [userId], references: [id])
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   
   pedidosTomados Pedido[] // Relación: Un empleado puede tomar muchos pedidos
 
