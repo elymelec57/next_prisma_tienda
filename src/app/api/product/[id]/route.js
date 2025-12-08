@@ -45,7 +45,7 @@ export async function PUT(request, segmentData) {
     });
 
     if (plato) {
-        return NextResponse.json({ status: true, message: "Plato editado correctamente", id: plato.id })
+        return NextResponse.json({ status: true, message: "Plato editado correctamente", id: plato.id, mainImage: plato.mainImageId })
     }
     return NextResponse.json({ status: false, message: "Error al editar" })
 }

@@ -140,7 +140,7 @@ export default function Product() {
         if (platoUpdate.status) {
             if (form.image) {
                 const response = await fetch(
-                    `/api/avatar/upload?filename=${form.image.name}&id=${platoUpdate.id}`,
+                    `/api/avatar/update?filename=${form.image.name}&id=${platoUpdate.id}&mainImage=${platoUpdate.mainImage}`,
                     {
                         method: 'POST',
                         body: form.image,
