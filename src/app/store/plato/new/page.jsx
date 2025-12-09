@@ -5,6 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAppSelector } from "@/lib/hooks";
 import { toast } from 'react-toastify';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { plato } from '@/app/schemas/platoSchema';
 
 export default function Product() {
 
@@ -21,23 +24,36 @@ export default function Product() {
         }
     }, []);
 
-    const [showImg, setShowImg] = useState(true);
-    const [form, setForm] = useState({
-        name: '',
-        description: '',
-        price: '',
-        image: '',
+    const {
+        register,     // Función para registrar los inputs
+        handleSubmit, // Función que maneja el envío (solo si es válido)
+        formState: { errors, isSubmitting }, // Estado del formulario (errores y envío)
+        setValue
+    } = useForm({
+        resolver: zodResolver(plato), // Aquí conectamos Zod
+        defaultValues: {
+            name: '',
+            description: '',
+            price: '',
+            image: '',
+            categoryId: ''
+        },
+    });
+
+    const [userId, setUserId] = useState(useAppSelector((state) => state.auth.auth.id))
+    const [image, setImage] = useState({
         mainImageId: null,
         url: '',
-        categoryId: '',
-        userId: useAppSelector((state) => state.auth.auth.id)
-    });
-    const [imagePreview, setImagePreview] = useState(form.image); // New state for image preview
+        image: ''
+    })
+    const [showImg, setShowImg] = useState(true);
+    const [imagePreview, setImagePreview] = useState(image.image); // New state for image preview
 
     const onFileChange = (e) => {
         let file = e.target.files[0]; // Changed 'files' to 'file' for clarity
-        setForm({
-            ...form,
+
+        setImage({
+            ...image,
             image: file,
         })
 
@@ -53,15 +69,16 @@ export default function Product() {
         const data = await fetch(`/api/product/${params.id}`)
         const { plato } = await data.json()
 
-        setForm({
-            name: plato.nombre,
-            description: plato.descripcion,
-            price: plato.precio,
-            mainImageId: plato.mainImageId,
-            url: plato.url,
-            categoryId: plato.categoriaId
-        })
+        setValue("name", plato.nombre)
+        setValue("description", plato.descripcion)
+        setValue("price", plato.precio)
+        setValue("categoryId", plato.categoriaId)
         setSelectedCategory(plato.categoriaId)
+        setImage({
+            ...image,
+            mainImageId: plato.mainImageId,
+            url: plato.url
+        })
     }
 
     async function fetchCategories() {
@@ -70,44 +87,26 @@ export default function Product() {
         setCategories(categories);
     }
 
-    const changeImput = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value
-        })
-    }
-
-    const changeCategory = (e) => {
-        setSelectedCategory(e.target.value);
-        setForm({
-            ...form,
-            categoryId: e.target.value
-        });
-    };
-
-    const savePlato = async (e) => {
-        e.preventDefault()
-        let res;
+    const onSubmit = async (data) => {
 
         if (params.id) {
-            return updatePlato()
+            return updatePlato(data)
         }
 
-        res = await fetch(`/api/product/new`, {
+        const res = await fetch(`/api/product/new`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ form })
+            body: JSON.stringify({ form: data, user: userId })
         });
-
 
         const plato = await res.json();
         if (plato.status) {
 
             const response = await fetch(
-                `/api/avatar/upload?filename=${form.image.name}&id=${plato.id}`,
+                `/api/avatar/upload?filename=${image.image.name}&id=${plato.id}`,
                 {
                     method: 'POST',
-                    body: form.image,
+                    body: image.image,
                 },
             );
 
@@ -118,32 +117,31 @@ export default function Product() {
                 router.refresh()
                 router.push('/store/plato')
             } else {
-                alert(newBlob.message)
+                toast.error(newBlob.message)
                 router.refresh()
                 router.push('/store/plato')
             }
 
         } else {
-            alert(plato.message)
+            toast.error(plato.message)
         }
-
     }
 
-    const updatePlato = async () => {
+    const updatePlato = async (data) => {
         const update = await fetch(`/api/product/${params.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ form })
+            body: JSON.stringify({ form: data })
         });
 
         const platoUpdate = await update.json()
         if (platoUpdate.status) {
-            if (form.image) {
+            if (image.image) {
                 const response = await fetch(
-                    `/api/avatar/update?filename=${form.image.name}&id=${platoUpdate.id}&mainImage=${platoUpdate.mainImage}`,
+                    `/api/avatar/update?filename=${image.image.name}&id=${platoUpdate.id}&mainImage=${platoUpdate.mainImage}`,
                     {
                         method: 'POST',
-                        body: form.image,
+                        body: image.image,
                     },
                 );
             }
@@ -156,31 +154,35 @@ export default function Product() {
 
 
     return (
-        <div className="mt-10">
-            <div className="text-center">
-                <h1 className="text-2xl font-bold mb-1">Registo de platos</h1>
-            </div>
-
-            <form onSubmit={savePlato} className="max-w-sm mx-auto p-4 sm:max-w-md md:max-w-lg">
+        <div className="">
+            <form onSubmit={handleSubmit(onSubmit)} className="max-w-sm mx-auto p-4 sm:max-w-md md:max-w-lg">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold mb-1 mt-20">{params.id ? 'Editando plato' : 'Registro de platos'}</h1>
+                </div>
                 <div className="mb-5">
                     <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre</label>
-                    <input type="text" id="name" name="name" value={form.name} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    <input type="text" id="name" name="name" {...register('name')}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    {errors.name && <p className="error">{errors.name.message}</p>}
                 </div>
                 <div className="mb-5">
                     <label htmlFor="description" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripcción</label>
-                    <input type="text" id="description" name="description" value={form.description} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    <input type="text" id="description" name="description" {...register('description')}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    {errors.description && <p className="error">{errors.description.message}</p>}
                 </div>
                 <div className="mb-5">
                     <label htmlFor="price" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Precio</label>
-                    <input type="number" id="price" name="price" value={form.price} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    <input type="number" id="price" name="price" {...register('price')} 
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    {errors.price && <p className="error">{errors.price.message}</p>}
                 </div>
                 <div className="mb-5">
                     <label htmlFor="category" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categoria</label>
                     <select
                         id="category"
                         name="category"
-                        value={selectedCategory}
-                        onChange={changeCategory}
+                        {...register('categoryId')}
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         required
                     >
@@ -193,10 +195,10 @@ export default function Product() {
                     </select>
                 </div>
                 {
-                    form.mainImageId != null && showImg ? (
+                    image.mainImageId != null && showImg ? (
                         <>
                             <div className="">
-                                <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${form.url}`} alt="" />
+                                <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${image.url}`} alt="" />
                                 <button onClick={() => {
                                     setShowImg(false)
                                 }} className="p-2 text-center underline underline-offset-1">Subir otra imagen</button>
@@ -219,7 +221,7 @@ export default function Product() {
                                 </div>
                             )}
                             {
-                                form.imageCurrent != '' && !showImg ? (
+                                !showImg ? (
                                     <>
                                         <button onClick={() => {
                                             setShowImg(true);
@@ -233,14 +235,9 @@ export default function Product() {
                         </>
                     )
                 }
-                {/* <div className="flex items-start mb-5">
-            <div className="flex items-center h-5">
-              <input id="remember" type="checkbox" value="" className="w-4 h-4 border border-gray-300 rounded-sm bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800" required />
-            </div>
-            <label htmlFor="remember" className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Remember me</label>
-          </div> */}
+
                 <div className="flex flex-col sm:flex-row justify-between mt-6 space-y-4 sm:space-y-0 sm:space-x-4">
-                    <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
+                    <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Guardar</button>
                     <Link className="text-blue-700 hover:underline font-medium rounded-lg text-sm w-full py-2.5 text-center border border-blue-700 dark:text-blue-500 dark:border-blue-500" href={'/store/plato'}>Atras</Link>
                 </div>
             </form>

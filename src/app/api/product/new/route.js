@@ -3,11 +3,11 @@ import { prisma } from '@/libs/prisma';
 
 export async function POST(request) {
 
-    const { form } = await request.json()
+    const { form, user } = await request.json()
     
     const rest = await prisma.restaurant.findUnique({
         where: {
-            userId: Number(form.userId)
+            userId: Number(user)
         },
         select: {
             id: true
