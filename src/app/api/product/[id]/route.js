@@ -7,6 +7,9 @@ export async function GET(request, segmentData) {
     const plato = await prisma.plato.findUnique({
         where: {
             id: Number(params.id)
+        },
+        include: {
+            contornos: true
         }
     });
 
@@ -41,6 +44,9 @@ export async function PUT(request, segmentData) {
             descripcion: form.description,
             precio: Number(form.price),
             categoriaId: Number(form.categoryId),
+            contornos: {
+                set: form.contornos ? form.contornos.map(id => ({ id: Number(id) })) : []
+            }
         }
     });
 
@@ -62,14 +68,14 @@ export async function DELETE(request, segmentData) {
 
         if (platoDelete) {
             const image = await prisma.image.delete({
-                where:{
+                where: {
                     id: platoDelete.mainImageId
                 }
             })
 
             const blog = await deleteImage(image.url)
 
-            if(blog.status){
+            if (blog.status) {
                 return NextResponse.json({ status: true, message: "Eliminado correctamente" })
             }
         }

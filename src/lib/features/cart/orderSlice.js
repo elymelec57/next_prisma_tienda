@@ -32,7 +32,7 @@ export const orderSlice = createAppSlice({
       });
 
     },
-    sumarProduct: (state,action) => {
+    sumarProduct: (state, action) => {
       const id = action.payload
       state.order.forEach((e) => {
         if (e.id == id) {
@@ -43,7 +43,7 @@ export const orderSlice = createAppSlice({
       localStorage.setItem('count', JSON.stringify(state.count++))
 
     },
-    restarProduct: (state,action) => {
+    restarProduct: (state, action) => {
       const id = action.payload
       state.order.forEach((e) => {
         if (e.id == id) {
@@ -60,7 +60,7 @@ export const orderSlice = createAppSlice({
     inialityCount: (state, action) => {
       state.count = action.payload
     },
-    reset: (state)=>{
+    reset: (state) => {
       state.order = []
       state.count = 0
     }

@@ -16,6 +16,17 @@ export default function Product() {
 
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [contornos, setContornos] = useState([]);
+    const [selectedContornos, setSelectedContornos] = useState([]);
+
+    const [userId, setUserId] = useState(useAppSelector((state) => state.auth.auth.id))
+    const [image, setImage] = useState({
+        mainImageId: null,
+        url: '',
+        image: ''
+    })
+    const [showImg, setShowImg] = useState(true);
+    const [imagePreview, setImagePreview] = useState(image.image); // New state for image preview
 
     useEffect(() => {
         fetchCategories();
@@ -23,6 +34,12 @@ export default function Product() {
             consultProduct();
         }
     }, []);
+
+    useEffect(() => {
+        if (userId) {
+            fetchContornos();
+        }
+    }, [userId]);
 
     const {
         register,     // Función para registrar los inputs
@@ -39,15 +56,6 @@ export default function Product() {
             categoryId: ''
         },
     });
-
-    const [userId, setUserId] = useState(useAppSelector((state) => state.auth.auth.id))
-    const [image, setImage] = useState({
-        mainImageId: null,
-        url: '',
-        image: ''
-    })
-    const [showImg, setShowImg] = useState(true);
-    const [imagePreview, setImagePreview] = useState(image.image); // New state for image preview
 
     const onFileChange = (e) => {
         let file = e.target.files[0]; // Changed 'files' to 'file' for clarity
@@ -79,12 +87,22 @@ export default function Product() {
             mainImageId: plato.mainImageId,
             url: plato.url
         })
+        if (plato.contornos) {
+            setSelectedContornos(plato.contornos.map(c => c.id.toString()));
+        }
     }
 
     async function fetchCategories() {
         const res = await fetch('/api/category');
         const categories = await res.json();
         setCategories(categories);
+    }
+
+    async function fetchContornos() {
+        if (!userId) return;
+        const res = await fetch(`/api/contornos?userId=${userId}`);
+        const data = await res.json();
+        setContornos(data);
     }
 
     const onSubmit = async (data) => {
@@ -96,7 +114,7 @@ export default function Product() {
         const res = await fetch(`/api/product/new`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ form: data, user: userId })
+            body: JSON.stringify({ form: { ...data, contornos: selectedContornos }, user: userId })
         });
 
         const plato = await res.json();
@@ -131,7 +149,7 @@ export default function Product() {
         const update = await fetch(`/api/product/${params.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ form: data })
+            body: JSON.stringify({ form: { ...data, contornos: selectedContornos } })
         });
 
         const platoUpdate = await update.json()
@@ -193,6 +211,33 @@ export default function Product() {
                             </option>
                         ))}
                     </select>
+                </div>
+                <div className="mb-5">
+                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contornos</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        {contornos.map((contorno) => (
+                            <div key={contorno.id} className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id={`contorno-${contorno.id}`}
+                                    value={contorno.id}
+                                    checked={selectedContornos.includes(contorno.id.toString())}
+                                    onChange={(e) => {
+                                        const id = contorno.id.toString();
+                                        if (e.target.checked) {
+                                            setSelectedContornos([...selectedContornos, id]);
+                                        } else {
+                                            setSelectedContornos(selectedContornos.filter(c => c !== id));
+                                        }
+                                    }}
+                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                />
+                                <label htmlFor={`contorno-${contorno.id}`} className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                    {contorno.nombre}
+                                </label>
+                            </div>
+                        ))}
+                    </div>
                 </div>
                 {
                     image.mainImageId != null && showImg ? (

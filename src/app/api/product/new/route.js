@@ -4,7 +4,7 @@ import { prisma } from '@/libs/prisma';
 export async function POST(request) {
 
     const { form, user } = await request.json()
-    
+
     const rest = await prisma.restaurant.findUnique({
         where: {
             userId: Number(user)
@@ -29,6 +29,9 @@ export async function POST(request) {
                 connect: {
                     id: Number(form.categoryId),
                 }
+            },
+            contornos: {
+                connect: form.contornos ? form.contornos.map(id => ({ id: Number(id) })) : []
             }
         },
         include: {
@@ -37,7 +40,7 @@ export async function POST(request) {
         },
     });
 
-    if(plato){
+    if (plato) {
         return NextResponse.json({ status: true, message: 'Plato creado con exito', id: plato.id })
     }
     return NextResponse.json({ status: false, message: 'Ocurrio en error inesperado' })
