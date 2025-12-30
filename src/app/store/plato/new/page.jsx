@@ -103,7 +103,7 @@ export default function Product() {
         if (plato.status) {
 
             const response = await fetch(
-                `/api/avatar/upload?filename=${image.image.name}&id=${plato.id}`,
+                `/api/avatar/upload?filename=${image.image.name}&model=plato&id=${plato.id}`,
                 {
                     method: 'POST',
                     body: image.image,
@@ -138,7 +138,7 @@ export default function Product() {
         if (platoUpdate.status) {
             if (image.image) {
                 const response = await fetch(
-                    `/api/avatar/update?filename=${image.image.name}&id=${platoUpdate.id}&mainImage=${platoUpdate.mainImage}`,
+                    `/api/avatar/update?filename=${image.image.name}&model=plato&id=${platoUpdate.id}&mainImage=${platoUpdate.mainImage}`,
                     {
                         method: 'POST',
                         body: image.image,
@@ -173,7 +173,7 @@ export default function Product() {
                 </div>
                 <div className="mb-5">
                     <label htmlFor="price" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Precio</label>
-                    <input type="number" id="price" name="price" {...register('price')} 
+                    <input type="number" id="price" name="price" {...register('price')}
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
                     {errors.price && <p className="error">{errors.price.message}</p>}
                 </div>

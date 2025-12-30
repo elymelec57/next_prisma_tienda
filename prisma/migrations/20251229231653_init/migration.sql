@@ -40,7 +40,6 @@ CREATE TABLE `Restaurant` (
     `slogan` VARCHAR(191) NOT NULL,
     `phone` VARCHAR(191) NOT NULL,
     `direcction` VARCHAR(191) NOT NULL,
-    `logo` VARCHAR(191) NOT NULL,
     `userId` INTEGER NOT NULL,
     `mainImageId` VARCHAR(191) NULL,
 
@@ -67,6 +66,16 @@ CREATE TABLE `Plato` (
     `categoriaId` INTEGER NOT NULL,
     `restaurantId` INTEGER NOT NULL,
     `mainImageId` VARCHAR(191) NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Contornos` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(191) NOT NULL,
+    `price` DOUBLE NULL,
+    `restaurantId` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -181,6 +190,15 @@ CREATE TABLE `_RolUserToUser` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `_ContornosToPlato` (
+    `A` INTEGER NOT NULL,
+    `B` INTEGER NOT NULL,
+
+    UNIQUE INDEX `_ContornosToPlato_AB_unique`(`A`, `B`),
+    INDEX `_ContornosToPlato_B_index`(`B`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `_ClienteToRestaurant` (
     `A` INTEGER NOT NULL,
     `B` INTEGER NOT NULL,
@@ -197,6 +215,9 @@ ALTER TABLE `Plato` ADD CONSTRAINT `Plato_categoriaId_fkey` FOREIGN KEY (`catego
 
 -- AddForeignKey
 ALTER TABLE `Plato` ADD CONSTRAINT `Plato_restaurantId_fkey` FOREIGN KEY (`restaurantId`) REFERENCES `Restaurant`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Contornos` ADD CONSTRAINT `Contornos_restaurantId_fkey` FOREIGN KEY (`restaurantId`) REFERENCES `Restaurant`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Pedido` ADD CONSTRAINT `Pedido_clienteId_fkey` FOREIGN KEY (`clienteId`) REFERENCES `Cliente`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -236,6 +257,12 @@ ALTER TABLE `_RolUserToUser` ADD CONSTRAINT `_RolUserToUser_A_fkey` FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE `_RolUserToUser` ADD CONSTRAINT `_RolUserToUser_B_fkey` FOREIGN KEY (`B`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_ContornosToPlato` ADD CONSTRAINT `_ContornosToPlato_A_fkey` FOREIGN KEY (`A`) REFERENCES `Contornos`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_ContornosToPlato` ADD CONSTRAINT `_ContornosToPlato_B_fkey` FOREIGN KEY (`B`) REFERENCES `Plato`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `_ClienteToRestaurant` ADD CONSTRAINT `_ClienteToRestaurant_A_fkey` FOREIGN KEY (`A`) REFERENCES `Cliente`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

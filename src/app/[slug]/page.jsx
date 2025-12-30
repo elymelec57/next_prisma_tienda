@@ -16,9 +16,9 @@ export default async function page({ params }) {
   const { slug } = await params
   const business = await BusinessData(slug)
 
-  const products = await prisma.product.findMany({
+  const products = await prisma.plato.findMany({
     where: {
-      user: {
+      restaurant: {
         id: Number(business.userId)
       }
     }

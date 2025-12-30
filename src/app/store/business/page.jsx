@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAppSelector } from "@/lib/hooks";
+import { toast } from 'react-toastify';
 
 export default function Business() {
 
@@ -14,7 +15,12 @@ export default function Business() {
     }, [])
 
     const [showImg, setShowImg] = useState(true)
-    const [logoCurrent, setLogourrent] = useState('')
+    const [image, setImage] = useState({
+        mainImageId: null,
+        url: '',
+        image: ''
+    })
+    const [imagePreview, setImagePreview] = useState(image.image);
 
     const [form, setForm] = useState({
         id: '',
@@ -22,17 +28,23 @@ export default function Business() {
         slogan: '',
         phone: '',
         direcction: '',
-        logo: '',
         slug: '',
-        logoCurrent: '',
     });
 
     const onFileChange = (e) => {
-        let files = e.target.files[0];
-        setForm({
-            ...form,
-            logo: files,
+        let file = e.target.files[0]; // Changed 'files' to 'file' for clarity
+
+        setImage({
+            ...image,
+            image: file,
         })
+
+        let fileReader = new FileReader();
+        fileReader.readAsDataURL(file);
+
+        fileReader.onload = (event) => {
+            setImagePreview(event.target.result); // Set image preview
+        };
     }
 
     async function consultProduct() {
@@ -47,10 +59,14 @@ export default function Business() {
                 slogan: rest.slogan,
                 phone: rest.phone,
                 direcction: rest.direcction,
-                logoCurrent: rest.logo,
                 slug: rest.slug
             })
-            setLogourrent(rest.logo)
+
+            setImage({
+                ...image,
+                mainImageId: rest.mainImageId,
+                url: rest.url
+            })
         }
     }
 
@@ -67,44 +83,58 @@ export default function Business() {
 
     const businessSave = async (e) => {
         e.preventDefault()
-        let res = ''
 
-        const response = await fetch(
-            `/api/avatar/upload?filename=${form.logo.name}`,
-            {
-                method: 'POST',
-                body: form.logo,
-            },
-        );
-        const newLogo = await response.json();
-
-        if (newLogo.pathname) {
-            if (form.id != '') {
-                res = await fetch(`/api/business/user/${userId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form })
-                });
-            } else {
-                res = await fetch(`/api/business`, {
+        try {
+            if (!form) {
+                const storeBusiness = await fetch(`/api/business`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ form, userId, logo: newLogo.pathname })
                 });
-            }
-
-            const businessUpdate = await res.json();
-            if (businessUpdate.status) {
-                router.refresh()
-                alert(businessUpdate.message)
-                setShowImg(true)
-                consultProduct()
+                const rest = await storeBusiness.json()
+                if (rest) {
+                    const response = await fetch(
+                        `/api/avatar/upload?filename=${image.image.name}&model=restaurant&id=${rest.id}`,
+                        {
+                            method: 'POST',
+                            body: image.image,
+                        },
+                    );
+                    toast.success('Business stored successfully')
+                    router.refresh()
+                    consultProduct()
+                }
             } else {
-                alert(businessUpdate.message)
+                const updateBusiness = await fetch(`/api/business/user/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form })
+                });
+
+                const rest = await updateBusiness.json()
+                if (rest) {
+
+                    if (image.image) {
+                        const response = await fetch(
+                            `/api/avatar/update?filename=${image.image.name}&model=restaurant&id=${rest.id}&mainImage=${rest.mainImage}`,
+                            {
+                                method: 'POST',
+                                body: image.image,
+                            },
+                        );
+                    }
+
+                    toast.success('Business updated successfully')
+                    setShowImg(true)
+                    router.refresh()
+                    consultProduct()
+                }
             }
-        } else {
-            alert('Error al subir el logo')
+        } catch (error) {
+            console.log(error)
+            toast.error('Error al guardar el negocio', error)
         }
+
     }
 
     return (
@@ -142,10 +172,11 @@ export default function Business() {
                     <input type="text" id="address" name="direcction" value={form.direcction} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
                 </div>
                 {
-                    logoCurrent != '' && showImg ? (
+
+                    image.mainImageId != null && showImg ? (
                         <>
                             <div className="">
-                                <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${logoCurrent}`} alt="" />
+                                <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${image.url}`} alt="" />
                                 <button onClick={() => {
                                     setShowImg(false)
                                 }} className="p-2 text-center underline underline-offset-1">Subir otro logo</button>
@@ -161,9 +192,14 @@ export default function Business() {
                                     onChange={onFileChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                     required
                                 />
+                                {imagePreview && ( // Display image preview if available
+                                    <div className="mb-5">
+                                        <img src={imagePreview} alt="Image Preview" className="mt-2 max-w-full h-auto rounded-lg shadow-md" />
+                                    </div>
+                                )}
                             </div>
                             {
-                                logoCurrent != '' && !showImg ? (
+                                image.mainImageId != null && !showImg ? (
                                     <>
                                         <button onClick={() => {
                                             setShowImg(true)
@@ -176,15 +212,6 @@ export default function Business() {
                         </>
                     )
                 }
-              
-                {/* <div className="flex justify-center mb-4">
-                    <div>
-                        <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Guardar</button>
-                    </div>
-                    <div>
-                        <Link className="underline underline-offset-1 mx-4" href={'/store'}>Inicio</Link>
-                    </div>
-                </div> */}
                 <div className="flex flex-col sm:flex-row justify-between mt-6 space-y-4 sm:space-y-0 sm:space-x-4">
                     <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
                     <Link className="text-blue-700 hover:underline font-medium rounded-lg text-sm w-full py-2.5 text-center border border-blue-700 dark:text-blue-500 dark:border-blue-500" href={'/store'}>Inicio</Link>

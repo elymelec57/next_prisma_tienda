@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request) {
   const { searchParams } = new URL(request.url);
   const filename = searchParams.get('filename');
+  const model = searchParams.get('model');
   const id = searchParams.get('id');
 
   const blob = await put(filename, request.body, {
@@ -16,19 +17,19 @@ export async function POST(request) {
     data: {
       url: blob.pathname,
       modelId: String(id),
-      modelType: 'Plato', // Indica el modelo padre
-      altText: 'Imagen que pertenece al plato',
+      modelType: model, // Indica el modelo padre
+      altText: 'Imagen que pertenece al ' + model,
     },
   });
 
   if (newImage) {
-    await prisma.plato.update({
+    await prisma[model].update({
       where: { id: Number(id) },
       data: { mainImageId: newImage.id },
     });
 
-    return NextResponse.json({ status: true, message: 'Plato creado con exito' })
+    return NextResponse.json({ status: true, message: 'creado con exito' })
   }
 
-  return NextResponse.json({ status: true, message: 'Se creo el plato pero error al guardar la imagen' });
+  return NextResponse.json({ status: false, message: 'Error al guardar la imagen, pero se guardo el registro' });
 }

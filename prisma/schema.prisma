@@ -16,29 +16,30 @@ datasource db {
 
 // La clave 'id' es el campo polimórfico
 model Image {
-  id          String   @id @default(cuid())
-  url         String   // URL del servicio de almacenamiento (Vercel Blob/S3/Cloudinary)
-  altText     String?  // Texto alternativo para accesibilidad
-  uploadedAt  DateTime @default(now())
+  id         String   @id @default(cuid())
+  url        String // URL del servicio de almacenamiento (Vercel Blob/S3/Cloudinary)
+  altText    String? // Texto alternativo para accesibilidad
+  uploadedAt DateTime @default(now())
 
   // --- Campos Polimórficos ---
   // 1. Clave Foránea al Modelo 'Padre'
-  modelId     String
+  modelId String
 
   // 2. Tipo del Modelo 'Padre'
-  modelType   String
+  modelType String
 
   // Índices para mejorar el rendimiento de búsqueda
   @@index([modelId, modelType])
 }
+
 model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String
-  password String 
-  roles RolUser[]
+  id        Int         @id @default(autoincrement())
+  email     String      @unique
+  name      String
+  password  String
+  roles     RolUser[]
   empleados Empleado[]
-  business Restaurant?
+  business  Restaurant?
 
   // Campo para almacenar el ID de la Imagen Principal.
   // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
@@ -46,29 +47,29 @@ model User {
 }
 
 model RolUser {
-  id        Int     @id @default(autoincrement())
-  name     String
-  users User[]
+  id        Int      @id @default(autoincrement())
+  name      String
+  users     User[]
   createdAt DateTime @default(now())
 }
 
 model Restaurant {
-  id     Int  @id @default(autoincrement())
-  slug String
-  name String
-  slogan String
-  phone String
+  id         Int       @id @default(autoincrement())
+  slug       String
+  name       String
+  slogan     String
+  phone      String
   direcction String
-  logo String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId Int  @unique // relation scalar field (used in the `@relation` attribute above)
-  cliente Cliente[]
-  pedidos Pedido[]
-  platos Plato[]
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId     Int       @unique // relation scalar field (used in the `@relation` attribute above)
+  cliente    Cliente[]
+  pedidos    Pedido[]
+  platos     Plato[]
 
   // Campo para almacenar el ID de la Imagen Principal.
   // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
   mainImageId String?
+  contornos   Contornos[]
 }
 
 // --- Entidades del Menú y Platos ---
@@ -80,38 +81,47 @@ model Categoria {
 }
 
 model Plato {
-  id           Int        @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   nombre       String
   descripcion  String?
   precio       Float
-  disponible   Boolean    @default(true)
+  disponible   Boolean      @default(true)
   categoriaId  Int
-  categoria    Categoria  @relation(fields: [categoriaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  restaurantId  Int
-  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  categoria    Categoria    @relation(fields: [categoriaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  restaurantId Int
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   itemsPedido  ItemPedido[] // Relación: Un plato puede estar en muchos items de pedido
-
+  contornos    Contornos[]
   // Campo para almacenar el ID de la Imagen Principal.
   // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
-  mainImageId String?
+  mainImageId  String?
+}
+
+model Contornos {
+  id           Int        @id @default(autoincrement())
+  nombre       String
+  price        Float?
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  platos       Plato[]
 }
 
 // --- Entidades de Mesas y Clientes ---
 
 model Mesa {
-  id         Int     @id @default(autoincrement())
-  numero     Int     @unique
-  capacidad  Int
-  estado     String  @default("Libre") // Ej: "Libre", "Ocupada", "Reservada"
-  pedidos    Pedido[] // Relación: Una mesa puede tener muchos pedidos a lo largo del tiempo
-  reservas   Reserva[] // Relación: Una mesa puede tener muchas reservas
+  id        Int       @id @default(autoincrement())
+  numero    Int       @unique
+  capacidad Int
+  estado    String    @default("Libre") // Ej: "Libre", "Ocupada", "Reservada"
+  pedidos   Pedido[] // Relación: Una mesa puede tener muchos pedidos a lo largo del tiempo
+  reservas  Reserva[] // Relación: Una mesa puede tener muchas reservas
 }
 
 model Cliente {
-  id         Int      @id @default(autoincrement())
+  id         Int          @id @default(autoincrement())
   nombre     String
-  telefono   String?  @unique
-  email      String?  @unique
+  telefono   String?      @unique
+  email      String?      @unique
   pedidos    Pedido[] // Relación: Un cliente puede realizar muchos pedidos
   reservas   Reserva[] // Relación: Un cliente puede realizar muchas reservas
   restaurant Restaurant[]
@@ -124,85 +134,85 @@ model Cliente {
 // --- Entidades de Pedidos ---
 
 model Pedido {
-  id         Int          @id @default(autoincrement())
-  fechaHora  DateTime     @default(now())
-  estado     String       @default("Pendiente") // Ej: "Pendiente", "Preparando", "Servido", "Pagado", "Cancelado"
-  total      Float        @default(0.0)
-  clienteId  Int?         // El pedido puede ser de un cliente registrado o no
-  cliente    Cliente?     @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  restaurantId  Int?         // El pedido tambien pertenece a un restaurante
-  restaurant    Restaurant?     @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  mesaId     Int
-  mesa       Mesa         @relation(fields: [mesaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  empleadoId Int?         // Quién tomó el pedido (opcional)
-  empleado   Empleado?    @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  items      ItemPedido[] // Relación: Un pedido tiene muchos items
-  pago       Pago?        // Relación 1:1 con Pago
+  id           Int          @id @default(autoincrement())
+  fechaHora    DateTime     @default(now())
+  estado       String       @default("Pendiente") // Ej: "Pendiente", "Preparando", "Servido", "Pagado", "Cancelado"
+  total        Float        @default(0.0)
+  clienteId    Int? // El pedido puede ser de un cliente registrado o no
+  cliente      Cliente?     @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  restaurantId Int? // El pedido tambien pertenece a un restaurante
+  restaurant   Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  mesaId       Int
+  mesa         Mesa         @relation(fields: [mesaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  empleadoId   Int? // Quién tomó el pedido (opcional)
+  empleado     Empleado?    @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  items        ItemPedido[] // Relación: Un pedido tiene muchos items
+  pago         Pago? // Relación 1:1 con Pago
 }
 
 model ItemPedido {
-  id        Int    @id @default(autoincrement())
-  cantidad  Int
-  nota      String?
+  id             Int     @id @default(autoincrement())
+  cantidad       Int
+  nota           String?
   precioUnitario Float
-  
-  pedidoId  Int
-  pedido    Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  
-  platoId   Int
-  plato     Plato  @relation(fields: [platoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  
+
+  pedidoId Int
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  platoId Int
+  plato   Plato @relation(fields: [platoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
   @@unique([pedidoId, platoId]) // Un plato solo puede estar una vez en el mismo pedido
 }
 
 // --- Entidades de Pago y Reserva ---
 
 model Pago {
-  id          Int      @id @default(autoincrement())
-  monto       Float
-  metodo      String   // Ej: "Efectivo", "Tarjeta", "Transferencia"
-  fechaHora   DateTime @default(now())
-  
-  pedidoId    Int      @unique // Relación 1:1 con Pedido
-  pedido      Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id        Int      @id @default(autoincrement())
+  monto     Float
+  metodo    String // Ej: "Efectivo", "Tarjeta", "Transferencia"
+  fechaHora DateTime @default(now())
+
+  pedidoId Int    @unique // Relación 1:1 con Pedido
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Reserva {
-  id            Int      @id @default(autoincrement())
-  fechaHora     DateTime
-  numPersonas   Int
-  estado        String   @default("Pendiente") // Ej: "Pendiente", "Confirmada", "Cancelada"
-  
-  clienteId     Int
-  cliente       Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  
-  mesaId        Int
-  mesa          Mesa     @relation(fields: [mesaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  
+  id          Int      @id @default(autoincrement())
+  fechaHora   DateTime
+  numPersonas Int
+  estado      String   @default("Pendiente") // Ej: "Pendiente", "Confirmada", "Cancelada"
+
+  clienteId Int
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  mesaId Int
+  mesa   Mesa @relation(fields: [mesaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
   @@unique([fechaHora, mesaId]) // Una mesa solo puede estar reservada una vez a una hora específica
 }
 
 // --- Entidades de Empleados y Roles ---
 
 model Rol {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique // Ej: "Mesero", "Cocinero", "Administrador"
-  empleados   Empleado[] // Relación: Un rol tiene muchos empleados
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique // Ej: "Mesero", "Cocinero", "Administrador"
+  empleados Empleado[] // Relación: Un rol tiene muchos empleados
 }
 
 model Empleado {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  apellido    String
-  telefono    String?  @unique
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  apellido      String
+  telefono      String?  @unique
   fechaContrato DateTime @default(now())
-  
-  rolId       Int
-  rol         Rol      @relation(fields: [rolId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  userId     Int
-  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  
+  rolId Int
+  rol   Rol @relation(fields: [rolId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
   pedidosTomados Pedido[] // Relación: Un empleado puede tomar muchos pedidos
 
   // Campo para almacenar el ID de la Imagen Principal.

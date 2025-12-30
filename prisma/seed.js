@@ -67,7 +67,6 @@ async function main() {
         direcction: "jhiugi ig igiu giu ilug ilugliu giug i",
         slogan: "jhiugi ig igiu giu ilug ilugliu giug i",
         phone: "53563565656",
-        logo: "logo-xfAFf3VBTRBbQE9hrAGUbczaGYPKEN.jpg",
         userId: user.id,
       },
     ],
