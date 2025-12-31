@@ -25,7 +25,9 @@ export default function Buy() {
     });
 
     const [editingProduct, setEditingProduct] = useState(null); // State for the product being edited
-    const [tempSelectedContornos, setTempSelectedContornos] = useState([]); // Temporary state for contornos selection
+    // tempSelectedContornos will be an array of arrays: [ [contornoId1, contornoId2], [contornoId1], ... ]
+    // Each index corresponds to a unit of the product.
+    const [tempSelectedContornos, setTempSelectedContornos] = useState([]);
 
     const changeImput = (e) => {
         setForm({
@@ -36,15 +38,6 @@ export default function Buy() {
 
     const onFileChange = (e) => {
         let files = e.target.files[0];
-        // let fileReader = new FileReader();
-        // fileReader.readAsDataURL(files[0]);
-
-        // fileReader.onload = (event) => {
-        //     setForm({
-        //         ...form,
-        //         comprobante: event.target.result,
-        //     })
-        // }
         setForm({
             ...form,
             comprobante: files,
@@ -68,7 +61,29 @@ export default function Buy() {
 
     function openEditModal(product) {
         setEditingProduct(product);
-        setTempSelectedContornos(product.selectedContornos || []);
+
+        const count = product.count;
+        let currentSelection = [];
+
+        // Check if we have a valid array-of-arrays structure
+        if (Array.isArray(product.selectedContornos) && product.selectedContornos.length > 0 && Array.isArray(product.selectedContornos[0])) {
+            currentSelection = [...product.selectedContornos];
+        }
+
+        // Adjust length to match current count
+        if (currentSelection.length > count) {
+            currentSelection = currentSelection.slice(0, count);
+        } else {
+            // Fill missing slots with DEFAULT (All Contornos)
+            // Use available contornos or empty if none
+            const allContornoIds = product.contornos ? product.contornos.map(c => c.id.toString()) : [];
+
+            while (currentSelection.length < count) {
+                currentSelection.push([...allContornoIds]);
+            }
+        }
+
+        setTempSelectedContornos(currentSelection);
     }
 
     function closeEditModal() {
@@ -76,13 +91,22 @@ export default function Buy() {
         setTempSelectedContornos([]);
     }
 
-    function handleContornoChange(contornoId) {
-        const id = contornoId.toString();
-        if (tempSelectedContornos.includes(id)) {
-            setTempSelectedContornos(tempSelectedContornos.filter(c => c !== id));
-        } else {
-            setTempSelectedContornos([...tempSelectedContornos, id]);
-        }
+    function toggleContornoForUnit(unitIndex, contornoId) {
+        setTempSelectedContornos(prev => {
+            const newSelection = [...prev];
+            // Ensure the inner array exists (just in case)
+            if (!newSelection[unitIndex]) newSelection[unitIndex] = [];
+
+            const unitContornos = newSelection[unitIndex];
+            const idStr = contornoId.toString();
+
+            if (unitContornos.includes(idStr)) {
+                newSelection[unitIndex] = unitContornos.filter(id => id !== idStr);
+            } else {
+                newSelection[unitIndex] = [...unitContornos, idStr];
+            }
+            return newSelection;
+        });
     }
 
     function saveContornos() {
@@ -105,14 +129,8 @@ export default function Buy() {
         e.preventDefault()
         form.order = order
 
-        // const response = await fetch(
-        //     `/api/avatar/upload?filename=${form.comprobante.name}`,
-        //     {
-        //         method: 'POST',
-        //         body: form.comprobante,
-        //     },
-        // );
-        const newPago = await response.json();
+        // Create a basic payment object or handle file upload if enabled later
+        const newPago = { pathname: 'pending_payment_proof' };
 
         if (newPago.pathname) {
             const OrderSolicitud = await fetch('/api/buy/', {
@@ -140,6 +158,44 @@ export default function Buy() {
         }
     }
 
+    // Helper to generate a summary string for display
+    const getSummary = (item) => {
+        if (!item.selectedContornos || !Array.isArray(item.selectedContornos) || !Array.isArray(item.selectedContornos[0])) {
+            return null;
+        }
+
+        // We need to sync with current count just for display safety
+        const relevantSelection = item.selectedContornos.slice(0, item.count);
+        // If count increased but selection wasn't updated via modal, those new units have "All" effectively, but here we might just show what we have or nothing for new ones.
+        // Actually best to show "Default" for unconfigured ones?
+        // Let's just iterate what we have.
+
+        // Grouping logic for display
+        const counts = {}; // { "Arroz, Ensalada": 2, "Arroz": 1 }
+
+        for (let i = 0; i < item.count; i++) {
+            // If we don't have config for this unit (e.g. user increased quantity but didn't open modal), assume ALL.
+            let ids = [];
+            if (i < relevantSelection.length) {
+                ids = relevantSelection[i];
+            } else {
+                ids = item.contornos ? item.contornos.map(c => c.id.toString()) : [];
+            }
+
+            const names = ids.map(id => {
+                const c = item.contornos?.find(cx => cx.id.toString() === id);
+                return c ? c.nombre : null;
+            }).filter(Boolean).join(', ');
+
+            const key = names || "Sin Contornos";
+            counts[key] = (counts[key] || 0) + 1;
+        }
+
+        return Object.entries(counts).map(([names, qty]) => (
+            <span key={names} className="block">• {qty}x [{names}]</span>
+        ));
+    }
+
     return (
         <>
             <div className="container">
@@ -157,6 +213,14 @@ export default function Buy() {
                                         <div className="mb-2 sm:mb-0">
                                             <p className="font-bold text-lg">{o.name} - {o.price}$</p>
                                             <p className="text-sm">Cantidad: {o.count}</p>
+
+                                            {/* Display Distribution Summary */}
+                                            {o.contornos && o.contornos.length > 0 && (
+                                                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                                    {getSummary(o)}
+                                                </div>
+                                            )}
+
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="text-lg font-semibold">{o.price * o.count} $</div>
@@ -174,7 +238,7 @@ export default function Buy() {
                                                     </button>
                                                 )}
                                                 {o.contornos && o.contornos.length > 0 && (
-                                                    <button type="button" title="Editar Contornos" onClick={() => openEditModal(o)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                                    <button type="button" title="Personalizar Unidades" onClick={() => openEditModal(o)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                                                         <FaEdit className="text-blue-500" />
                                                     </button>
                                                 )}
@@ -196,25 +260,35 @@ export default function Buy() {
                 </div>
                 {editingProduct && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-                            <h3 className="text-xl font-bold mb-4 dark:text-white">Editar Contornos - {editingProduct.name}</h3>
-                            <div className="mb-4 max-h-60 overflow-y-auto">
-                                {editingProduct.contornos.map((contorno) => (
-                                    <div key={contorno.id} className="flex items-center mb-2">
-                                        <input
-                                            type="checkbox"
-                                            id={`contorno-${contorno.id}`}
-                                            checked={tempSelectedContornos.includes(contorno.id.toString())}
-                                            onChange={() => handleContornoChange(contorno.id)}
-                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                                        />
-                                        <label htmlFor={`contorno-${contorno.id}`} className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                            {contorno.nombre}
-                                        </label>
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full max-h-[80vh] flex flex-col">
+                            <h3 className="text-xl font-bold mb-4 dark:text-white">Personalizar Unidades - {editingProduct.name}</h3>
+                            <p className="text-sm mb-4 text-gray-500">Marque los contornos deseados para cada unidad.</p>
+
+                            <div className="flex-1 overflow-y-auto pr-2">
+                                {tempSelectedContornos.map((unitSelection, index) => (
+                                    <div key={index} className="mb-6 border-b border-gray-200 pb-4 last:border-0 dark:border-gray-700">
+                                        <h4 className="font-bold text-md mb-2 dark:text-gray-200">Unidad #{index + 1}</h4>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {editingProduct.contornos.map((contorno) => (
+                                                <div key={contorno.id} className="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        id={`u${index}-c${contorno.id}`}
+                                                        checked={unitSelection.includes(contorno.id.toString())}
+                                                        onChange={() => toggleContornoForUnit(index, contorno.id)}
+                                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                                    />
+                                                    <label htmlFor={`u${index}-c${contorno.id}`} className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                                        {contorno.nombre}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
-                            <div className="flex justify-end gap-2">
+
+                            <div className="flex justify-end gap-2 mt-4 pt-2 border-t dark:border-gray-700">
                                 <button onClick={closeEditModal} className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">Cancelar</button>
                                 <button onClick={saveContornos} className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">Guardar</button>
                             </div>
@@ -236,16 +310,6 @@ export default function Buy() {
                             <label htmlFor="phone" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono</label>
                             <input type="text" id="phone" name="phone" onChange={changeImput} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" placeholder="Ej: +58 412-1234567" required />
                         </div>
-                        {/* <div className="mb-6">
-                            <label htmlFor="comprobante" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Comprobante de pago</label>
-                            <input type="file"
-                                id="comprobante"
-                                name="comprobante"
-                                onChange={onFileChange}
-                                className="w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                required
-                            />
-                        </div> */}
 
                         <div className="flex justify-center">
                             <button type="submit" className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 transition-colors text-lg">Comprar</button>
