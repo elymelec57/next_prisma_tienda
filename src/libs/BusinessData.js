@@ -8,5 +8,20 @@ export const BusinessData = cache(async (slug) => {
       slug: slug
     }
   });
-  return res
+
+  const logo = await prisma.image.findFirst({
+    where: {
+      id: res.mainImageId
+    },
+    select: {
+      url: true
+    }
+  })
+
+  let restaurante = {
+    ...res,
+    logo: logo.url
+  }
+
+  return restaurante
 })

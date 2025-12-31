@@ -1,32 +1,19 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/libs/prisma';
+import { cache } from 'react'
+import { prisma } from './prisma'
 
-export async function GET(request, segmentData) {
-
-    const params = await segmentData.params
-
-    const rest = await prisma.restaurant.findUnique({
-        where: {
-            userId: Number(params.id)
-        },
-        select: {
-            id: true
-        }
-    })
+// getPost will be used twice, but execute only once
+export const ProductsData = cache(async (id) => {
 
     const platos = await prisma.plato.findMany({
-        select: {
-            id: true,
-            nombre: true,
-            descripcion: true,
-            precio: true,
-            disponible: true,
-            mainImageId: true,
-        },
         where: {
-            restaurantId: Number(rest.id)
+            restaurant: {
+                id: Number(id)
+            }
         },
-    });
+        include: {
+            contornos: true
+        }
+    })
 
     const imageIds = platos
         .map((p) => p.mainImageId)
@@ -35,7 +22,7 @@ export async function GET(request, segmentData) {
     if (imageIds.length === 0) {
         // No hay imágenes para buscar, devolver solo los productos
         const dataPlatos = platos.map((p) => ({ ...p, mainImage: null }));
-        return NextResponse.json({ dataPlatos })
+        return dataPlatos
     }
 
     const images = await prisma.image.findMany({
@@ -59,5 +46,6 @@ export async function GET(request, segmentData) {
         ...plato,
         mainImage: plato.mainImageId ? imageMap.get(plato.mainImageId) : null,
     }));
-    return NextResponse.json({ dataPlatos })
-}
+
+    return dataPlatos
+})

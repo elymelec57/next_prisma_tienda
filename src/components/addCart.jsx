@@ -5,7 +5,7 @@ import { useAppDispatch } from "@/lib/hooks";
 import { addCart } from "@/lib/features/cart/orderSlice";
 import { useState } from "react"; // Import useState
 
-export default function AddCart({ id, name, price }) {
+export default function AddCart({ id, name, price, contornos }) {
     const dispatch = useAppDispatch();
     const [isAdding, setIsAdding] = useState(false); // State for visual feedback
 
@@ -15,7 +15,9 @@ export default function AddCart({ id, name, price }) {
             id,
             name,
             price,
-            count: 1
+            count: 1,
+            contornos,
+            selectedContornos: []
         }
         dispatch(addCart(product));
         setTimeout(() => setIsAdding(false), 500); // Reset state after 500ms

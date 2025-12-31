@@ -2,6 +2,7 @@ import { BusinessData } from '@/libs/BusinessData';
 import NavBarBusiness from '@/components/NavBarBusiness';
 import { prisma } from '@/libs/prisma';
 import Cart from '@/components/Cart';
+import { ProductsData } from '@/libs/ProductsData';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
@@ -15,14 +16,7 @@ export async function generateMetadata({ params }) {
 export default async function page({ params }) {
   const { slug } = await params
   const business = await BusinessData(slug)
-
-  const products = await prisma.plato.findMany({
-    where: {
-      restaurant: {
-        id: Number(business.userId)
-      }
-    }
-  })
+  const products = await ProductsData(business.userId)
 
   return (
     <div>

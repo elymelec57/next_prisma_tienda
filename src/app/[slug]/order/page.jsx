@@ -3,10 +3,11 @@
 import { FaPlus, FaMinus } from "react-icons/fa";
 import { FiXSquare } from "react-icons/fi";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
-import { sumarProduct, restarProduct, subCart, reset } from "@/lib/features/cart/orderSlice";
+import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { FaEdit } from "react-icons/fa";
 
 export default function Buy() {
     const dispatch = useAppDispatch()
@@ -22,6 +23,9 @@ export default function Buy() {
         total: 0,
         order: {}
     });
+
+    const [editingProduct, setEditingProduct] = useState(null); // State for the product being edited
+    const [tempSelectedContornos, setTempSelectedContornos] = useState([]); // Temporary state for contornos selection
 
     const changeImput = (e) => {
         setForm({
@@ -62,6 +66,32 @@ export default function Buy() {
         dispatch(subCart(id))
     }
 
+    function openEditModal(product) {
+        setEditingProduct(product);
+        setTempSelectedContornos(product.selectedContornos || []);
+    }
+
+    function closeEditModal() {
+        setEditingProduct(null);
+        setTempSelectedContornos([]);
+    }
+
+    function handleContornoChange(contornoId) {
+        const id = contornoId.toString();
+        if (tempSelectedContornos.includes(id)) {
+            setTempSelectedContornos(tempSelectedContornos.filter(c => c !== id));
+        } else {
+            setTempSelectedContornos([...tempSelectedContornos, id]);
+        }
+    }
+
+    function saveContornos() {
+        if (editingProduct) {
+            dispatch(updateContornos({ id: editingProduct.id, selectedContornos: tempSelectedContornos }));
+            closeEditModal();
+        }
+    }
+
     const total = () => {
         let total = 0
         order.forEach(element => {
@@ -75,13 +105,13 @@ export default function Buy() {
         e.preventDefault()
         form.order = order
 
-        const response = await fetch(
-            `/api/avatar/upload?filename=${form.comprobante.name}`,
-            {
-                method: 'POST',
-                body: form.comprobante,
-            },
-        );
+        // const response = await fetch(
+        //     `/api/avatar/upload?filename=${form.comprobante.name}`,
+        //     {
+        //         method: 'POST',
+        //         body: form.comprobante,
+        //     },
+        // );
         const newPago = await response.json();
 
         if (newPago.pathname) {
@@ -143,6 +173,11 @@ export default function Buy() {
                                                         <FiXSquare className="text-red-500 text-xl" />
                                                     </button>
                                                 )}
+                                                {o.contornos && o.contornos.length > 0 && (
+                                                    <button type="button" title="Editar Contornos" onClick={() => openEditModal(o)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                                        <FaEdit className="text-blue-500" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -159,6 +194,33 @@ export default function Buy() {
                         <Link href={`/${params.slug}`} className="bg-red-500 text-white p-3 rounded-lg hover:bg-red-600 transition-colors text-lg">Atras</Link>
                     </div>
                 </div>
+                {editingProduct && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                            <h3 className="text-xl font-bold mb-4 dark:text-white">Editar Contornos - {editingProduct.name}</h3>
+                            <div className="mb-4 max-h-60 overflow-y-auto">
+                                {editingProduct.contornos.map((contorno) => (
+                                    <div key={contorno.id} className="flex items-center mb-2">
+                                        <input
+                                            type="checkbox"
+                                            id={`contorno-${contorno.id}`}
+                                            checked={tempSelectedContornos.includes(contorno.id.toString())}
+                                            onChange={() => handleContornoChange(contorno.id)}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                        />
+                                        <label htmlFor={`contorno-${contorno.id}`} className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                            {contorno.nombre}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button onClick={closeEditModal} className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">Cancelar</button>
+                                <button onClick={saveContornos} className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">Guardar</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
                     <h2 className="text-center text-2xl font-bold mb-4">Formulario de Pago</h2>
                     <form onSubmit={buy} className="w-full">
@@ -174,7 +236,7 @@ export default function Buy() {
                             <label htmlFor="phone" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono</label>
                             <input type="text" id="phone" name="phone" onChange={changeImput} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" placeholder="Ej: +58 412-1234567" required />
                         </div>
-                        <div className="mb-6">
+                        {/* <div className="mb-6">
                             <label htmlFor="comprobante" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Comprobante de pago</label>
                             <input type="file"
                                 id="comprobante"
@@ -183,7 +245,7 @@ export default function Buy() {
                                 className="w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                 required
                             />
-                        </div>
+                        </div> */}
 
                         <div className="flex justify-center">
                             <button type="submit" className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 transition-colors text-lg">Comprar</button>

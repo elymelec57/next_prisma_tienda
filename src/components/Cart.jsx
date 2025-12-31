@@ -32,13 +32,13 @@ export default function Cart({ products }) {
             {
                 productos.map((p) => (
                     <div key={p.id} className="max-w-sm bg-white border m-1 border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-                        <img className="rounded-t-lg" src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.image}`} alt="" />
+                        <img className="rounded-t-lg" src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`} alt="" />
                         <div className="p-5">
                             <a href="#">
-                                <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{p.name}</h5>
+                                <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{p.nombre}</h5>
                             </a>
-                            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">{p.description}</p>
-                            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">{parseFloat(p.price).toFixed(2)}</p>
+                            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">{p.descripcion}</p>
+                            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">{parseFloat(p.precio).toFixed(2)} $</p>
                             {
                                 ProductOrder.find(o => o.id === p.id) ? (
                                     <>
@@ -46,7 +46,7 @@ export default function Cart({ products }) {
                                     </>
                                 ) : (
                                     <>
-                                        <AddCart id={p.id} car={p.car} name={p.name} price={parseFloat(p.price).toFixed(2)} />
+                                        <AddCart id={p.id} car={p.car} name={p.nombre} price={parseFloat(p.precio).toFixed(2)} contornos={p.contornos} />
                                     </>
                                 )
                             }

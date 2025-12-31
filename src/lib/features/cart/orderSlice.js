@@ -63,12 +63,21 @@ export const orderSlice = createAppSlice({
     reset: (state) => {
       state.order = []
       state.count = 0
+    },
+    updateContornos: (state, action) => {
+      const { id, selectedContornos } = action.payload;
+      state.order.forEach((e) => {
+        if (e.id === id) {
+          e.selectedContornos = selectedContornos;
+        }
+      });
+      localStorage.setItem('order', JSON.stringify(state.order));
     }
   },
 
 })
 
 // Action creators are generated for each case reducer function
-export const { addCart, subCart, order, inialityCount, sumarProduct, restarProduct, reset } = orderSlice.actions
+export const { addCart, subCart, order, inialityCount, sumarProduct, restarProduct, reset, updateContornos } = orderSlice.actions
 //export const { selectCount, selectStatus } = counterSlice.selectors;
 export default orderSlice.reducer;
