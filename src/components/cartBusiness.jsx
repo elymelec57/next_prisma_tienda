@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
-export default function CartBusiness({ business }) {
-    const [Business, setBusiness] = useState(business)
+export default function CartBusiness({ restaurant }) {
+    const [Restaurant, setRestaurant] = useState(restaurant)
 
     return (
         <>
             {
-                Business.map((p) => (
+                Restaurant.map((p) => (
                     <div key={p.id} className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden transform transition-transform duration-300 hover:scale-105 dark:bg-gray-800 dark:border-gray-700 mx-2 my-4">
                         <Link href={`/${p.slug}`} className="block relative h-48 overflow-hidden">
                             <img
-                                src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.logo}`}
+                                src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`}
                                 alt={p.name}
                                 className="w-full h-full object-cover transition-opacity duration-300 hover:opacity-90"
                             />
