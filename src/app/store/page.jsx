@@ -13,7 +13,7 @@ export default function Store() {
   useEffect(() => {
     async function fetchDashboardData() {
       try {
-        const response = await fetch('/api/store/dashboard');
+        const response = await fetch('/api/user/store/dashboard');
         if (!response.ok) {
           throw new Error('Error al cargar los datos del dashboard');
         }

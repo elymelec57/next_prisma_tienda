@@ -36,7 +36,7 @@ export default function Product() {
     const [userId, setUserId] = useState(useAppSelector((state) => state.auth.auth.id))
 
     async function consultContorno() {
-        const data = await fetch(`/api/contorno/${params.id}`)
+        const data = await fetch(`/api/user/contorno/${params.id}`)
         const { contorno } = await data.json()
 
         setValue("name", contorno.nombre)
@@ -51,7 +51,7 @@ export default function Product() {
 
         try {
             console.log(data)
-            const res = await fetch(`/api/contornos/new`, {
+            const res = await fetch(`/api/user/contornos/new`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ form: data, user: userId })
@@ -71,7 +71,7 @@ export default function Product() {
     }
 
     const updatePlato = async (data) => {
-        const update = await fetch(`/api/product/${params.id}`, {
+        const update = await fetch(`/api/user/product/${params.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ form: data })

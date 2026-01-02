@@ -23,9 +23,9 @@ export default function ListProduct() {
     const platos = async () => {
         let res = ''
         if (params.id) {
-            res = await fetch(`/api/product/user/${params.id}`)
+            res = await fetch(`/api/user/product/user/${params.id}`)
         } else {
-            res = await fetch(`/api/product/user/${id}`)
+            res = await fetch(`/api/user/product/user/${id}`)
         }
 
         const { dataPlatos } = await res.json()
@@ -44,7 +44,7 @@ export default function ListProduct() {
         if (!productToDelete) return;
 
         const id = productToDelete.id;
-        const res = await fetch(`/api/product/${id}`, {
+        const res = await fetch(`/api/user/product/${id}`, {
             method: 'DELETE'
         })
 

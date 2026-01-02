@@ -48,7 +48,7 @@ export default function Business() {
     }
 
     async function consultProduct() {
-        const data = await fetch(`/api/business/user/${userId}`)
+        const data = await fetch(`/api/user/business/user/${userId}`)
         const { rest } = await data.json()
 
         if (rest) {
@@ -86,7 +86,7 @@ export default function Business() {
 
         try {
             if (!form) {
-                const storeBusiness = await fetch(`/api/business`, {
+                const storeBusiness = await fetch(`/api/user/business`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ form, userId, logo: newLogo.pathname })
@@ -105,7 +105,7 @@ export default function Business() {
                     consultProduct()
                 }
             } else {
-                const updateBusiness = await fetch(`/api/business/user/${userId}`, {
+                const updateBusiness = await fetch(`/api/user/business/user/${userId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ form })

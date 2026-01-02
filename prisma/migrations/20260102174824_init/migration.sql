@@ -57,6 +57,15 @@ CREATE TABLE `Categoria` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `CategoriaIngrediente` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `CategoriaIngrediente_nombre_key`(`nombre`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Plato` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `nombre` VARCHAR(191) NOT NULL,
@@ -67,6 +76,27 @@ CREATE TABLE `Plato` (
     `restaurantId` INTEGER NOT NULL,
     `mainImageId` VARCHAR(191) NULL,
 
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Ingrediente` (
+    `id` VARCHAR(191) NOT NULL,
+    `nombre` VARCHAR(191) NOT NULL,
+    `sku` VARCHAR(191) NULL,
+    `categoria` VARCHAR(191) NOT NULL,
+    `unidadMedida` VARCHAR(191) NOT NULL,
+    `stockActual` DOUBLE NOT NULL DEFAULT 0,
+    `stockMinimo` DOUBLE NOT NULL DEFAULT 0,
+    `stockMaximo` DOUBLE NULL,
+    `costoUnitario` DECIMAL(10, 2) NOT NULL,
+    `categoriaIngredienteId` INTEGER NOT NULL,
+    `fechaVencimiento` DATETIME(3) NULL,
+    `ultimoIngreso` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `Ingrediente_sku_key`(`sku`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -215,6 +245,9 @@ ALTER TABLE `Plato` ADD CONSTRAINT `Plato_categoriaId_fkey` FOREIGN KEY (`catego
 
 -- AddForeignKey
 ALTER TABLE `Plato` ADD CONSTRAINT `Plato_restaurantId_fkey` FOREIGN KEY (`restaurantId`) REFERENCES `Restaurant`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Ingrediente` ADD CONSTRAINT `Ingrediente_categoriaIngredienteId_fkey` FOREIGN KEY (`categoriaIngredienteId`) REFERENCES `CategoriaIngrediente`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Contornos` ADD CONSTRAINT `Contornos_restaurantId_fkey` FOREIGN KEY (`restaurantId`) REFERENCES `Restaurant`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

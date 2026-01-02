@@ -80,6 +80,12 @@ model Categoria {
   platos Plato[] // Relación: Una categoría tiene muchos platos
 }
 
+model CategoriaIngrediente {
+  id           Int           @id @default(autoincrement())
+  nombre       String        @unique
+  ingredientes Ingrediente[]
+}
+
 model Plato {
   id           Int          @id @default(autoincrement())
   nombre       String
@@ -96,6 +102,43 @@ model Plato {
   // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
   mainImageId  String?
 }
+
+model Ingrediente {
+  id        String  @id @default(uuid())
+  nombre    String
+  sku       String? @unique
+  categoria String // Podría ser una relación a otro modelo Category
+
+  // Inventario
+  unidadMedida String // "kg", "lt", "oz", "unidad"
+  stockActual  Float  @default(0)
+  stockMinimo  Float  @default(0)
+  stockMaximo  Float?
+
+  // Costos
+  costoUnitario Decimal @db.Decimal(10, 2)
+
+  categoriaIngredienteId Int
+  categoriaIngrediente   CategoriaIngrediente @relation(fields: [categoriaIngredienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Fechas y Control
+  fechaVencimiento DateTime?
+  ultimoIngreso    DateTime  @default(now())
+
+  // // Relaciones (Opcional)
+  // proveedorId     String?
+  // proveedor       Proveedor? @relation(fields: [proveedorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// model Proveedor {
+//   id          String        @id @default(uuid())
+//   nombre      String
+//   contacto    String?
+//   ingredientes Ingrediente[]
+// }
 
 model Contornos {
   id           Int        @id @default(autoincrement())

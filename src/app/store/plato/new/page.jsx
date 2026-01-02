@@ -74,7 +74,7 @@ export default function Product() {
     }
 
     async function consultProduct() {
-        const data = await fetch(`/api/product/${params.id}`)
+        const data = await fetch(`/api/user/product/${params.id}`)
         const { plato } = await data.json()
 
         setValue("name", plato.nombre)
@@ -100,7 +100,7 @@ export default function Product() {
 
     async function fetchContornos() {
         if (!userId) return;
-        const res = await fetch(`/api/contornos?userId=${userId}`);
+        const res = await fetch(`/api/user/contornos?userId=${userId}`);
         const data = await res.json();
         setContornos(data);
     }
@@ -111,7 +111,7 @@ export default function Product() {
             return updatePlato(data)
         }
 
-        const res = await fetch(`/api/product/new`, {
+        const res = await fetch(`/api/user/product/new`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ form: { ...data, contornos: selectedContornos }, user: userId })
@@ -146,7 +146,7 @@ export default function Product() {
     }
 
     const updatePlato = async (data) => {
-        const update = await fetch(`/api/product/${params.id}`, {
+        const update = await fetch(`/api/user/product/${params.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ form: { ...data, contornos: selectedContornos } })

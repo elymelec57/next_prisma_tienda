@@ -16,9 +16,9 @@ export default function Clients() {
     }, [])
 
     const getCLients = async () => {
-        const res = await fetch(`/api/clients/user/${id}`)
-        const { clients } = await res.json()
-        setClients(clients);
+        const res = await fetch(`/api/user/clients/user/${id}`)
+        const { restaurant } = await res.json()
+        setClients(restaurant.cliente);
         setLoading(false);
     }
 
@@ -34,13 +34,13 @@ export default function Clients() {
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th scope="col" className="px-6 py-3">
-                                Order
+                                Nombre
                             </th>
                             <th scope="col" className="px-6 py-3">
-                                Total 
+                                Celular
                             </th>
                             <th scope="col" className="px-6 py-3">
-                                CLient
+                                Correo
                             </th>
                             <th scope="col" className="px-6 py-3">
                                 Actions
@@ -52,13 +52,13 @@ export default function Clients() {
                             clients.map((o) => (
                                 <tr key={o.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200">
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                        {o.name}
+                                        {o.nombre}
                                     </th>
                                     <td className="px-6 py-4">
-                                        {o.email}
+                                        {o.telefono}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {o.phone}
+                                        {o.email}
                                     </td>
                                     <td className="px-6 py-4">
                                         {/* <button type="button" onClick={() => {

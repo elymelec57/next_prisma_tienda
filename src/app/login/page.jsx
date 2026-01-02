@@ -25,7 +25,7 @@ export default function Login() {
 
     const onSubmit = async (data) => {
         // Aquí harías la llamada a tu API (ej. con fetch o Axios)
-        const res = await fetch('/api/login', {
+        const res = await fetch('/api/user/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({form:data})

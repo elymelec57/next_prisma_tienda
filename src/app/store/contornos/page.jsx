@@ -20,7 +20,7 @@ export default function ListContorno() {
 
     const getContornos = async () => {
 
-        const res = await fetch(`/api/contornos/${id}`)
+        const res = await fetch(`/api/user/contornos/${id}`)
 
         const { contornos } = await res.json()
 
@@ -38,7 +38,7 @@ export default function ListContorno() {
         if (!productToDelete) return;
 
         const id = productToDelete.id;
-        const res = await fetch(`/api/product/${id}`, {
+        const res = await fetch(`/api/user/product/${id}`, {
             method: 'DELETE'
         })
 
