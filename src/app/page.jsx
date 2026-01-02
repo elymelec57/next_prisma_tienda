@@ -44,7 +44,6 @@ export default async function page() {
     mainImage: r.mainImageId ? imageMap.get(r.mainImageId) : null,
   }));
 
-  console.log(dataRest)
   return (
     <div>
       <NavBarIndex />
