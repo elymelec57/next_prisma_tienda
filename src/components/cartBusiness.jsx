@@ -10,13 +10,15 @@ export default function CartBusiness({ restaurant }) {
             {
                 Restaurant.map((p) => (
                     <div key={p.id} className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden transform transition-transform duration-300 hover:scale-105 dark:bg-gray-800 dark:border-gray-700 mx-2 my-4">
-                        <Link href={`/${p.slug}`} className="block relative h-48 overflow-hidden">
-                            <img
-                                src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`}
-                                alt={p.name}
-                                className="w-full h-full object-cover transition-opacity duration-300 hover:opacity-90"
-                            />
-                        </Link>
+                        {p.mainImage !== null && (
+                            <Link href={`/${p.slug}`} className="block relative h-48 overflow-hidden">
+                                <img
+                                    src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`}
+                                    alt={p.name}
+                                    className="w-full h-full object-cover transition-opacity duration-300 hover:opacity-90"
+                                />
+                            </Link>
+                        )}
                         <div className="p-5 flex flex-col justify-between h-auto">
                             <div>
                                 <h5 className="mb-2 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white truncate">

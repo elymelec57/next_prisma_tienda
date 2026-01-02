@@ -30,7 +30,7 @@ export const ProductsData = cache(async (id) => {
             id: {
                 in: imageIds, // Filtrar por los IDs que acabamos de extraer
             },
-            modelType: 'Plato',
+            modelType: 'plato',
         },
         select: {
             id: true, // Incluir el ID para mapear

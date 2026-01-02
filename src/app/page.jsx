@@ -10,16 +10,15 @@ export async function generateMetadata() {
 }
 
 export default async function page() {
-  const restaurant = await prisma.restaurant.findMany()
-
+  const restaurant = await prisma.restaurant.findMany();
+  let dataRest;
   const imageIds = restaurant
     .map((r) => r.mainImageId)
     .filter((id) => id !== null);
 
   if (imageIds.length === 0) {
     // No hay imágenes para buscar, devolver solo los productos
-    const dataRest = restaurant.map((r) => ({ ...r, mainImage: null }));
-    return NextResponse.json({ dataRest })
+    dataRest = restaurant.map((r) => ({ ...r, mainImage: null }));
   }
 
   const images = await prisma.image.findMany({
@@ -39,7 +38,7 @@ export default async function page() {
   // 4. Mapear las imágenes a los productos
   const imageMap = new Map(images.map((img) => [img.id, img]));
 
-  const dataRest = restaurant.map((r) => ({
+  dataRest = restaurant.map((r) => ({
     ...r,
     mainImage: r.mainImageId ? imageMap.get(r.mainImageId) : null,
   }));
