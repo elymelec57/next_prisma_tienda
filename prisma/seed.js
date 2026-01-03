@@ -58,6 +58,21 @@ async function main() {
     },
   })
 
+  const admin = await prisma.user.upsert({
+    where: { email: 'elymelecc084@gmail.com' },
+    update: {},
+    create: {
+      email: 'elymelecc084@gmail.com',
+      name: 'elymelec',
+      password: hash,
+      roles: {
+        connect: {
+          id: 1,
+        },
+      },
+    },
+  })
+
   const rest = await prisma.restaurant.createMany({
     data: [
       {
