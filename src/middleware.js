@@ -3,7 +3,7 @@ import verifytoken from './libs/fecthVerifyToken'
 
 // Lista de orígenes permitidos (Vue App y el propio Next App)
 const allowedOrigins = [
-    "http://localhost:6001",
+    "https://elymelec57.github.io",
 ];
 
 // This function can be marked `async` if using `await` inside
