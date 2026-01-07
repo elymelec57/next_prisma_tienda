@@ -136,7 +136,7 @@ export default function Login() {
             </div>
             <div className="hidden bg-muted lg:block relative h-full w-full bg-gray-900">
                 <Image
-                    src="/images/register-bg.png"
+                    src="https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/public/register-bg.png"
                     alt="Fine dining table setting"
                     fill
                     className="object-cover opacity-90"

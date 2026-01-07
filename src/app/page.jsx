@@ -35,7 +35,7 @@ export default function LandingPage() {
         {/* Helper del fondo con Imagen y Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/images/bg-hero.png"
+            src="https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/public/bg-hero.png"
             alt="Fondo de comida deliciosa"
             fill
             className="object-cover opacity-60"
@@ -105,7 +105,7 @@ export default function LandingPage() {
 
             <div className="relative h-[500px] w-full rounded-3xl overflow-hidden shadow-2xl group">
               <Image
-                src="/images/about-us.png"
+                src="https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/public/about-us.png"
                 alt="Sobre RestoApp"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"

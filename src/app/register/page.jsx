@@ -49,7 +49,7 @@ export default function Register() {
         <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
             <div className="hidden bg-muted lg:block relative h-full w-full bg-gray-900 order-last lg:order-first">
                 <Image
-                    src="/images/register-bg.png"
+                    src="https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/public/register-bg.png"
                     alt="Fresh ingredients cooking scene"
                     fill
                     className="object-cover opacity-90"
