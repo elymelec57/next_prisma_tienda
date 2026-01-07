@@ -43,7 +43,7 @@ export async function GET(request, segmentData) {
             id: {
                 in: imageIds, // Filtrar por los IDs que acabamos de extraer
             },
-            modelType: 'Plato',
+            modelType: 'plato',
         },
         select: {
             id: true, // Incluir el ID para mapear
@@ -59,5 +59,6 @@ export async function GET(request, segmentData) {
         ...plato,
         mainImage: plato.mainImageId ? imageMap.get(plato.mainImageId) : null,
     }));
+    console.log(dataPlatos)
     return NextResponse.json({ dataPlatos })
 }

@@ -1,6 +1,5 @@
 import { BusinessData } from '@/libs/BusinessData';
 import NavBarBusiness from '@/components/NavBarBusiness';
-import { prisma } from '@/libs/prisma';
 import Cart from '@/components/Cart';
 import { ProductsData } from '@/libs/ProductsData';
 

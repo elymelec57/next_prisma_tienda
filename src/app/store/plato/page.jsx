@@ -64,7 +64,7 @@ export default function ListProduct() {
         setIsModalOpen(false);
         setProductToDelete(null);
     };
- 
+
     if (loading) {
         return <div className='container mx-auto mt-20'>Cargando...</div>;
     }
@@ -139,7 +139,7 @@ export default function ListProduct() {
                     </tbody>
                 </table>
             </div>
-            
+
             <DeleteConfirmationModal
                 isOpen={isModalOpen}
                 onClose={handleCancelDelete}
