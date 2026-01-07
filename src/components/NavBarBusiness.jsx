@@ -1,68 +1,69 @@
 'use client'
 import Link from "next/link"
 import { useAppSelector } from "@/lib/hooks";
-import Image from 'next/image'
-import { FaShoppingBasket } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import { ShoppingCart, Menu } from 'lucide-react';
 
 export default function NavBarBusiness({ business }) {
 
     const router = useRouter()
     const count = useAppSelector((state) => state.order.count)
 
-    function buy(){
-        if(count > 0){
+    function buy() {
+        if (count > 0) {
             router.push(`/${business.slug}/order`)
         }
     }
 
     return (
-        <div>
-            <nav className="bg-white dark:bg-gray-900 fixed w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600">
-                <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-                    <div className="flex">
-                        {/* <Image
-                            src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${business.logo}`}
-                            alt="Picture of the author"
-                            width={60}
-                            height={60}
-                        /> */}
-                        <img className="rounded-t-lg" src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${business.logo}`} width={60} height={60} alt="" />
-
-                        <Link href={`/${business.slug}`} className="flex items-center space-x-3 rtl:space-x-reverse">
-                            {/* <img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Flowbite Logo"> */}
-                            <span className="self-center text-2xl ml-5 font-semibold whitespace-nowrap dark:text-white">{business.name}</span>
-                            {/* <span className="self-center text-1xl font-semibold whitespace-nowrap dark:text-white">{auth.email}</span> */}
-                        </Link>
-                    </div>
-                    <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-                        <div className="flex relative">
-                            {
-                                count != 0 ? (
-                                    <>
-                                    <p className="ml-7 absolute font-bold text-white">{count}</p>
-                                    </>
-                                ) : (
-                                    <></>
-                                )
-                            }
-                            
-                            <a onClick={()=>{
-                                buy()
-                            }} className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"><FaShoppingBasket /></a>
+        <div className="h-16"> {/* Spacer to prevent content jump since nav is fixed */}
+            <nav className="bg-white/95 backdrop-blur-md fixed w-full z-50 top-0 start-0 border-b border-slate-200 shadow-sm transition-all">
+                <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-3 px-4 sm:px-6">
+                    <div className="flex items-center gap-3">
+                        <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-full overflow-hidden border-2 border-orange-100 shadow-sm group">
+                            <img
+                                src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${business.logo}`}
+                                alt={business.name}
+                                className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
                         </div>
 
-                        <button data-collapse-toggle="navbar-sticky" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600" aria-controls="navbar-sticky" aria-expanded="false">
+                        <Link href={`/${business.slug}`} className="flex flex-col relative top-0.5">
+                            <span className="self-center text-xl sm:text-2xl font-bold whitespace-nowrap text-slate-900 tracking-tight leading-none hover:text-orange-600 transition-colors">
+                                {business.name}
+                            </span>
+                        </Link>
+                    </div>
+
+                    <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse items-center">
+                        <button
+                            onClick={buy}
+                            className={`relative inline-flex items-center justify-center p-2.5 rounded-full transition-all duration-300 ${count > 0
+                                ? 'bg-orange-600 text-white shadow-lg hover:bg-orange-700 hover:shadow-orange-500/30 transform hover:-translate-y-0.5'
+                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                }`}
+                            disabled={count === 0}
+                        >
+                            <ShoppingCart className="h-5 w-5" />
+                            {count > 0 && (
+                                <div className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full">
+                                    {count}
+                                </div>
+                            )}
+                        </button>
+
+                        <button data-collapse-toggle="navbar-sticky" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-slate-500 rounded-lg md:hidden hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-200" aria-controls="navbar-sticky" aria-expanded="false">
                             <span className="sr-only">Open main menu</span>
-                            {/* <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15" />
-                            </svg> */}
+                            <Menu className="h-6 w-6" />
                         </button>
                     </div>
+
                     <div className="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-sticky">
-                        <ul className="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
+                        <ul className="flex flex-col p-4 md:p-0 mt-4 font-medium border border-slate-100 rounded-lg bg-slate-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white">
                             <li>
-                                <Link href={`/${business.slug}/ingredients`} className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 md:dark:hover:text-blue-500 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700">Ingredientes</Link>
+                                {/* <Link href={`/${business.slug}/ingredients`} className="block py-2 px-3 text-slate-700 rounded hover:bg-slate-100 md:hover:bg-transparent md:hover:text-orange-600 md:p-0 transition-colors">
+                                    Ingredientes
+                                </Link> */}
                             </li>
                         </ul>
                     </div>

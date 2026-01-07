@@ -12,7 +12,7 @@ export default function IngredientsPage() {
 
   async function fetchIngredients() {
     try {
-      const res = await fetch('/api/ingredients')
+      const res = await fetch('/api/user/ingredients')
       if (res.ok) {
         const data = await res.json()
         setIngredients(data)
@@ -36,7 +36,7 @@ export default function IngredientsPage() {
   const handleDelete = async (id) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este ingrediente?')) {
       try {
-        const res = await fetch(`/api/ingredients?id=${id}`, {
+        const res = await fetch(`/api/user/ingredients?id=${id}`, {
           method: 'DELETE',
         })
         if (res.ok) {
@@ -53,8 +53,8 @@ export default function IngredientsPage() {
   const handleFormSubmit = async (data) => {
     const method = selectedIngredient ? 'PUT' : 'POST'
     const url = selectedIngredient
-      ? `/api/ingredients?id=${selectedIngredient.id}`
-      : '/api/ingredients'
+      ? `/api/user/ingredients?id=${selectedIngredient.id}`
+      : '/api/user/ingredients'
 
     try {
       const res = await fetch(url, {
@@ -81,7 +81,7 @@ export default function IngredientsPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mt-30 mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Gestión de Ingredientes</h1>
         <Button onClick={openAddModal}>Agregar Ingrediente</Button>

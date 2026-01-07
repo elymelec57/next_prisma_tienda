@@ -1,13 +1,11 @@
 'use client'
 
-import { FaPlus, FaMinus } from "react-icons/fa";
-import { FiXSquare } from "react-icons/fi";
+import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
-import { FaEdit } from "react-icons/fa";
 
 export default function Buy() {
     const dispatch = useAppDispatch()
@@ -24,27 +22,17 @@ export default function Buy() {
         order: {}
     });
 
-    const [editingProduct, setEditingProduct] = useState(null); // State for the product being edited
-    // tempSelectedContornos will be an array of arrays: [ [contornoId1, contornoId2], [contornoId1], ... ]
-    // Each index corresponds to a unit of the product.
+    const [editingProduct, setEditingProduct] = useState(null);
     const [tempSelectedContornos, setTempSelectedContornos] = useState([]);
 
-    const changeImput = (e) => {
+    const changeInput = (e) => {
         setForm({
             ...form,
             [e.target.name]: e.target.value
         })
     }
 
-    const onFileChange = (e) => {
-        let files = e.target.files[0];
-        setForm({
-            ...form,
-            comprobante: files,
-        })
-    }
-
-    const order = useAppSelector((state) => state.order.order)
+    const orderList = useAppSelector((state) => state.order.order)
     const count = useAppSelector((state) => state.order.count)
 
     function sumar(id) {
@@ -61,28 +49,21 @@ export default function Buy() {
 
     function openEditModal(product) {
         setEditingProduct(product);
-
         const count = product.count;
         let currentSelection = [];
 
-        // Check if we have a valid array-of-arrays structure
         if (Array.isArray(product.selectedContornos) && product.selectedContornos.length > 0 && Array.isArray(product.selectedContornos[0])) {
             currentSelection = [...product.selectedContornos];
         }
 
-        // Adjust length to match current count
         if (currentSelection.length > count) {
             currentSelection = currentSelection.slice(0, count);
         } else {
-            // Fill missing slots with DEFAULT (All Contornos)
-            // Use available contornos or empty if none
             const allContornoIds = product.contornos ? product.contornos.map(c => c.id.toString()) : [];
-
             while (currentSelection.length < count) {
                 currentSelection.push([...allContornoIds]);
             }
         }
-
         setTempSelectedContornos(currentSelection);
     }
 
@@ -94,15 +75,14 @@ export default function Buy() {
     function toggleContornoForUnit(unitIndex, contornoId) {
         setTempSelectedContornos(prev => {
             const newSelection = [...prev];
-            // Ensure the inner array exists (just in case)
             if (!newSelection[unitIndex]) newSelection[unitIndex] = [];
-
             const unitContornos = newSelection[unitIndex];
             const idStr = contornoId.toString();
 
             if (unitContornos.includes(idStr)) {
                 newSelection[unitIndex] = unitContornos.filter(id => id !== idStr);
             } else {
+                // Check logic if needed (e.g. max contornos), for now allow all
                 newSelection[unitIndex] = [...unitContornos, idStr];
             }
             return newSelection;
@@ -116,65 +96,57 @@ export default function Buy() {
         }
     }
 
-    const total = () => {
+    const calculateTotal = () => {
         let total = 0
-        order.forEach(element => {
+        orderList.forEach(element => {
             total = Number(total) + Number(element.price) * element.count
         });
         form.total = total
-        return total
+        return total.toFixed(2)
     }
 
     const buy = async (e) => {
         e.preventDefault()
-        form.order = order
+        form.order = orderList
 
-        // Create a basic payment object or handle file upload if enabled later
+        // Placeholder for payment logic
         const newPago = { pathname: 'pending_payment_proof' };
 
         if (newPago.pathname) {
-            const OrderSolicitud = await fetch('/api/buy/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ form, pago: newPago.pathname })
-            })
+            try {
+                const OrderSolicitud = await fetch('/api/buy/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form, pago: newPago.pathname })
+                })
 
-            const res = await OrderSolicitud.json()
-            if (res.status) {
-                alert(res.message)
-
-                dispatch(reset())
-                localStorage.removeItem('order');
-                localStorage.removeItem('count');
-                router.push(`/${params.slug}`)
-
-            } else {
-                alert(res.message)
+                const res = await OrderSolicitud.json()
+                if (res.status) {
+                    // Success UI Feedback could go here
+                    alert("Pedido realizado con éxito!"); // Replace with toast later
+                    dispatch(reset())
+                    localStorage.removeItem('order');
+                    localStorage.removeItem('count');
+                    router.push(`/${params.slug}`)
+                } else {
+                    alert(res.message)
+                }
+            } catch (error) {
+                console.error("Error submitting order:", error);
+                alert("Ocurrió un error al procesar el pedido.");
             }
-        } else {
-            alert('Error al procesar el pago')
         }
     }
 
-    // Helper to generate a summary string for display
     const getSummary = (item) => {
         if (!item.selectedContornos || !Array.isArray(item.selectedContornos) || !Array.isArray(item.selectedContornos[0])) {
             return null;
         }
 
-        // We need to sync with current count just for display safety
         const relevantSelection = item.selectedContornos.slice(0, item.count);
-        // If count increased but selection wasn't updated via modal, those new units have "All" effectively, but here we might just show what we have or nothing for new ones.
-        // Actually best to show "Default" for unconfigured ones?
-        // Let's just iterate what we have.
-
-        // Grouping logic for display
-        const counts = {}; // { "Arroz, Ensalada": 2, "Arroz": 1 }
+        const counts = {};
 
         for (let i = 0; i < item.count; i++) {
-            // If we don't have config for this unit (e.g. user increased quantity but didn't open modal), assume ALL.
             let ids = [];
             if (i < relevantSelection.length) {
                 ids = relevantSelection[i];
@@ -187,136 +159,253 @@ export default function Buy() {
                 return c ? c.nombre : null;
             }).filter(Boolean).join(', ');
 
-            const key = names || "Sin Contornos";
+            const key = names || "Sin extras";
             counts[key] = (counts[key] || 0) + 1;
         }
 
         return Object.entries(counts).map(([names, qty]) => (
-            <span key={names} className="block">• {qty}x [{names}]</span>
+            <div key={names} className="flex items-start gap-2 text-xs text-slate-500 mt-1">
+                <span className="font-medium bg-slate-100 px-1.5 rounded text-slate-600">{qty}x</span>
+                <span>{names}</span>
+            </div>
         ));
     }
 
     return (
-        <>
-            <div className="container">
-                <h1 className="text-center font-bold uppercase p-4 cursor-pointer"><Link href={`/${params.slug}`}>{params.slug}</Link></h1>
-            </div>
-            <div className="container mx-auto p-4 md:p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
-                <div className="w-full lg:w-2/3">
-                    <div className="w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        {order.length === 0 ? (
-                            <p className="p-4 text-center text-gray-500 dark:text-gray-400">No hay productos en el carrito.</p>
-                        ) : (
-                            order.map((o) => (
-                                <div key={o.id} className="block w-full px-4 py-2 text-gray-900 bg-white border-b border-gray-200 cursor-pointer dark:bg-gray-800 dark:border-gray-600 dark:text-white first:rounded-t-lg last:rounded-b-lg">
-                                    <div className="flex flex-col sm:flex-row justify-between items-center">
-                                        <div className="mb-2 sm:mb-0">
-                                            <p className="font-bold text-lg">{o.name} - {o.price}$</p>
-                                            <p className="text-sm">Cantidad: {o.count}</p>
+        <div className="min-h-screen bg-slate-50 py-10 px-4 md:px-6">
+            <div className="max-w-5xl mx-auto">
+                <div className="mb-8 flex items-center justify-between">
+                    <Link href={`/${params.slug}`} className="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-medium">
+                        <ArrowLeft className="h-5 w-5" />
+                        Volver al menú
+                    </Link>
+                    <h1 className="text-2xl font-bold text-slate-900 hidden sm:block">Finalizar Pedido</h1>
+                </div>
 
-                                            {/* Display Distribution Summary */}
-                                            {o.contornos && o.contornos.length > 0 && (
-                                                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                                    {getSummary(o)}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    {/* COLUMNA IZQUIERDA: RESUMEN DE PRODUCTOS */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="p-6 border-b border-slate-100 flex items-center gap-3">
+                                <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
+                                    <ShoppingBag className="h-6 w-6" />
+                                </div>
+                                <h2 className="text-xl font-bold text-slate-900">Tu Carrito</h2>
+                            </div>
+
+                            <div className="divide-y divide-slate-100">
+                                {orderList.length === 0 ? (
+                                    <div className="p-12 text-center text-slate-400">
+                                        <ShoppingBag className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                                        <p className="text-lg font-medium">No has agregado productos aún.</p>
+                                        <Link href={`/${params.slug}`} className="mt-4 inline-block text-orange-600 font-bold hover:underline">
+                                            Ir a comprar
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    orderList.map((o) => (
+                                        <div key={o.id} className="p-6 transition-colors hover:bg-slate-50/50">
+                                            <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-start">
+                                                        <h3 className="font-bold text-lg text-slate-900">{o.name}</h3>
+                                                        <span className="font-bold text-slate-900 sm:hidden">${(o.price * o.count).toFixed(2)}</span>
+                                                    </div>
+                                                    <p className="text-slate-500 text-sm mb-2">Precio unitario: ${parseFloat(o.price).toFixed(2)}</p>
+
+                                                    {o.contornos && o.contornos.length > 0 && (
+                                                        <div className="mt-2 pl-3 border-l-2 border-orange-100">
+                                                            {getSummary(o)}
+                                                            <button
+                                                                onClick={() => openEditModal(o)}
+                                                                className="mt-2 flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors"
+                                                            >
+                                                                <Edit className="h-3 w-3" />
+                                                                Editar opciones
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
 
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-lg font-semibold">{o.price * o.count} $</div>
-                                            <div className="flex items-center space-x-2">
-                                                <button type="button" title="Sumar Producto" onClick={() => sumar(o.id)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                                                    <FaPlus className="text-green-500" />
-                                                </button>
-                                                {o.count > 0 ? (
-                                                    <button type="button" title="Restar producto" onClick={() => restar(o.id)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                                                        <FaMinus className="text-yellow-500" />
-                                                    </button>
-                                                ) : (
-                                                    <button type="button" title="Eliminar del carrito" onClick={() => deleteP(o.id)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                                                        <FiXSquare className="text-red-500 text-xl" />
-                                                    </button>
-                                                )}
-                                                {o.contornos && o.contornos.length > 0 && (
-                                                    <button type="button" title="Personalizar Unidades" onClick={() => openEditModal(o)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                                                        <FaEdit className="text-blue-500" />
-                                                    </button>
-                                                )}
+                                                <div className="flex items-center justify-between sm:justify-end gap-6 mt-4 sm:mt-0">
+                                                    <div className="flex items-center gap-3 bg-slate-100 rounded-lg p-1">
+                                                        <button
+                                                            onClick={o.count === 1 ? () => deleteP(o.id) : () => restar(o.id)}
+                                                            className="p-1.5 rounded-md bg-white text-slate-600 shadow-sm hover:text-red-500 transition-colors disabled:opacity-50"
+                                                        >
+                                                            {o.count === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                                                        </button>
+                                                        <span className="font-bold text-slate-900 w-4 text-center">{o.count}</span>
+                                                        <button
+                                                            onClick={() => sumar(o.id)}
+                                                            className="p-1.5 rounded-md bg-white text-slate-600 shadow-sm hover:text-green-600 transition-colors"
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="text-right min-w-[80px] hidden sm:block">
+                                                        <span className="block font-bold text-lg text-slate-900">${(o.price * o.count).toFixed(2)}</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {orderList.length > 0 && (
+                                <div className="p-6 bg-slate-50 border-t border-slate-200">
+                                    <div className="flex justify-between items-center text-lg">
+                                        <span className="font-semibold text-slate-600">Total a Pagar</span>
+                                        <span className="font-bold text-2xl text-slate-900">${calculateTotal()}</span>
                                     </div>
                                 </div>
-                            ))
-                        )}
+                            )}
+                        </div>
                     </div>
-                    {order.length > 0 && (
-                        <p className="text-center p-4 text-lg font-semibold bg-white dark:bg-gray-700 rounded-b-lg shadow-md">
-                            Cantidad: <span className="font-bold">{count}</span> Total: <span className="font-bold">{total()}$</span>
-                        </p>
-                    )}
-                    <div className="flex justify-center mt-4">
-                        <Link href={`/${params.slug}`} className="bg-red-500 text-white p-3 rounded-lg hover:bg-red-600 transition-colors text-lg">Atras</Link>
-                    </div>
-                </div>
-                {editingProduct && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full max-h-[80vh] flex flex-col">
-                            <h3 className="text-xl font-bold mb-4 dark:text-white">Personalizar Unidades - {editingProduct.name}</h3>
-                            <p className="text-sm mb-4 text-gray-500">Marque los contornos deseados para cada unidad.</p>
 
-                            <div className="flex-1 overflow-y-auto pr-2">
-                                {tempSelectedContornos.map((unitSelection, index) => (
-                                    <div key={index} className="mb-6 border-b border-gray-200 pb-4 last:border-0 dark:border-gray-700">
-                                        <h4 className="font-bold text-md mb-2 dark:text-gray-200">Unidad #{index + 1}</h4>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {editingProduct.contornos.map((contorno) => (
-                                                <div key={contorno.id} className="flex items-center">
-                                                    <input
-                                                        type="checkbox"
-                                                        id={`u${index}-c${contorno.id}`}
-                                                        checked={unitSelection.includes(contorno.id.toString())}
-                                                        onChange={() => toggleContornoForUnit(index, contorno.id)}
-                                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                                                    />
-                                                    <label htmlFor={`u${index}-c${contorno.id}`} className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                                        {contorno.nombre}
-                                                    </label>
-                                                </div>
-                                            ))}
-                                        </div>
+                    {/* COLUMNA DERECHA: FORMULARIO */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-24">
+                            <div className="mb-6 flex items-center gap-2 text-slate-900">
+                                <CreditCard className="h-5 w-5 text-orange-600" />
+                                <h2 className="text-xl font-bold">Datos de Envío</h2>
+                            </div>
+
+                            <form onSubmit={buy} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nombre Completo</label>
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={form.name}
+                                            onChange={changeInput}
+                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                                            placeholder="Ej: Juan Pérez"
+                                            required
+                                        />
                                     </div>
-                                ))}
-                            </div>
+                                </div>
 
-                            <div className="flex justify-end gap-2 mt-4 pt-2 border-t dark:border-gray-700">
-                                <button onClick={closeEditModal} className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">Cancelar</button>
-                                <button onClick={saveContornos} className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">Guardar</button>
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={form.email}
+                                            onChange={changeInput}
+                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                                            placeholder="juan@ejemplo.com"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Teléfono</label>
+                                    <div className="relative">
+                                        <PhoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            value={form.phone}
+                                            onChange={changeInput}
+                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                                            placeholder="+58 412 123 4567"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={orderList.length === 0}
+                                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Confirmar Pedido
+                                    </button>
+                                    <p className="text-xs text-center text-slate-400 mt-4">
+                                        Al hacer click confirmas que los datos son correctos.
+                                    </p>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                )}
-                <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
-                    <h2 className="text-center text-2xl font-bold mb-4">Formulario de Pago</h2>
-                    <form onSubmit={buy} className="w-full">
-                        <div className="mb-4">
-                            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nombre Completo</label>
-                            <input type="text" id="name" name="name" value={form.name} onChange={changeImput} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" placeholder="Tu nombre" required />
-                        </div>
-                        <div className="mb-4">
-                            <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                            <input type="email" id="email" name="email" value={form.email} onChange={changeImput} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" placeholder="nombre@ejemplo.com" required />
-                        </div>
-                        <div className="mb-4">
-                            <label htmlFor="phone" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono</label>
-                            <input type="text" id="phone" name="phone" onChange={changeImput} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" placeholder="Ej: +58 412-1234567" required />
-                        </div>
 
-                        <div className="flex justify-center">
-                            <button type="submit" className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 transition-colors text-lg">Comprar</button>
-                        </div>
-                    </form>
                 </div>
             </div>
-        </>
+
+            {/* MODAL DE EDICIÓN */}
+            {editingProduct && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+                        <div className="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <h3 className="font-bold text-lg text-slate-900">Personalizar {editingProduct.name}</h3>
+                            <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600">
+                                <Trash2 className="h-5 w-5 rotate-45" /> {/* Using Trash as Close icon X-like or just use X icon but removed to minimize imports, rotate 45 gives X feel roughly or I should import X */}
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                            <p className="text-sm text-slate-500 bg-blue-50 text-blue-700 p-3 rounded-lg border border-blue-100">
+                                Selecciona los ingredientes que deseas <strong>incluir</strong> en cada unidad.
+                            </p>
+
+                            {tempSelectedContornos.map((unitSelection, index) => (
+                                <div key={index} className="p-4 rounded-xl border border-slate-200 hover:border-orange-100 transition-colors">
+                                    <h4 className="font-bold text-sm text-slate-700 mb-3 uppercase tracking-wide">Plato #{index + 1}</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {editingProduct.contornos.map((contorno) => {
+                                            const isSelected = unitSelection.includes(contorno.id.toString());
+                                            return (
+                                                <label
+                                                    key={contorno.id}
+                                                    className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all ${isSelected
+                                                            ? 'bg-orange-50 border-orange-200 text-orange-800 font-semibold'
+                                                            : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
+                                                        }`}
+                                                >
+                                                    <div className={`w-5 h-5 rounded flex items-center justify-center border ${isSelected ? 'bg-orange-500 border-orange-500' : 'bg-white border-slate-300'}`}>
+                                                        {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
+                                                    </div>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="hidden"
+                                                        checked={isSelected}
+                                                        onChange={() => toggleContornoForUnit(index, contorno.id)}
+                                                    />
+                                                    <span className="text-sm">{contorno.nombre}</span>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                            <button
+                                onClick={closeEditModal}
+                                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-lg transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={saveContornos}
+                                className="px-6 py-2.5 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 shadow-md hover:shadow-orange-500/20 transition-all"
+                            >
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     )
 }
