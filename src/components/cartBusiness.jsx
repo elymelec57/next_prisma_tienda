@@ -9,28 +9,28 @@ export default function CartBusiness({ restaurant }) {
         <>
             {
                 Restaurant.map((p) => (
-                    <div key={p.id} className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden transform transition-transform duration-300 hover:scale-105 dark:bg-gray-800 dark:border-gray-700 mx-2 my-4">
+                    <div key={p.id} className="w-full max-w-sm bg-card text-card-foreground border rounded-lg shadow-md overflow-hidden transform transition-transform duration-300 hover:shadow-xl dark:bg-gray-800 dark:border-gray-700 mx-2 my-4">
                         {p.mainImage !== null && (
                             <Link href={`/${p.slug}`} className="block relative h-48 overflow-hidden">
                                 <img
                                     src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`}
                                     alt={p.name}
-                                    className="w-full h-full object-cover transition-opacity duration-300 hover:opacity-90"
+                                    className="w-full h-full object-cover"
                                 />
                             </Link>
                         )}
-                        <div className="p-5 flex flex-col justify-between h-auto">
+                        <div className="p-5 flex flex-col justify-between">
                             <div>
-                                <h5 className="mb-2 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white truncate">
+                                <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white truncate">
                                     {p.name}
                                 </h5>
-                                <p className="mb-3 font-medium text-gray-600 dark:text-gray-400 text-sm overflow-hidden text-ellipsis line-clamp-2">
+                                <p className="mb-3 font-normal text-gray-700 dark:text-gray-400 text-sm overflow-hidden text-ellipsis line-clamp-2">
                                     {p.slogan}
                                 </p>
                             </div>
                             <Link
                                 href={`/${p.slug}`}
-                                className="mt-4 w-full text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-bold rounded-lg text-sm px-5 py-2.5 text-center shadow-lg transform transition-transform duration-200 hover:scale-105"
+                                className="mt-4 inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-gray-800"
                             >
                                 Ver Negocio
                             </Link>

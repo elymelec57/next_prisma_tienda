@@ -21,7 +21,7 @@ export default async function page({ params }) {
     <div>
       <NavBarBusiness business={business} />
       <div className='container mt-30 mx-auto'>
-        <div className='flex flex-wrap justify-center space-x-2'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
           <Cart products={JSON.parse(JSON.stringify(products))} />
         </div>
       </div>
