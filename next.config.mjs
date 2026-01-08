@@ -1,4 +1,4 @@
-//import withFlowbiteReact from "flowbite-react/class-list.json";
+
 const isProd = process.env.DEPLOY === 'production';
 
 /** @type {import('next').NextConfig} */
@@ -25,5 +25,4 @@ const nextConfig = {
   },
 };
 
-//export default withFlowbiteReact(nextConfig);
 export default nextConfig;

@@ -9,18 +9,28 @@ export const BusinessData = cache(async (slug) => {
     },
   });
 
-  const logo = await prisma.image.findFirst({
-    where: {
-      id: res.mainImageId
-    },
-    select: {
-      url: true
+  if (!res) {
+    return null;
+  }
+
+  let logoUrl = null;
+  if (res.mainImageId) {
+    const logo = await prisma.image.findFirst({
+      where: {
+        id: res.mainImageId
+      },
+      select: {
+        url: true
+      }
+    });
+    if (logo) {
+      logoUrl = logo.url;
     }
-  })
+  }
 
   let restaurante = {
     ...res,
-    logo: logo.url
+    logo: logoUrl
   }
 
   return restaurante

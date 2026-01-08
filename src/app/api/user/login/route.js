@@ -23,6 +23,13 @@ export async function POST(request) {
         },
     });
 
+    const restaurante = await prisma.restaurant.findUnique({
+        where: { userId: Auth.id },
+        select: {
+            id: true,
+        },
+    });
+
     if (form.email == '' && form.password == '') return NextResponse.json({ status: false, message: 'Enter data' })
 
     if (Auth) {
@@ -33,7 +40,8 @@ export async function POST(request) {
                 id: Auth.id,
                 name: Auth.name,
                 email: Auth.email,
-                role: Auth.roles[0].name
+                role: Auth.roles[0].name,
+                restauranteId: restaurante == null ? null : restaurante.id
             }
 
             const token = jwt.sign({
@@ -44,15 +52,10 @@ export async function POST(request) {
             cookieStore.set({
                 name: 'token',
                 value: token,
-                httpOnly: false,
+                httpOnly: true, // No accesible desde JS de Vue (Protección XSS)
                 path: '/',
             });
 
-            // if(data.role == 'Admin'){
-            //     console.log(request.url)
-            //     return NextResponse.redirect(new URL('/dashboard', request.url))
-            // }
-            // return NextResponse.redirect(new URL('/store', request.url))
             return NextResponse.json({ status: true, message: 'login successfully', auth: data })
         } else {
             return NextResponse.json({ status: false, message: 'not match password' })

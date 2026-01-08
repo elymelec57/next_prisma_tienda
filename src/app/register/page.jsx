@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema } from '../schemas/registerSchema';
 import { User, Mail, Lock, Loader2 } from 'lucide-react';
 import { useState } from "react";
+import { toast } from 'react-toastify';
 
 export default function Register() {
     const router = useRouter();
@@ -39,9 +40,10 @@ export default function Register() {
         setIsLoading(false);
 
         if (registerAdmin.status) {
+            toast.success(registerAdmin.message);
             router.push('/login');
         } else {
-            alert(registerAdmin.message);
+            toast.error(registerAdmin.message);
         }
     }
 

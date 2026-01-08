@@ -3,33 +3,33 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import verify from "@/libs/fecthVerifyToken";
-import Cookies from "js-cookie";
+import { User, Mail, Lock, Save, ArrowLeft } from 'lucide-react';
 
 export default function Profile() {
 
     const router = useRouter()
-    const token = Cookies.get('token')
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         consultUser()
     }, [])
 
     async function consultUser() {
-        // const { auth } = await verify(token)
+
         const res = await fetch(`/api/verifyToken2`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json' // Important for JSON data
             },
-            body: JSON.stringify({ token }),
         })
         const { auth } = await res.json()
-        
+
         setForm({
             id: auth.id,
             name: auth.name,
-            email: auth.email
+            email: auth.email,
+            password: '',
+            confirm_password: ''
         })
     }
 
@@ -50,59 +50,142 @@ export default function Profile() {
 
     const updateProfile = async (e) => {
         e.preventDefault()
+        setIsLoading(true)
 
-        const res = await fetch('/api/user/profile', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ form })
-        });
+        try {
+            const res = await fetch('/api/user/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ form })
+            });
 
-        const profileUpdate = await res.json();
-        if (profileUpdate.status) {
-            router.push('/login')
-        } else {
-            alert(profileUpdate.message)
+            const profileUpdate = await res.json();
+            if (profileUpdate.status) {
+                router.push('/login')
+            } else {
+                alert(profileUpdate.message)
+            }
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsLoading(false)
         }
     }
 
     return (
-        <div className="mt-10">
-            <div className="text-center">
-                <h1 className="text-2xl font-bold mb-1">Users register</h1>
+        <div className="max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Mi Perfil</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">Administra tu información personal y seguridad.</p>
+                </div>
             </div>
 
-            <form onSubmit={updateProfile} className="max-w-sm mx-auto">
-                <div className="mb-5">
-                    <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
-                    <input type="text" id="name" name="name" value={form.name} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+            <div className="rounded-xl border border-gray-200 bg-white text-gray-950 shadow-sm dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50">
+                <div className="p-6 pt-6">
+                    <form onSubmit={updateProfile} className="space-y-6">
+                        <div className="grid gap-6">
+                            <div className="space-y-2">
+                                <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Nombre Completo
+                                </label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                                    <input
+                                        type="text"
+                                        id="name"
+                                        name="name"
+                                        value={form.name}
+                                        onChange={changeImput}
+                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 pl-9 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 dark:placeholder:text-gray-400 dark:focus-visible:ring-gray-300"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Correo Electrónico
+                                </label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        value={form.email}
+                                        onChange={changeImput}
+                                        placeholder="tu@email.com"
+                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 pl-9 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 dark:placeholder:text-gray-400 dark:focus-visible:ring-gray-300"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        Contraseña Actual
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            name="password"
+                                            onChange={changeImput}
+                                            placeholder="••••••••"
+                                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 pl-9 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 dark:placeholder:text-gray-400 dark:focus-visible:ring-gray-300"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="confirm_password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        Nueva Contraseña
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                                        <input
+                                            type="password"
+                                            id="confirm_password"
+                                            name="confirm_password"
+                                            onChange={changeImput}
+                                            placeholder="••••••••"
+                                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 pl-9 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 dark:placeholder:text-gray-400 dark:focus-visible:ring-gray-300"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                            <Link
+                                href="/store"
+                                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-transparent hover:bg-gray-100 hover:text-gray-900 h-10 px-4 py-2 text-gray-500"
+                            >
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Cancelar
+                            </Link>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-gray-50 hover:bg-gray-900/90 h-10 px-8 py-2 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90"
+                            >
+                                {isLoading ? (
+                                    <>Guardando...</>
+                                ) : (
+                                    <>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Actualizar Perfil
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div className="mb-5">
-                    <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
-                    <input type="email" id="email" name="email" value={form.email} onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" required />
-                </div>
-                <div className="mb-5">
-                    <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password current</label>
-                    <input type="password" id="password" name="password" onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                </div>
-                <div className="mb-5">
-                    <label htmlFor="confirm_password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">New password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" onChange={changeImput} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                </div>
-                {/* <div className="flex items-start mb-5">
-            <div className="flex items-center h-5">
-              <input id="remember" type="checkbox" value="" className="w-4 h-4 border border-gray-300 rounded-sm bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800" required />
             </div>
-            <label htmlFor="remember" className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Remember me</label>
-          </div> */}
-                <div className="flex justify-center mb-4">
-                    <div>
-                        <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
-                    </div>
-                    <div>
-                        <Link className="underline underline-offset-1 mx-4" href={'/store'}>Home</Link>
-                    </div>
-                </div>
-            </form>
         </div>
     )
 }

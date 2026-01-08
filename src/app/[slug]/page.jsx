@@ -4,10 +4,18 @@ import Cart from '@/components/Cart';
 import { ProductsData } from '@/libs/ProductsData';
 import { MapPin, Phone, Clock, Star, UtensilsCrossed } from 'lucide-react';
 import Image from 'next/image';
+import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
   const business = await BusinessData(slug)
+
+  if (!business) {
+    return {
+      title: 'Restaurante no encontrado',
+    }
+  }
+
   return {
     title: business.name,
     description: business.slogan,
@@ -17,6 +25,11 @@ export async function generateMetadata({ params }) {
 export default async function page({ params }) {
   const { slug } = await params
   const business = await BusinessData(slug)
+
+  if (!business) {
+    notFound()
+  }
+
   const products = await ProductsData(business.userId)
 
   return (

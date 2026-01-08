@@ -37,7 +37,7 @@ export default function Login() {
         setIsLoading(false);
 
         if (login.status) {
-            router.push(login.auth.role === 'User' ? '/store' : '/dashboard');
+            router.push('/store');
         } else {
             alert(login.message);
         }

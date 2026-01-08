@@ -46,11 +46,7 @@ export async function middleware(request) {
         if (request.cookies.has('token')) {
             const verify = await verifytoken(originNext, token)
             if (verify.status) {
-                if (verify.auth.role == 'Admin') {
-                    return NextResponse.redirect(new URL('/dashboard', request.url))
-                } else {
-                    return NextResponse.redirect(new URL('/store', request.url))
-                }
+                return NextResponse.redirect(new URL('/store', request.url))
             } else {
                 return NextResponse.next()
             }
@@ -63,28 +59,10 @@ export async function middleware(request) {
         if (request.cookies.has('token')) {
             const verify = await verifytoken(originNext, token)
             if (verify.status) {
-                if (verify.auth.role == 'User') {
-                    return NextResponse.next()
-                } else {
-                    return NextResponse.redirect(new URL('/dashboard', request.url))
-                }
-            } else {
-                return NextResponse.redirect(new URL('/login', request.url))
-            }
-        } else {
-            return NextResponse.redirect(new URL('/login', request.url))
-        }
-    }
-
-    if (pathname.startsWith('/dashboard')) {
-        if (request.cookies.has('token')) {
-            const verify = await verifytoken(originNext, token)
-            if (verify.status) {
-                if (verify.auth.role == 'Admin') {
-                    return NextResponse.next()
-                } else {
-                    return NextResponse.redirect(new URL('/store', request.url))
-                }
+                // if (verify.auth.restauranteId === null) {
+                //     return NextResponse.redirect(new URL('/info/business', request.url))
+                // }
+                return NextResponse.next()
             } else {
                 return NextResponse.redirect(new URL('/login', request.url))
             }
@@ -105,6 +83,6 @@ export async function middleware(request) {
 }
 
 export const config = {
-    matcher: ['/dashboard/:path*', '/login', '/register', '/store/:path*']
+    matcher: ['/login', '/register', '/store/:path*']
     //matcher: ['/api/:path*']
 }

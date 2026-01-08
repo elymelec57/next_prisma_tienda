@@ -1,26 +1,38 @@
 'use client'
+
 import { useState, useEffect } from 'react'
-import { IngredientList } from '@/components/ingredients/IngredientList'
-import { IngredientForm } from '@/components/ingredients/IngredientForm'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { toast } from 'react-toastify'
+import { Plus, Pencil, Trash, Loader2, Package, Search } from 'lucide-react'
+
+import Modal from '@/components/Modal'
+import IngredientForm from '@/components/IngredientForm'
+import DeleteConfirmationModal from '@/components/DeleteConfirmationModal'
 
 export default function IngredientsPage() {
   const [ingredients, setIngredients] = useState([])
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedIngredient, setSelectedIngredient] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // Modal states
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false)
+  const [ingredientToEdit, setIngredientToEdit] = useState(null)
+  const [ingredientToDelete, setIngredientToDelete] = useState(null)
 
   async function fetchIngredients() {
+    setLoading(true)
     try {
+      // Using the API path found in the original page.jsx
       const res = await fetch('/api/user/ingredients')
       if (res.ok) {
         const data = await res.json()
-        setIngredients(data)
+        setIngredients(data || [])
       } else {
-        console.error('Failed to fetch ingredients')
+        toast.error('Error al cargar ingredientes')
       }
     } catch (error) {
-      console.error('An error occurred while fetching ingredients:', error)
+      console.error('Error fetching ingredients:', error)
+      toast.error('Error de conexión')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -29,86 +41,172 @@ export default function IngredientsPage() {
   }, [])
 
   const handleEdit = (ingredient) => {
-    setSelectedIngredient(ingredient)
-    setIsModalOpen(true)
+    setIngredientToEdit(ingredient)
+    setIsFormModalOpen(true)
   }
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este ingrediente?')) {
-      try {
-        const res = await fetch(`/api/user/ingredients?id=${id}`, {
-          method: 'DELETE',
-        })
-        if (res.ok) {
-          fetchIngredients() // Refresh the list
-        } else {
-          console.error('Failed to delete ingredient')
-        }
-      } catch (error) {
-        console.error('An error occurred while deleting the ingredient:', error)
-      }
-    }
+  const handleDeleteClick = (ingredient) => {
+    setIngredientToDelete(ingredient)
   }
 
-  const handleFormSubmit = async (data) => {
-    const method = selectedIngredient ? 'PUT' : 'POST'
-    const url = selectedIngredient
-      ? `/api/user/ingredients?id=${selectedIngredient.id}`
-      : '/api/user/ingredients'
+  const handleConfirmDelete = async () => {
+    if (!ingredientToDelete) return
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      const res = await fetch(`/api/user/ingredients?id=${ingredientToDelete.id}`, {
+        method: 'DELETE',
       })
 
-      if (res.ok) {
-        setIsModalOpen(false)
-        setSelectedIngredient(null)
-        fetchIngredients() // Refresh the list
+      const result = await res.json()
+
+      if (res.ok && result.status !== false) {
+        toast.success(result.message || 'Ingrediente eliminado')
+        fetchIngredients()
       } else {
-        console.error('Failed to save ingredient')
+        toast.error(result.message || 'Error al eliminar ingrediente')
       }
     } catch (error) {
-      console.error('An error occurred while saving the ingredient:', error)
+      toast.error('Error al eliminar ingrediente')
+    } finally {
+      setIngredientToDelete(null)
     }
   }
 
-  const openAddModal = () => {
-    setSelectedIngredient(null)
-    setIsModalOpen(true)
+  const handleFormSuccess = () => {
+    setIsFormModalOpen(false)
+    setIngredientToEdit(null)
+    fetchIngredients()
+  }
+
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false)
+    setIngredientToEdit(null)
   }
 
   return (
-    <div className="container mt-30 mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Gestión de Ingredientes</h1>
-        <Button onClick={openAddModal}>Agregar Ingrediente</Button>
+    <div className="space-y-6">
+      {/* Header section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Ingredientes</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Administra el inventario de insumos para tu cocina.
+          </p>
+        </div>
+        <button
+          onClick={() => { setIngredientToEdit(null); setIsFormModalOpen(true); }}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-gray-50 hover:bg-gray-900/90 h-10 px-4 py-2 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Agregar Ingrediente
+        </button>
       </div>
 
-      <IngredientList onEdit={handleEdit} onDelete={handleDelete} key={ingredients.length} />
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {selectedIngredient ? 'Editar Ingrediente' : 'Agregar Ingrediente'}
-            </h2>
-            <IngredientForm
-              onSubmit={handleFormSubmit}
-              defaultValues={selectedIngredient}
-            />
-            <Button
-              onClick={() => setIsModalOpen(false)}
-              variant="outline"
-              className="mt-4"
-            >
-              Cancelar
-            </Button>
-          </Card>
+      {/* Table section */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <div className="relative w-full overflow-auto">
+          <table className="w-full caption-bottom text-sm">
+            <thead className="[&_tr]:border-b">
+              <tr className="border-b transition-colors hover:bg-gray-100/50 data-[state=selected]:bg-gray-100 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800">
+                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 dark:text-gray-400">Ingrediente</th>
+                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 dark:text-gray-400 hidden sm:table-cell">Categoría</th>
+                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 dark:text-gray-400">Stock</th>
+                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 dark:text-gray-400 hidden md:table-cell">Costo</th>
+                <th className="h-12 px-4 text-right align-middle font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="[&_tr:last-child]:border-0">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="h-24 text-center">
+                    <div className="flex justify-center items-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                      <span className="ml-2">Cargando ingredientes...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : ingredients.length > 0 ? (
+                ingredients.map((ingredient) => (
+                  <tr key={ingredient.id} className="border-b transition-colors hover:bg-gray-100/50 data-[state=selected]:bg-gray-100 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800">
+                    <td className="p-4 align-middle">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{ingredient.nombre}</div>
+                      {ingredient.sku && <div className="text-xs text-gray-500 uppercase">{ingredient.sku}</div>}
+                    </td>
+                    <td className="p-4 align-middle hidden sm:table-cell">
+                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/20">
+                        {ingredient.categoria}
+                      </span>
+                    </td>
+                    <td className="p-4 align-middle">
+                      <div className="flex flex-col">
+                        <span className={`font-semibold ${ingredient.stockActual <= ingredient.stockMinimo ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                          {ingredient.stockActual} {ingredient.unidadMedida}
+                        </span>
+                        {ingredient.stockActual <= ingredient.stockMinimo && (
+                          <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">Stock Crítico</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4 align-middle hidden md:table-cell text-gray-600 dark:text-gray-400">
+                      ${ingredient.costoUnitario?.toFixed(2)}
+                    </td>
+                    <td className="p-4 align-middle text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(ingredient)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800"
+                        >
+                          <Pencil className="h-4 w-4 text-gray-500" />
+                          <span className="sr-only">Editar</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(ingredient)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-600 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                        >
+                          <Trash className="h-4 w-4" />
+                          <span className="sr-only">Eliminar</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col items-center justify-center">
+                      <Package className="h-10 w-10 text-gray-300 mb-2" />
+                      <p>No se encontraron ingredientes.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
+
+      {/* Ingredient Form Modal */}
+      <Modal
+        isOpen={isFormModalOpen}
+        onClose={handleCloseFormModal}
+        title={ingredientToEdit ? "Editar Ingrediente" : "Nuevo Ingrediente"}
+      >
+        <div className="mt-2 text-left">
+          <IngredientForm
+            ingredientId={ingredientToEdit?.id}
+            onSuccess={handleFormSuccess}
+            onCancel={handleCloseFormModal}
+          />
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={!!ingredientToDelete}
+        onClose={() => setIngredientToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        productName={ingredientToDelete?.nombre}
+      />
     </div>
   )
 }
