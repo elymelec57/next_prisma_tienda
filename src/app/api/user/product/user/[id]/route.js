@@ -59,6 +59,6 @@ export async function GET(request, segmentData) {
         ...plato,
         mainImage: plato.mainImageId ? imageMap.get(plato.mainImageId) : null,
     }));
-    console.log(dataPlatos)
+
     return NextResponse.json({ dataPlatos })
 }

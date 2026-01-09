@@ -7,154 +7,134 @@ const prisma = new PrismaClient()
 const bcrypt = require('bcryptjs');
 
 async function main() {
-  console.log('Iniciando el proceso de seeding...');
+  console.log('--- Iniciando el seeding ---');
 
-  // --- 1. Seeders para Roles (Empleados) ---
-  console.log('Creando roles...');
-  const rolesData = [
-    { nombre: 'Administrador' },
-    { nombre: 'Mesero' },
-    { nombre: 'Cocinero' },
-    { nombre: 'Barista' },
-  ];
+  // 1. Limpieza de datos (Opcional, cuidado en producción)
+  // El orden importa por las relaciones
+  await prisma.image.deleteMany();
+  await prisma.itemPedido.deleteMany();
+  await prisma.pedido.deleteMany();
+  await prisma.plato.deleteMany();
+  await prisma.mesa.deleteMany();
+  await prisma.restaurantHours.deleteMany();
+  await prisma.restaurant.deleteMany();
+  await prisma.empleado.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.rolUser.deleteMany();
+  await prisma.rol.deleteMany();
+  await prisma.categoria.deleteMany();
+  await prisma.categoriaIngrediente.deleteMany();
 
-  for (const rol of rolesData) {
-    await prisma.rol.upsert({
-      where: { nombre: rol.nombre },
-      update: {}, // No hacemos nada si existe
-      create: rol,
-    });
-  }
+  // 2. Crear Roles de Usuario (Sistema)
+  const rolAdmin = await prisma.rolUser.create({ data: { name: 'Admin' } });
+  const rolUser = await prisma.rolUser.create({ data: { name: 'User' } });
 
-  await prisma.rolUser.createMany({
-    data: [
-      {
-        name: 'Admin',
-      },
-      {
-        name: 'User',
-      },
-    ],
-    skipDuplicates: true, // Esto evita errores si intentamos insertar platos con el mismo nombre
-  });
-
-  console.log("creando los usuarios de las cuentas para los restarantes")
-
+  // 3. Crear Usuario con Múltiples Roles
   const salt = bcrypt.genSaltSync(10);
   const hash = bcrypt.hashSync("elymelec", salt);
 
-  const user = await prisma.user.upsert({
-    where: { email: 'usuarioprueba@gmail.com' },
-    update: {},
-    create: {
+  const user = await prisma.user.create({
+    data: {
       email: 'usuarioprueba@gmail.com',
       name: 'usuario prueba',
-      password: hash,
+      password: hash, // En un caso real, usa bcrypt
       roles: {
-        connect: {
-          id: 2,
-        },
-      },
-    },
-  })
+        connect: [{ id: rolUser.id }]
+      }
+    }
+  });
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'elymelecc084@gmail.com' },
-    update: {},
-    create: {
+  const admin = await prisma.user.create({
+    data: {
       email: 'elymelecc084@gmail.com',
       name: 'elymelec',
-      password: hash,
+      password: hash, // En un caso real, usa bcrypt
       roles: {
-        connect: {
-          id: 1,
-        },
-      },
-    },
-  })
-
-  const rest = await prisma.restaurant.createMany({
-    data: [
-      {
-        slug: 'los-mejores',
-        name: 'Los mejores',
-        slogan: "jhiugi ig igiu giu ilug ilugliu giug i",
-        direcction: "jhiugi ig igiu giu ilug ilugliu giug i",
-        slogan: "jhiugi ig igiu giu ilug ilugliu giug i",
-        phone: "53563565656",
-        userId: user.id,
-      },
-    ],
-    skipDuplicates: true, // Esto evita errores si intentamos insertar platos con el mismo nombre
+        connect: [{ id: rolAdmin.id }]
+      }
+    }
   });
 
-  // Obtenemos los IDs de los roles para usarlos en Empleado si fuera necesario
-  const rolMesero = await prisma.rol.findUnique({ where: { nombre: 'Mesero' } });
-  const rolAdmin = await prisma.rol.findUnique({ where: { nombre: 'Administrador' } });
+  // 4. Crear Categorías
+  const catComida = await prisma.categoria.create({ data: { nombre: 'Hamburguesas' } });
+  const catBebida = await prisma.categoria.create({ data: { nombre: 'Bebidas' } });
+  const catIngrediente = await prisma.categoriaIngrediente.create({ data: { nombre: 'Proteínas' } });
 
-
-  // --- 2. Seeders para Categorías (Menú) ---
-  console.log('Creando categorías de menú...');
-  const categoriaEntrada = await prisma.categoria.upsert({
-    where: { nombre: 'Entradas' },
-    update: {},
-    create: { nombre: 'Entradas' },
+  // 5. Crear Restaurante
+  const restaurant = await prisma.restaurant.create({
+    data: {
+      name: 'La Forchetta de Oro',
+      slug: 'la-forchetta-oro',
+      slogan: 'Sabor italiano en tu mesa',
+      phone: '+584120000000',
+      direcction: 'Calle Falsa 123, Caracas',
+      userId: user.id,
+      restaurantHours: {
+        create: {
+          dayOfWeek: 1, // Lunes
+          openTime: '08:00',
+          closeTime: '22:00',
+        }
+      }
+    }
   });
 
-  const categoriaPrincipal = await prisma.categoria.upsert({
-    where: { nombre: 'Platos Principales' },
-    update: {},
-    create: { nombre: 'Platos Principales' },
+  // 6. Manejo Polimórfico: Crear Imagen para el Restaurante
+  await prisma.image.create({
+    data: {
+      url: 'https://mi-bucket.com/logo-restaurant.jpg',
+      altText: 'Logo de La Forchetta',
+      modelId: restaurant.id.toString(), // ID del restaurante
+      modelType: 'Restaurant'           // Tipo de modelo
+    }
   });
 
-  const categoriaBebida = await prisma.categoria.upsert({
-    where: { nombre: 'Bebidas' },
-    update: {},
-    create: { nombre: 'Bebidas' },
+  // 7. Crear Platos
+  const plato1 = await prisma.plato.create({
+    data: {
+      nombre: 'Hamburguesa Trufada',
+      descripcion: 'Carne de angus con aceite de trufa',
+      precio: 15.50,
+      categoriaId: catComida.id,
+      restaurantId: restaurant.id,
+    }
   });
 
-  // --- 3. Seeders para Platos ---
-  // console.log('Creando platos de ejemplo...');
-  // await prisma.plato.createMany({
-  //   data: [
-  //     {
-  //       nombre: 'Sopa del Día',
-  //       precio: 5.50,
-  //       descripcion: 'Deliciosa sopa fresca de temporada.',
-  //       categoriaId: categoriaEntrada.id,
-  //       restaurantId: 1
-  //     },
-  //     {
-  //       nombre: 'Filete de Res a la Parrilla',
-  //       precio: 18.99,
-  //       descripcion: 'Servido con papas rústicas y vegetales.',
-  //       categoriaId: categoriaPrincipal.id,
-  //       restaurantId: 1
-  //     },
-  //     {
-  //       nombre: 'Limonada de Menta',
-  //       precio: 3.50,
-  //       descripcion: 'Refrescante limonada natural con hojas de menta.',
-  //       categoriaId: categoriaBebida.id,
-  //       restaurantId: 1
-  //     },
-  //   ],
-  //   skipDuplicates: true, // Esto evita errores si intentamos insertar platos con el mismo nombre
-  // });
-
-  // --- 4. Seeders para Mesas ---
-  console.log('Creando mesas...');
+  // 8. Crear Mesas
   await prisma.mesa.createMany({
     data: [
-      { numero: 1, capacidad: 4, estado: "Libre" },
-      { numero: 2, capacidad: 2, estado: "Libre" },
-      { numero: 3, capacidad: 6, estado: "Libre" },
-    ],
-    skipDuplicates: true,
+      { numero: 1, capacidad: 4, estado: 'Libre' },
+      { numero: 2, capacidad: 2, estado: 'Ocupada' },
+      { numero: 3, capacidad: 6, estado: 'Libre' },
+    ]
   });
 
+  // 9. Métodos de Pago
+  await prisma.paymentMethod.create({
+    data: {
+      type: 'PAGO_MOVIL',
+      label: 'Banesco Principal',
+      ownerName: 'Admin User',
+      ownerId: 'V-12345678',
+      bankName: 'Banesco',
+      phoneNumber: '04121234567',
+      restaurantId: restaurant.id
+    }
+  });
 
-  console.log('Seeding completado exitosamente.');
+  // 10. Roles de Empleados y Empleado
+  const rolMesero = await prisma.rol.create({ data: { nombre: 'Mesero' } });
+
+  await prisma.empleado.create({
+    data: {
+      nombre: 'Juan',
+      apellido: 'Pérez',
+      rolId: rolMesero.id,
+      userId: user.id, // Vinculado al mismo usuario por simplicidad en el seed
+    }
+  });
+
+  console.log('--- Seeding completado con éxito ---');
 }
 
 // Ejecuta la función principal y maneja los errores

@@ -33,14 +33,13 @@ model Image {
 }
 
 model User {
-  id        Int         @id @default(autoincrement())
-  email     String      @unique
-  name      String
-  password  String
-  roles     RolUser[]
-  empleados Empleado[]
-  business  Restaurant?
-
+  id          Int         @id @default(autoincrement())
+  email       String      @unique
+  name        String
+  password    String
+  roles       RolUser[]
+  empleados   Empleado[]
+  business    Restaurant?
   // Campo para almacenar el ID de la Imagen Principal.
   // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
   mainImageId String?
@@ -54,22 +53,37 @@ model RolUser {
 }
 
 model Restaurant {
-  id         Int       @id @default(autoincrement())
-  slug       String
-  name       String
-  slogan     String
-  phone      String
-  direcction String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId     Int       @unique // relation scalar field (used in the `@relation` attribute above)
-  cliente    Cliente[]
-  pedidos    Pedido[]
-  platos     Plato[]
+  id                     Int                      @id @default(autoincrement())
+  slug                   String
+  name                   String
+  slogan                 String
+  phone                  String
+  direcction             String
+  user                   User                     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId                 Int                      @unique // relation scalar field (used in the `@relation` attribute above)
+  cliente                Cliente[]
+  pedidos                Pedido[]
+  platos                 Plato[]
+  ingredienteRestaurante IngredienteRestaurante[]
+  categoriaRestaurant    CategoriaRestaurant[]
+  paymentMethods         PaymentMethod[]
 
   // Campo para almacenar el ID de la Imagen Principal.
   // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
-  mainImageId String?
-  contornos   Contornos[]
+  mainImageId     String?
+  contornos       Contornos[]
+  restaurantHours RestaurantHours?
+  payments        Payment[]
+}
+
+model RestaurantHours {
+  id           Int        @id @default(autoincrement())
+  dayOfWeek    Int // 0 (Domingo) a 6 (Sábado)
+  openTime     String // "09:00"
+  closeTime    String // "22:00"
+  isOpen       Boolean    @default(true)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  restaurantId Int        @unique // relation scalar field (used in the `@relation` attribute above)
 }
 
 // --- Entidades del Menú y Platos ---
@@ -84,6 +98,12 @@ model CategoriaIngrediente {
   id           Int           @id @default(autoincrement())
   nombre       String        @unique
   ingredientes Ingrediente[]
+}
+
+model CategoriaRestaurant {
+  id           Int          @id @default(autoincrement())
+  nombre       String       @unique
+  restaurantes Restaurant[]
 }
 
 model Plato {
@@ -104,10 +124,18 @@ model Plato {
 }
 
 model Ingrediente {
-  id        String  @id @default(uuid())
-  nombre    String
-  sku       String? @unique
-  categoria String // Podría ser una relación a otro modelo Category
+  id                      Int                      @id @default(autoincrement())
+  nombre                  String
+  categoriaIngredienteId  Int
+  categoriaIngrediente    CategoriaIngrediente     @relation(fields: [categoriaIngredienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  ingredienteRestaurantes IngredienteRestaurante[]
+}
+
+model IngredienteRestaurante {
+  id  Int     @id @default(autoincrement())
+  sku String? @unique
 
   // Inventario
   unidadMedida String // "kg", "lt", "oz", "unidad"
@@ -118,19 +146,19 @@ model Ingrediente {
   // Costos
   costoUnitario Decimal @db.Decimal(10, 2)
 
-  categoriaIngredienteId Int
-  categoriaIngrediente   CategoriaIngrediente @relation(fields: [categoriaIngredienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ingredienteId Int
+  ingrediente   Ingrediente @relation(fields: [ingredienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   // Fechas y Control
   fechaVencimiento DateTime?
   ultimoIngreso    DateTime  @default(now())
 
-  // // Relaciones (Opcional)
+  // // Relaciones (Opcional) 
   // proveedorId     String?
   // proveedor       Proveedor? @relation(fields: [proveedorId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  restaurant Restaurant[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 }
 
 // model Proveedor {
@@ -190,7 +218,7 @@ model Pedido {
   empleadoId   Int? // Quién tomó el pedido (opcional)
   empleado     Empleado?    @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   items        ItemPedido[] // Relación: Un pedido tiene muchos items
-  pago         Pago? // Relación 1:1 con Pago
+  Payment      Payment? // Relación 1:1 con Pago
 }
 
 model ItemPedido {
@@ -209,15 +237,61 @@ model ItemPedido {
 }
 
 // --- Entidades de Pago y Reserva ---
+// Definición de los tipos de métodos soportados
+enum PaymentType {
+  PAGO_MOVIL
+  TRANSFERENCIA
+  ZELLE
+  EFECTIVO
+}
 
-model Pago {
-  id        Int      @id @default(autoincrement())
+model PaymentMethod {
+  id       String      @id @default(uuid())
+  type     PaymentType
+  isActive Boolean     @default(true)
+
+  // Datos comunes para identificación
+  label     String // Ej: "Mi Cuenta Banesco" o "Pago Móvil Principal"
+  ownerName String // Nombre del titular
+  ownerId   String? // Cédula o RIF del titular
+
+  // Datos específicos para Transferencia / Pago Móvil
+  bankName      String? // Nombre del banco (Ej: "Banesco")
+  accountNumber String? // Número de cuenta (20 dígitos)
+  phoneNumber   String? // Número de teléfono (para Pago Móvil)
+
+  // Datos específicos para Zelle o métodos digitales
+  email String? // Correo electrónico
+
+  // Relación con los pagos recibidos
+  payments Payment[]
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurantId Int?
+}
+
+model Payment {
+  id        Int           @id @default(autoincrement())
   monto     Float
-  metodo    String // Ej: "Efectivo", "Tarjeta", "Transferencia"
-  fechaHora DateTime @default(now())
+  status    PaymentStatus @default(PENDING)
+  fechaHora DateTime      @default(now())
+
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
 
   pedidoId Int    @unique // Relación 1:1 con Pedido
   pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  restaurantId Int? // El pedido tambien pertenece a un restaurante
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
 }
 
 model Reserva {
@@ -261,4 +335,13 @@ model Empleado {
   // Campo para almacenar el ID de la Imagen Principal.
   // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
   mainImageId String?
+  shifts      EmpleadoHorario[]
+}
+
+model EmpleadoHorario {
+  id         String   @id @default(uuid())
+  empleadoId Int // Empleado asignado
+  startTime  DateTime
+  endTime    DateTime
+  empleado   Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
