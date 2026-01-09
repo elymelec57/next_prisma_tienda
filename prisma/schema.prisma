@@ -74,6 +74,7 @@ model Restaurant {
   contornos       Contornos[]
   restaurantHours RestaurantHours?
   payments        Payment[]
+  employees       Empleado[]
 }
 
 model RestaurantHours {
@@ -333,9 +334,12 @@ model Empleado {
   pedidosTomados Pedido[] // Relación: Un empleado puede tomar muchos pedidos
 
   // Campo para almacenar el ID de la Imagen Principal.
-  // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
+  // La imagen se gestiona través de la relación polimórfica en la capa de la aplicación.
   mainImageId String?
   shifts      EmpleadoHorario[]
+
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model EmpleadoHorario {

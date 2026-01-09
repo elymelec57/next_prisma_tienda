@@ -1,20 +1,10 @@
-// src/app/api/roles/route.js
+// src/app/api/users/route.js
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../libs/prisma';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
 export async function GET() {
-  try {
-    const roles = await prisma.rol.findMany();
-    return NextResponse.json(roles);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
-
-export async function POST(request) {
   try {
     const cookieStore = cookies();
     const token = cookieStore.get('token')?.value;
@@ -25,19 +15,8 @@ export async function POST(request) {
 
     jwt.verify(token, process.env.JWT_TOKEN);
 
-    const { nombre } = await request.json();
-
-    if (!nombre) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-    }
-
-    const newRole = await prisma.rol.create({
-      data: {
-        nombre,
-      },
-    });
-
-    return NextResponse.json(newRole, { status: 201 });
+    const users = await prisma.user.findMany();
+    return NextResponse.json(users);
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
