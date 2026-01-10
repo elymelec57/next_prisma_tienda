@@ -68,13 +68,15 @@ export async function POST(request) {
             }
         })
 
-        // 5. Create Pago
+        // 5. Create Payment record
         if (pago) {
-            await prisma.pago.create({
+            await prisma.payment.create({
                 data: {
                     monto: parseFloat(form.total),
-                    metodo: "Transferencia/Digital",
-                    pedido: { connect: { id: pedido.id } }
+                    status: "PENDING",
+                    paymentMethod: { connect: { id: pago } }, // 'pago' contains the paymentMethodId
+                    pedido: { connect: { id: pedido.id } },
+                    restaurant: { connect: { id: restaurant.id } }
                 }
             })
         }

@@ -60,6 +60,76 @@ async function main() {
   const catBebida = await prisma.categoria.create({ data: { nombre: 'Bebidas' } });
   const catIngrediente = await prisma.categoriaIngrediente.create({ data: { nombre: 'Proteínas' } });
 
+  const data = [
+    {
+      category: 'Frutas y Verduras',
+      ingredients: ['Tomate', 'Cebolla', 'Ajo', 'Zanahoria', 'Espinacas', 'Manzana', 'Aguacate', 'Limón']
+    },
+    {
+      category: 'Proteínas (Carnes y Pescados)',
+      ingredients: ['Pechuga de Pollo', 'Carne de Res', 'Salmón', 'Lomo de Cerdo', 'Atún en lata']
+    },
+    {
+      category: 'Lácteos y Huevos',
+      ingredients: ['Leche entera', 'Queso Parmesano', 'Yogur natural', 'Huevo', 'Mantequilla']
+    },
+    {
+      category: 'Legumbres y Granos',
+      ingredients: ['Arroz blanco', 'Lentejas', 'Garbanzos', 'Frijoles negros', 'Quinoa']
+    },
+    {
+      category: 'Especias y Hierbas',
+      ingredients: ['Sal marina', 'Pimienta negra', 'Orégano', 'Albahaca', 'Comino', 'Pimentón']
+    },
+    {
+      category: 'Aceites y Grasas',
+      ingredients: ['Aceite de Oliva Virgen Extra', 'Aceite de Girasol', 'Manteca de cerdo', 'Aceite de Coco']
+    },
+    {
+      category: 'Panadería y Repostería',
+      ingredients: ['Harina de Trigo', 'Azúcar blanca', 'Levadura seca', 'Polvo de hornear', 'Pepitas de Chocolate']
+    },
+    {
+      category: 'Condimentos y Salsas',
+      ingredients: ['Mostaza', 'Ketchup', 'Mayonesa', 'Salsa de Soja', 'Vinagre de manzana']
+    },
+    {
+      category: 'Bebidas',
+      ingredients: ['Agua mineral', 'Café en grano', 'Té verde', 'Vino tinto', 'Cerveza']
+    },
+    {
+      category: 'Frutos Secos y Semillas',
+      ingredients: ['Nueces', 'Almendras', 'Semillas de Chía', 'Sésamo', 'Cacahuetes']
+    }
+  ];
+
+  console.log('🌱 Sembrando categorías e ingredientes...');
+
+  for (const item of data) {
+    // 1. Primero creamos o actualizamos la categoría
+    const category = await prisma.categoriaIngrediente.upsert({
+      where: { nombre: item.category },
+      update: {},
+      create: { nombre: item.category },
+    });
+
+    console.log(`  - Categoría: ${category.nombre}`);
+
+    // 2. Insertamos los ingredientes asociados a esa categoría
+    for (const ingredientName of item.ingredients) {
+      const i = await prisma.ingrediente.upsert({
+        where: { nombre: ingredientName }, // Asumiendo que el nombre es único
+        update: { categoriaIngredienteId: Number(category.id) },
+        create: {
+          nombre: ingredientName,
+          categoriaIngredienteId: Number(category.id),
+        },
+      });
+    }
+  }
+
+  console.log('✅ Base de datos poblada con éxito.');
+
   // 5. Crear Restaurante
   const restaurant = await prisma.restaurant.create({
     data: {

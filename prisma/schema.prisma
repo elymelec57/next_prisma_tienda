@@ -52,29 +52,34 @@ model RolUser {
   createdAt DateTime @default(now())
 }
 
+model CategoriaRestaurant {
+  id         Int          @id @default(autoincrement())
+  nombre     String       @unique
+  restaurant Restaurant[]
+}
+
 model Restaurant {
-  id                     Int                      @id @default(autoincrement())
-  slug                   String
-  name                   String
-  slogan                 String
-  phone                  String
-  direcction             String
-  user                   User                     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId                 Int                      @unique // relation scalar field (used in the `@relation` attribute above)
-  cliente                Cliente[]
-  pedidos                Pedido[]
-  platos                 Plato[]
-  ingredienteRestaurante IngredienteRestaurante[]
-  categoriaRestaurant    CategoriaRestaurant[]
-  paymentMethods         PaymentMethod[]
+  id                  Int                   @id @default(autoincrement())
+  slug                String
+  name                String
+  slogan              String
+  phone               String
+  direcction          String
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId              Int                   @unique // relation scalar field (used in the `@relation` attribute above)
+  cliente             Cliente[]
+  pedidos             Pedido[]
+  platos              Plato[]
+  categoriaRestaurant CategoriaRestaurant[]
+  paymentMethods      PaymentMethod[]
 
   // Campo para almacenar el ID de la Imagen Principal.
   // La imagen se gestiona a través de la relación polimórfica en la capa de la aplicación.
-  mainImageId     String?
-  contornos       Contornos[]
-  restaurantHours RestaurantHours?
-  payments        Payment[]
-  employees       Empleado[]
+  mainImageId             String?
+  contornos               Contornos[]
+  restaurantHours         RestaurantHours[]
+  payments                Payment[]
+  employees               Empleado[]
 }
 
 model RestaurantHours {
@@ -84,7 +89,9 @@ model RestaurantHours {
   closeTime    String // "22:00"
   isOpen       Boolean    @default(true)
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  restaurantId Int        @unique // relation scalar field (used in the `@relation` attribute above)
+  restaurantId Int // relation scalar field (used in the `@relation` attribute above)
+
+  @@unique([restaurantId, dayOfWeek])
 }
 
 // --- Entidades del Menú y Platos ---
@@ -93,18 +100,6 @@ model Categoria {
   id     Int     @id @default(autoincrement())
   nombre String  @unique
   platos Plato[] // Relación: Una categoría tiene muchos platos
-}
-
-model CategoriaIngrediente {
-  id           Int           @id @default(autoincrement())
-  nombre       String        @unique
-  ingredientes Ingrediente[]
-}
-
-model CategoriaRestaurant {
-  id           Int          @id @default(autoincrement())
-  nombre       String       @unique
-  restaurantes Restaurant[]
 }
 
 model Plato {
@@ -124,42 +119,44 @@ model Plato {
   mainImageId  String?
 }
 
+model CategoriaIngrediente {
+  id           Int           @id @default(autoincrement())
+  nombre       String        @unique
+  ingredientes Ingrediente[]
+}
+
 model Ingrediente {
-  id                      Int                      @id @default(autoincrement())
-  nombre                  String
-  categoriaIngredienteId  Int
-  categoriaIngrediente    CategoriaIngrediente     @relation(fields: [categoriaIngredienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createdAt               DateTime                 @default(now())
-  updatedAt               DateTime                 @updatedAt
-  ingredienteRestaurantes IngredienteRestaurante[]
+  id                     Int                  @id @default(autoincrement())
+  nombre                 String               @unique
+  categoriaIngredienteId Int
+  categoriaIngrediente   CategoriaIngrediente @relation(fields: [categoriaIngredienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
 }
 
 model IngredienteRestaurante {
-  id  Int     @id @default(autoincrement())
-  sku String? @unique
-
+  id               Int       @id @default(autoincrement())
+  nombre           String
+  categoria        String?
+  sku              String?   @unique
   // Inventario
-  unidadMedida String // "kg", "lt", "oz", "unidad"
-  stockActual  Float  @default(0)
-  stockMinimo  Float  @default(0)
-  stockMaximo  Float?
-
+  unidadMedida     String // "kg", "lt", "oz", "unidad"
+  stockActual      Float     @default(0)
+  stockMinimo      Float     @default(0)
+  stockMaximo      Float?
   // Costos
-  costoUnitario Decimal @db.Decimal(10, 2)
-
-  ingredienteId Int
-  ingrediente   Ingrediente @relation(fields: [ingredienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
+  costoUnitario    Decimal   @db.Decimal(10, 2)
   // Fechas y Control
   fechaVencimiento DateTime?
   ultimoIngreso    DateTime  @default(now())
 
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   // // Relaciones (Opcional) 
   // proveedorId     String?
   // proveedor       Proveedor? @relation(fields: [proveedorId], references: [id])
-  restaurant Restaurant[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 // model Proveedor {
@@ -336,7 +333,7 @@ model Empleado {
   // Campo para almacenar el ID de la Imagen Principal.
   // La imagen se gestiona través de la relación polimórfica en la capa de la aplicación.
   mainImageId String?
-  shifts      EmpleadoHorario[]
+  empleadoHorario   EmpleadoHorario[]
 
   restaurantId Int
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)

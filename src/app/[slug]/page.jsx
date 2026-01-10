@@ -30,7 +30,7 @@ export default async function page({ params }) {
     notFound()
   }
 
-  const products = await ProductsData(business.userId)
+  const products = await ProductsData(business.id)
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-orange-100 selection:text-orange-900">

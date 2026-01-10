@@ -8,6 +8,14 @@ export async function GET(request, segmentData) {
     const rest = await prisma.restaurant.findUnique({
         where: {
             userId: Number(params.id)
+        },
+        include: {
+            restaurantHours: {
+                orderBy: {
+                    dayOfWeek: 'asc'
+                }
+            },
+            paymentMethods: true
         }
     })
 
