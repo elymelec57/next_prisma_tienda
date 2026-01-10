@@ -37,6 +37,14 @@ CREATE TABLE "RolUser" (
 );
 
 -- CreateTable
+CREATE TABLE "CategoriaRestaurant" (
+    "id" SERIAL NOT NULL,
+    "nombre" TEXT NOT NULL,
+
+    CONSTRAINT "CategoriaRestaurant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Restaurant" (
     "id" SERIAL NOT NULL,
     "slug" TEXT NOT NULL,
@@ -71,22 +79,6 @@ CREATE TABLE "Categoria" (
 );
 
 -- CreateTable
-CREATE TABLE "CategoriaIngrediente" (
-    "id" SERIAL NOT NULL,
-    "nombre" TEXT NOT NULL,
-
-    CONSTRAINT "CategoriaIngrediente_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "CategoriaRestaurant" (
-    "id" SERIAL NOT NULL,
-    "nombre" TEXT NOT NULL,
-
-    CONSTRAINT "CategoriaRestaurant_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Plato" (
     "id" SERIAL NOT NULL,
     "nombre" TEXT NOT NULL,
@@ -98,6 +90,14 @@ CREATE TABLE "Plato" (
     "mainImageId" TEXT,
 
     CONSTRAINT "Plato_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CategoriaIngrediente" (
+    "id" SERIAL NOT NULL,
+    "nombre" TEXT NOT NULL,
+
+    CONSTRAINT "CategoriaIngrediente_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -114,15 +114,16 @@ CREATE TABLE "Ingrediente" (
 -- CreateTable
 CREATE TABLE "IngredienteRestaurante" (
     "id" SERIAL NOT NULL,
+    "nombre" TEXT NOT NULL,
     "sku" TEXT,
     "unidadMedida" TEXT NOT NULL,
     "stockActual" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "stockMinimo" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "stockMaximo" DOUBLE PRECISION,
     "costoUnitario" DECIMAL(10,2) NOT NULL,
-    "ingredienteId" INTEGER NOT NULL,
     "fechaVencimiento" TIMESTAMP(3),
     "ultimoIngreso" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "restaurantId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -279,14 +280,6 @@ CREATE TABLE "_CategoriaRestaurantToRestaurant" (
 );
 
 -- CreateTable
-CREATE TABLE "_IngredienteRestauranteToRestaurant" (
-    "A" INTEGER NOT NULL,
-    "B" INTEGER NOT NULL,
-
-    CONSTRAINT "_IngredienteRestauranteToRestaurant_AB_pkey" PRIMARY KEY ("A","B")
-);
-
--- CreateTable
 CREATE TABLE "_ContornosToPlato" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL,
@@ -309,10 +302,13 @@ CREATE INDEX "Image_modelId_modelType_idx" ON "Image"("modelId", "modelType");
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "CategoriaRestaurant_nombre_key" ON "CategoriaRestaurant"("nombre");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Restaurant_userId_key" ON "Restaurant"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "RestaurantHours_restaurantId_key" ON "RestaurantHours"("restaurantId");
+CREATE UNIQUE INDEX "RestaurantHours_restaurantId_dayOfWeek_key" ON "RestaurantHours"("restaurantId", "dayOfWeek");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Categoria_nombre_key" ON "Categoria"("nombre");
@@ -321,7 +317,7 @@ CREATE UNIQUE INDEX "Categoria_nombre_key" ON "Categoria"("nombre");
 CREATE UNIQUE INDEX "CategoriaIngrediente_nombre_key" ON "CategoriaIngrediente"("nombre");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CategoriaRestaurant_nombre_key" ON "CategoriaRestaurant"("nombre");
+CREATE UNIQUE INDEX "Ingrediente_nombre_key" ON "Ingrediente"("nombre");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "IngredienteRestaurante_sku_key" ON "IngredienteRestaurante"("sku");
@@ -357,9 +353,6 @@ CREATE INDEX "_RolUserToUser_B_index" ON "_RolUserToUser"("B");
 CREATE INDEX "_CategoriaRestaurantToRestaurant_B_index" ON "_CategoriaRestaurantToRestaurant"("B");
 
 -- CreateIndex
-CREATE INDEX "_IngredienteRestauranteToRestaurant_B_index" ON "_IngredienteRestauranteToRestaurant"("B");
-
--- CreateIndex
 CREATE INDEX "_ContornosToPlato_B_index" ON "_ContornosToPlato"("B");
 
 -- CreateIndex
@@ -381,7 +374,7 @@ ALTER TABLE "Plato" ADD CONSTRAINT "Plato_restaurantId_fkey" FOREIGN KEY ("resta
 ALTER TABLE "Ingrediente" ADD CONSTRAINT "Ingrediente_categoriaIngredienteId_fkey" FOREIGN KEY ("categoriaIngredienteId") REFERENCES "CategoriaIngrediente"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "IngredienteRestaurante" ADD CONSTRAINT "IngredienteRestaurante_ingredienteId_fkey" FOREIGN KEY ("ingredienteId") REFERENCES "Ingrediente"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "IngredienteRestaurante" ADD CONSTRAINT "IngredienteRestaurante_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Contornos" ADD CONSTRAINT "Contornos_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -442,12 +435,6 @@ ALTER TABLE "_CategoriaRestaurantToRestaurant" ADD CONSTRAINT "_CategoriaRestaur
 
 -- AddForeignKey
 ALTER TABLE "_CategoriaRestaurantToRestaurant" ADD CONSTRAINT "_CategoriaRestaurantToRestaurant_B_fkey" FOREIGN KEY ("B") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_IngredienteRestauranteToRestaurant" ADD CONSTRAINT "_IngredienteRestauranteToRestaurant_A_fkey" FOREIGN KEY ("A") REFERENCES "IngredienteRestaurante"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_IngredienteRestauranteToRestaurant" ADD CONSTRAINT "_IngredienteRestauranteToRestaurant_B_fkey" FOREIGN KEY ("B") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_ContornosToPlato" ADD CONSTRAINT "_ContornosToPlato_A_fkey" FOREIGN KEY ("A") REFERENCES "Contornos"("id") ON DELETE CASCADE ON UPDATE CASCADE;

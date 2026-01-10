@@ -1,16 +1,20 @@
 'use client'
 
-import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon } from "lucide-react";
+import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Buy() {
     const dispatch = useAppDispatch()
     const params = useParams()
     const router = useRouter()
+
+    const [restaurant, setRestaurant] = useState(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [form, setForm] = useState({
         name: '',
@@ -19,8 +23,25 @@ export default function Buy() {
         comprobante: '',
         slug: params.slug,
         total: 0,
-        order: {}
+        order: {},
+        paymentMethodId: ''
     });
+
+    useEffect(() => {
+        fetchRestaurant();
+    }, [params.slug]);
+
+    const fetchRestaurant = async () => {
+        try {
+            const res = await fetch(`/api/restaurants/${params.slug}`);
+            const data = await res.json();
+            if (data.status) {
+                setRestaurant(data.restaurant);
+            }
+        } catch (error) {
+            console.error("Error fetching restaurant:", error);
+        }
+    }
 
     const [editingProduct, setEditingProduct] = useState(null);
     const [tempSelectedContornos, setTempSelectedContornos] = useState([]);
@@ -30,6 +51,14 @@ export default function Buy() {
             ...form,
             [e.target.name]: e.target.value
         })
+    }
+
+    const handlePaymentSelect = (method) => {
+        setSelectedPaymentMethod(method);
+        setForm({
+            ...form,
+            paymentMethodId: method.id
+        });
     }
 
     const orderList = useAppSelector((state) => state.order.order)
@@ -82,7 +111,6 @@ export default function Buy() {
             if (unitContornos.includes(idStr)) {
                 newSelection[unitIndex] = unitContornos.filter(id => id !== idStr);
             } else {
-                // Check logic if needed (e.g. max contornos), for now allow all
                 newSelection[unitIndex] = [...unitContornos, idStr];
             }
             return newSelection;
@@ -107,34 +135,36 @@ export default function Buy() {
 
     const buy = async (e) => {
         e.preventDefault()
+        if (!form.paymentMethodId) {
+            alert("Por favor selecciona un método de pago");
+            return;
+        }
+
+        setIsLoading(true);
         form.order = orderList
 
-        // Placeholder for payment logic
-        const newPago = { pathname: 'pending_payment_proof' };
+        try {
+            const OrderSolicitud = await fetch('/api/buy/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ form, pago: form.paymentMethodId })
+            })
 
-        if (newPago.pathname) {
-            try {
-                const OrderSolicitud = await fetch('/api/buy/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form, pago: newPago.pathname })
-                })
-
-                const res = await OrderSolicitud.json()
-                if (res.status) {
-                    // Success UI Feedback could go here
-                    alert("Pedido realizado con éxito!"); // Replace with toast later
-                    dispatch(reset())
-                    localStorage.removeItem('order');
-                    localStorage.removeItem('count');
-                    router.push(`/${params.slug}`)
-                } else {
-                    alert(res.message)
-                }
-            } catch (error) {
-                console.error("Error submitting order:", error);
-                alert("Ocurrió un error al procesar el pedido.");
+            const res = await OrderSolicitud.json()
+            if (res.status) {
+                alert("Pedido realizado con éxito!");
+                dispatch(reset())
+                localStorage.removeItem('order');
+                localStorage.removeItem('count');
+                router.push(`/${params.slug}`)
+            } else {
+                alert(res.message)
             }
+        } catch (error) {
+            console.error("Error submitting order:", error);
+            alert("Ocurrió un error al procesar el pedido.");
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -171,9 +201,19 @@ export default function Buy() {
         ));
     }
 
+    const getPaymentIcon = (type) => {
+        switch (type) {
+            case 'PAGO_MOVIL': return <Smartphone className="h-5 w-5" />;
+            case 'TRANSFERENCIA': return <Landmark className="h-5 w-5" />;
+            case 'ZELLE': return <Wallet className="h-5 w-5" />;
+            case 'EFECTIVO': return <DollarSign className="h-5 w-5" />;
+            default: return <CreditCard className="h-5 w-5" />;
+        }
+    }
+
     return (
         <div className="min-h-screen bg-slate-50 py-10 px-4 md:px-6">
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 <div className="mb-8 flex items-center justify-between">
                     <Link href={`/${params.slug}`} className="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-medium">
                         <ArrowLeft className="h-5 w-5" />
@@ -182,10 +222,10 @@ export default function Buy() {
                     <h1 className="text-2xl font-bold text-slate-900 hidden sm:block">Finalizar Pedido</h1>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                    {/* COLUMNA IZQUIERDA: RESUMEN DE PRODUCTOS */}
-                    <div className="lg:col-span-2 space-y-6">
+                    {/* COLUMNA IZQUIERDA: RESUMEN DE PRODUCTOS + PAGOS */}
+                    <div className="lg:col-span-8 space-y-6">
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                             <div className="p-6 border-b border-slate-100 flex items-center gap-3">
                                 <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
@@ -263,14 +303,104 @@ export default function Buy() {
                                 </div>
                             )}
                         </div>
+
+                        {/* SECCIÓN DE MÉTODOS DE PAGO */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="p-6 border-b border-slate-100 flex items-center gap-3">
+                                <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                                    <CreditCard className="h-6 w-6" />
+                                </div>
+                                <h2 className="text-xl font-bold text-slate-900">Método de Pago</h2>
+                            </div>
+                            <div className="p-6">
+                                <p className="text-sm text-slate-500 mb-4">Selecciona cómo deseas pagar tu pedido:</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {restaurant?.paymentMethods?.length > 0 ? (
+                                        restaurant.paymentMethods.map((method) => (
+                                            <div
+                                                key={method.id}
+                                                onClick={() => handlePaymentSelect(method)}
+                                                className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${form.paymentMethodId === method.id
+                                                    ? 'border-blue-500 bg-blue-50/50 ring-4 ring-blue-50'
+                                                    : 'border-slate-100 bg-white hover:border-blue-200'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className={`p-2 rounded-lg ${form.paymentMethodId === method.id ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                                        {getPaymentIcon(method.type)}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-slate-900">{method.label}</h4>
+                                                        <span className="text-[10px] uppercase font-bold text-slate-400">{method.type.replace('_', ' ')}</span>
+                                                    </div>
+                                                    {form.paymentMethodId === method.id && (
+                                                        <Check className="h-5 w-5 text-blue-500 ml-auto" />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-2 py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                            <p className="text-slate-500">No hay métodos de pago configurados.</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Detalles del método seleccionado */}
+                                {selectedPaymentMethod && (
+                                    <div className="mt-6 p-5 rounded-2xl bg-slate-900 text-white animate-in slide-in-from-top-2 duration-300">
+                                        <h5 className="font-bold text-blue-400 mb-3 flex items-center gap-2">
+                                            <Check className="h-4 w-4" />
+                                            Datos para el pago:
+                                        </h5>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm">
+                                            <div className="space-y-1">
+                                                <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Titular</span>
+                                                <p className="font-medium text-lg">{selectedPaymentMethod.ownerName}</p>
+                                            </div>
+                                            {selectedPaymentMethod.ownerId && (
+                                                <div className="space-y-1">
+                                                    <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">ID / RIF</span>
+                                                    <p className="font-medium text-lg">{selectedPaymentMethod.ownerId}</p>
+                                                </div>
+                                            )}
+                                            {selectedPaymentMethod.bankName && (
+                                                <div className="space-y-1">
+                                                    <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Banco</span>
+                                                    <p className="font-medium text-lg text-blue-200">{selectedPaymentMethod.bankName}</p>
+                                                </div>
+                                            )}
+                                            {selectedPaymentMethod.phoneNumber && (
+                                                <div className="space-y-1">
+                                                    <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Teléfono</span>
+                                                    <p className="font-medium text-lg tracking-wider">{selectedPaymentMethod.phoneNumber}</p>
+                                                </div>
+                                            )}
+                                            {selectedPaymentMethod.accountNumber && (
+                                                <div className="col-span-1 md:col-span-2 space-y-1 mt-2 pt-2 border-t border-slate-800">
+                                                    <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Número de Cuenta</span>
+                                                    <p className="font-mono text-xl text-blue-100 break-all">{selectedPaymentMethod.accountNumber}</p>
+                                                </div>
+                                            )}
+                                            {selectedPaymentMethod.email && (
+                                                <div className="col-span-1 md:col-span-2 space-y-1">
+                                                    <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Email</span>
+                                                    <p className="font-medium text-lg">{selectedPaymentMethod.email}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* COLUMNA DERECHA: FORMULARIO */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-4">
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-24">
                             <div className="mb-6 flex items-center gap-2 text-slate-900">
-                                <CreditCard className="h-5 w-5 text-orange-600" />
-                                <h2 className="text-xl font-bold">Datos de Envío</h2>
+                                <User className="h-5 w-5 text-orange-600" />
+                                <h2 className="text-xl font-bold">Datos del Cliente</h2>
                             </div>
 
                             <form onSubmit={buy} className="space-y-4">
@@ -322,16 +452,33 @@ export default function Buy() {
                                     </div>
                                 </div>
 
-                                <div className="pt-4">
+                                <div className="pt-4 border-t border-slate-100 mt-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-slate-500 font-medium">Total:</span>
+                                        <span className="text-2xl font-bold text-slate-900">${calculateTotal()}</span>
+                                    </div>
                                     <button
                                         type="submit"
-                                        disabled={orderList.length === 0}
-                                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={orderList.length === 0 || isLoading || !form.paymentMethodId}
+                                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
-                                        Confirmar Pedido
+                                        {isLoading ? (
+                                            <>
+                                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Procesando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Check className="h-5 w-5" />
+                                                Confirmar Pedido
+                                            </>
+                                        )}
                                     </button>
-                                    <p className="text-xs text-center text-slate-400 mt-4">
-                                        Al hacer click confirmas que los datos son correctos.
+                                    <p className="text-[10px] text-center text-slate-400 mt-4 uppercase font-bold tracking-wider">
+                                        Seguridad garantizada por Elymelec57
                                     </p>
                                 </div>
                             </form>
@@ -341,14 +488,14 @@ export default function Buy() {
                 </div>
             </div>
 
-            {/* MODAL DE EDICIÓN */}
+            {/* MODAL DE EDICIÓN (Mismo código anterior) */}
             {editingProduct && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
                         <div className="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                             <h3 className="font-bold text-lg text-slate-900">Personalizar {editingProduct.name}</h3>
                             <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600">
-                                <Trash2 className="h-5 w-5 rotate-45" /> {/* Using Trash as Close icon X-like or just use X icon but removed to minimize imports, rotate 45 gives X feel roughly or I should import X */}
+                                <Plus className="h-6 w-6 rotate-45" />
                             </button>
                         </div>
 
@@ -367,8 +514,8 @@ export default function Buy() {
                                                 <label
                                                     key={contorno.id}
                                                     className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all ${isSelected
-                                                            ? 'bg-orange-50 border-orange-200 text-orange-800 font-semibold'
-                                                            : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
+                                                        ? 'bg-orange-50 border-orange-200 text-orange-800 font-semibold'
+                                                        : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
                                                         }`}
                                                 >
                                                     <div className={`w-5 h-5 rounded flex items-center justify-center border ${isSelected ? 'bg-orange-500 border-orange-500' : 'bg-white border-slate-300'}`}>
