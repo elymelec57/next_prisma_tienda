@@ -80,6 +80,7 @@ model Restaurant {
   restaurantHours         RestaurantHours[]
   payments                Payment[]
   employees               Empleado[]
+  ingrediente IngredienteRestaurante[]
 }
 
 model RestaurantHours {

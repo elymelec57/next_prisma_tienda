@@ -201,6 +201,7 @@ async function main() {
       apellido: 'Pérez',
       rolId: rolMesero.id,
       userId: user.id, // Vinculado al mismo usuario por simplicidad en el seed
+      restaurantId: restaurant.id
     }
   });
 

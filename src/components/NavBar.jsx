@@ -47,6 +47,7 @@ export default function NavBar({ data }) {
         { href: '/store/orders', label: 'Pedidos', icon: ShoppingBag },
         { href: '/store/clients', label: 'Clientes', icon: Users },
         { href: '/store/business', label: 'Mi Restaurante', icon: Store },
+        { href: '/store/empleados', label: 'Empleados', icon: Users },
         { href: '/store/profile', label: 'Mi Perfil', icon: User },
     ];
 
