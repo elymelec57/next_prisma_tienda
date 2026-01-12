@@ -7,6 +7,14 @@ export const BusinessData = cache(async (slug) => {
     where: {
       slug: slug
     },
+    include: {
+      paymentMethods: {
+        where: {
+          isActive: true
+        }
+      },
+      restaurantHours: true
+    }
   });
 
   if (!res) {

@@ -49,6 +49,7 @@ export default function NavBar({ data }) {
         { href: '/store/mesas', label: 'Mesas', icon: Square },
         { href: '/store/clients', label: 'Clientes', icon: Users },
         { href: '/store/business', label: 'Mi Restaurante', icon: Store },
+        { href: '/store/empleados', label: 'Empleados', icon: Users },
         { href: '/store/profile', label: 'Mi Perfil', icon: User },
     ];
 

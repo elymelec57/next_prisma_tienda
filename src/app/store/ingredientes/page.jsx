@@ -17,10 +17,15 @@ export default function IngredientsPage() {
   const [ingredientToEdit, setIngredientToEdit] = useState(null)
   const [ingredientToDelete, setIngredientToDelete] = useState(null)
 
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [categories, setCategories] = useState([])
+
+
   async function fetchIngredients() {
     setLoading(true)
     try {
-      // Using the API path found in the original page.jsx
       const res = await fetch('/api/user/ingredients')
       if (res.ok) {
         const data = await res.json()
@@ -36,9 +41,30 @@ export default function IngredientsPage() {
     }
   }
 
+  async function fetchCategories() {
+    try {
+      const res = await fetch('/api/user/ingredients/categories')
+      if (res.ok) {
+        const data = await res.json()
+        setCategories(data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
+
   useEffect(() => {
     fetchIngredients()
+    fetchCategories()
   }, [])
+
+  const filteredIngredients = ingredients.filter(ing => {
+    const matchesSearch = ing.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (ing.sku && ing.sku.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesCategory = selectedCategory === 'all' || ing.categoria === selectedCategory
+    return matchesSearch && matchesCategory
+  })
+
 
   const handleEdit = (ingredient) => {
     setIngredientToEdit(ingredient)
@@ -102,6 +128,33 @@ export default function IngredientsPage() {
         </button>
       </div>
 
+      {/* Filters section */}
+      <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre o SKU..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+          />
+        </div>
+        <div className="w-full sm:w-64">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+          >
+            <option value="all">Todas las categorías</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+
       {/* Table section */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
         <div className="relative w-full overflow-auto">
@@ -125,8 +178,8 @@ export default function IngredientsPage() {
                     </div>
                   </td>
                 </tr>
-              ) : ingredients.length > 0 ? (
-                ingredients.map((ingredient) => (
+              ) : filteredIngredients.length > 0 ? (
+                filteredIngredients.map((ingredient) => (
                   <tr key={ingredient.id} className="border-b transition-colors hover:bg-gray-100/50 data-[state=selected]:bg-gray-100 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800">
                     <td className="p-4 align-middle">
                       <div className="font-medium text-gray-900 dark:text-gray-100">{ingredient.nombre}</div>

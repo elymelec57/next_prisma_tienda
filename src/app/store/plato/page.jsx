@@ -18,6 +18,13 @@ export default function ListProduct() {
     const id = useAppSelector((state) => state.auth.auth.id)
     const [product, setProduct] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [categories, setCategories] = useState([]);
+
+    // Filter states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedStatus, setSelectedStatus] = useState('all');
+
 
     // Modals state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -25,7 +32,21 @@ export default function ListProduct() {
 
     useEffect(() => {
         platos();
+        fetchCategories();
     }, [])
+
+    const fetchCategories = async () => {
+        try {
+            const res = await fetch('/api/category');
+            if (res.ok) {
+                const data = await res.json();
+                setCategories(data || []);
+            }
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        }
+    }
+
 
     const platos = async () => {
         try {
@@ -46,6 +67,16 @@ export default function ListProduct() {
             setLoading(false);
         }
     }
+
+    const filteredProducts = product.filter(p => {
+        const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' || p.categoriaId === parseInt(selectedCategory);
+        const matchesStatus = selectedStatus === 'all' ||
+            (selectedStatus === 'disponible' ? p.disponible : !p.disponible);
+
+        return matchesSearch && matchesCategory && matchesStatus;
+    });
+
 
     const handleDeleteClick = (p) => {
         setProductToDelete(p);
@@ -109,6 +140,46 @@ export default function ListProduct() {
                 </button>
             </div>
 
+            {/* Filters section */}
+            <div className="flex flex-col lg:flex-row gap-4 bg-white dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Buscar plato por nombre..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+                    />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="w-full sm:w-48">
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+                        >
+                            <option value="all">Todas las categorías</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="w-full sm:w-48">
+                        <select
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+                        >
+                            <option value="all">Todos los estados</option>
+                            <option value="disponible">Diponible</option>
+                            <option value="agotado">Agotado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
                 <div className="relative w-full overflow-auto">
                     <table className="w-full caption-bottom text-sm">
@@ -135,8 +206,8 @@ export default function ListProduct() {
                             </tr>
                         </thead>
                         <tbody className="[&_tr:last-child]:border-0">
-                            {product.length > 0 ? (
-                                product.map((p) => (
+                            {filteredProducts.length > 0 ? (
+                                filteredProducts.map((p) => (
                                     <tr key={p.id} className="border-b transition-colors hover:bg-gray-100/50 data-[state=selected]:bg-gray-100 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800">
                                         <td className="p-4 align-middle">
                                             {p.mainImage ? (

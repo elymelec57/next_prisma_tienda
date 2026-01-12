@@ -7,7 +7,8 @@ import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Save, Loader2, X } from 'lucide-react';
+import { Save, Loader2, X, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 
 const ingredientSchema = z.object({
     nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -29,6 +30,10 @@ export default function IngredientForm({ ingredientId = null, onSuccess, onCance
     // The previous implementation didn't send userId in body, so maybe it's not needed or backend gets it from session.
     // I'll leave it available just in case.
     const userId = useAppSelector((state) => state.auth.auth.id)
+    const [categories, setCategories] = useState([])
+    const [masterIngredients, setMasterIngredients] = useState([])
+    const [selectedCategoryId, setSelectedCategoryId] = useState('')
+
 
     const {
         register,
@@ -52,10 +57,60 @@ export default function IngredientForm({ ingredientId = null, onSuccess, onCance
     });
 
     useEffect(() => {
-        if (ingredientId) {
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
+        if (ingredientId && categories.length > 0) {
             consultIngredient(ingredientId);
         }
-    }, [ingredientId]);
+    }, [ingredientId, categories]);
+
+    async function fetchCategories() {
+        try {
+            const res = await fetch('/api/user/ingredients/categories')
+            if (res.ok) {
+                const data = await res.json()
+                setCategories(data)
+            }
+        } catch (error) {
+            console.error('Error fetching categories:', error)
+        }
+    }
+
+    async function fetchMasterIngredients(categoryId) {
+        try {
+            const res = await fetch(`/api/user/ingredients/master?categoryId=${categoryId}`)
+            if (res.ok) {
+                const data = await res.json()
+                setMasterIngredients(data)
+            }
+        } catch (error) {
+            console.error('Error fetching master ingredients:', error)
+        }
+    }
+
+    const handleCategoryChange = (e) => {
+        const categoryId = e.target.value
+        setSelectedCategoryId(categoryId)
+        const categoryMatch = categories.find(c => c.id === parseInt(categoryId))
+        if (categoryMatch) {
+            setValue('categoria', categoryMatch.nombre)
+        }
+        setMasterIngredients([])
+        if (categoryId) {
+            fetchMasterIngredients(categoryId)
+        }
+    }
+
+    const handleMasterIngredientChange = (e) => {
+        const ingredientId = e.target.value
+        const ingredient = masterIngredients.find(i => i.id === parseInt(ingredientId))
+        if (ingredient) {
+            setValue('nombre', ingredient.nombre)
+        }
+    }
+
 
     async function consultIngredient(id) {
         try {
@@ -96,13 +151,21 @@ export default function IngredientForm({ ingredientId = null, onSuccess, onCance
                 if (ingredient) {
                     setValue("nombre", ingredient.nombre);
                     setValue("sku", ingredient.sku || '');
-                    setValue("categoria", ingredient.categoria);
+                    setValue("categoria", ingredient.categoria || '');
                     setValue("unidadMedida", ingredient.unidadMedida);
-                    setValue("stockActual", ingredient.stockActual);
-                    setValue("stockMinimo", ingredient.stockMinimo);
-                    setValue("stockMaximo", ingredient.stockMaximo);
-                    setValue("costoUnitario", ingredient.costoUnitario);
+                    setValue("stockActual", parseFloat(ingredient.stockActual));
+                    setValue("stockMinimo", parseFloat(ingredient.stockMinimo));
+                    setValue("stockMaximo", ingredient.stockMaximo ? parseFloat(ingredient.stockMaximo) : null);
+                    setValue("costoUnitario", parseFloat(ingredient.costoUnitario));
                     setValue("fechaVencimiento", ingredient.fechaVencimiento ? new Date(ingredient.fechaVencimiento).toISOString().split('T')[0] : '');
+
+                    if (ingredient.categoria && categories.length > 0) {
+                        const cat = categories.find(c => c.nombre === ingredient.categoria)
+                        if (cat) {
+                            setSelectedCategoryId(cat.id.toString())
+                            fetchMasterIngredients(cat.id)
+                        }
+                    }
                 }
             } else {
                 console.error("Error fetching ingredient data");
@@ -169,13 +232,58 @@ export default function IngredientForm({ ingredientId = null, onSuccess, onCance
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Nombre</label>
+                    <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100 italic">Seleccionar Categoría</label>
+                    <div className="relative">
+                        <select
+                            value={selectedCategoryId}
+                            onChange={handleCategoryChange}
+                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 appearance-none dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+                        >
+                            <option value="">-- Elige una categoría --</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100 italic">Seleccionar Ingrediente Maestro</label>
+                    <div className="relative">
+                        <select
+                            onChange={handleMasterIngredientChange}
+                            disabled={!selectedCategoryId}
+                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 appearance-none disabled:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:disabled:bg-gray-900"
+                        >
+                            <option value="">-- Elige un ingrediente --</option>
+                            {masterIngredients.map(ing => (
+                                <option key={ing.id} value={ing.id}>{ing.nombre}</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Nombre Confirmado</label>
                     <input
                         {...register('nombre')}
                         className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
-                        placeholder="Nombre del ingrediente"
+                        placeholder="Nombre que se guardará"
                     />
                     {errors.nombre && <p className="text-xs text-red-500">{errors.nombre.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Categoría Confirmada</label>
+                    <input
+                        {...register('categoria')}
+                        readOnly
+                        className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400"
+                        placeholder="Categoría vinculada"
+                    />
+                    {errors.categoria && <p className="text-xs text-red-500">{errors.categoria.message}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -185,16 +293,6 @@ export default function IngredientForm({ ingredientId = null, onSuccess, onCance
                         className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
                         placeholder="Código SKU"
                     />
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Categoría</label>
-                    <input
-                        {...register('categoria')}
-                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
-                        placeholder="Ej. Vegetales, Carnes..."
-                    />
-                    {errors.categoria && <p className="text-xs text-red-500">{errors.categoria.message}</p>}
                 </div>
 
                 <div className="space-y-2">
