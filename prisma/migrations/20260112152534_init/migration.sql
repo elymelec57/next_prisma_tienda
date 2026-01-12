@@ -145,6 +145,8 @@ CREATE TABLE "Mesa" (
     "numero" INTEGER NOT NULL,
     "capacidad" INTEGER NOT NULL,
     "estado" TEXT NOT NULL DEFAULT 'Libre',
+    "qrData" JSONB,
+    "restaurantId" INTEGER NOT NULL,
 
     CONSTRAINT "Mesa_pkey" PRIMARY KEY ("id")
 );
@@ -248,6 +250,7 @@ CREATE TABLE "Empleado" (
     "rolId" INTEGER NOT NULL,
     "userId" INTEGER NOT NULL,
     "mainImageId" TEXT,
+    "restaurantId" INTEGER NOT NULL,
 
     CONSTRAINT "Empleado_pkey" PRIMARY KEY ("id")
 );
@@ -327,9 +330,6 @@ CREATE UNIQUE INDEX "CategoriaRestaurant_nombre_key" ON "CategoriaRestaurant"("n
 CREATE UNIQUE INDEX "IngredienteRestaurante_sku_key" ON "IngredienteRestaurante"("sku");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Mesa_numero_key" ON "Mesa"("numero");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Cliente_telefono_key" ON "Cliente"("telefono");
 
 -- CreateIndex
@@ -387,6 +387,9 @@ ALTER TABLE "IngredienteRestaurante" ADD CONSTRAINT "IngredienteRestaurante_ingr
 ALTER TABLE "Contornos" ADD CONSTRAINT "Contornos_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Mesa" ADD CONSTRAINT "Mesa_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Pedido" ADD CONSTRAINT "Pedido_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "Cliente"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -427,6 +430,9 @@ ALTER TABLE "Empleado" ADD CONSTRAINT "Empleado_rolId_fkey" FOREIGN KEY ("rolId"
 
 -- AddForeignKey
 ALTER TABLE "Empleado" ADD CONSTRAINT "Empleado_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Empleado" ADD CONSTRAINT "Empleado_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "EmpleadoHorario" ADD CONSTRAINT "EmpleadoHorario_empleadoId_fkey" FOREIGN KEY ("empleadoId") REFERENCES "Empleado"("id") ON DELETE CASCADE ON UPDATE CASCADE;

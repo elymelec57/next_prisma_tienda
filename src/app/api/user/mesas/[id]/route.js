@@ -1,24 +1,18 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/libs/prisma'
-import { verifyToken } from '@/libs/jwt'
-import { cookies } from 'next/headers'
+import { prisma } from '@/libs/prisma'
+import { authorizeRequest }  from '@/libs/auth'
 
 export async function PUT (request, { params }) {
-  const cookieStore = cookies()
-  const token = cookieStore.get('token')
 
-  if (!token) {
-    return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
-  }
+  const user = await authorizeRequest(request)
 
-  const user = await verifyToken(token.value)
   if (!user) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
   }
 
   try {
     const restaurant = await prisma.restaurant.findUnique({
-      where: { userId: user.id }
+      where: { userId: user.auth.id }
     })
 
     if (!restaurant) {
@@ -38,21 +32,16 @@ export async function PUT (request, { params }) {
 }
 
 export async function DELETE (request, { params }) {
-  const cookieStore = cookies()
-  const token = cookieStore.get('token')
 
-  if (!token) {
-    return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
-  }
+  const user = await authorizeRequest(request)
 
-  const user = await verifyToken(token.value)
   if (!user) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
   }
 
   try {
     const restaurant = await prisma.restaurant.findUnique({
-      where: { userId: user.id }
+      where: { userId: user.auth.id }
     })
 
     if (!restaurant) {

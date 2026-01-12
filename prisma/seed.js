@@ -103,9 +103,9 @@ async function main() {
   // 8. Crear Mesas
   await prisma.mesa.createMany({
     data: [
-      { numero: 1, capacidad: 4, estado: 'Libre' },
-      { numero: 2, capacidad: 2, estado: 'Ocupada' },
-      { numero: 3, capacidad: 6, estado: 'Libre' },
+      { numero: 1, capacidad: 4, estado: 'Libre', restaurantId: restaurant.id },
+      { numero: 2, capacidad: 2, estado: 'Ocupada', restaurantId: restaurant.id },
+      { numero: 3, capacidad: 6, estado: 'Libre', restaurantId: restaurant.id },
     ]
   });
 
@@ -131,6 +131,7 @@ async function main() {
       apellido: 'Pérez',
       rolId: rolMesero.id,
       userId: user.id, // Vinculado al mismo usuario por simplicidad en el seed
+      restaurantId: restaurant.id
     }
   });
 

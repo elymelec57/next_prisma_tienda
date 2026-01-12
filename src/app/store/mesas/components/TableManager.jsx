@@ -16,7 +16,7 @@ export default function TableManager () {
 
   const fetchMesas = async () => {
     try {
-      const response = await fetch('/api/store/mesas')
+      const response = await fetch('/api/user/mesas')
       if (!response.ok) {
         throw new Error('Error al cargar las mesas')
       }
@@ -41,9 +41,10 @@ export default function TableManager () {
 
   const handleSaveMesa = async (mesaData) => {
     const method = selectedMesa ? 'PUT' : 'POST'
-    const url = selectedMesa ? `/api/store/mesas/${selectedMesa.id}` : '/api/store/mesas'
+    const url = selectedMesa ? `/api/user/mesas/${selectedMesa.id}` : '/api/user/mesas'
 
     try {
+      console.log(mesaData)
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +64,7 @@ export default function TableManager () {
 
   const handleDeleteMesa = async (id) => {
     try {
-      const response = await fetch(`/api/store/mesas/${id}`, {
+      const response = await fetch(`/api/user/mesas/${id}`, {
         method: 'DELETE'
       })
 

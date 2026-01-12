@@ -75,6 +75,7 @@ model Restaurant {
   restaurantHours RestaurantHours?
   payments        Payment[]
   employees       Empleado[]
+  mesas Mesa[]
 }
 
 model RestaurantHours {
@@ -182,11 +183,14 @@ model Contornos {
 
 model Mesa {
   id        Int       @id @default(autoincrement())
-  numero    Int       @unique
+  numero    Int
   capacidad Int
   estado    String    @default("Libre") // Ej: "Libre", "Ocupada", "Reservada"
+  qrData    Json?
   pedidos   Pedido[] // Relación: Una mesa puede tener muchos pedidos a lo largo del tiempo
   reservas  Reserva[] // Relación: Una mesa puede tener muchas reservas
+  restaurantId Int // El pedido tambien pertenece a un restaurante
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Cliente {
