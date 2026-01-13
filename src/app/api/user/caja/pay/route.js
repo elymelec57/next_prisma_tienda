@@ -19,16 +19,32 @@ export async function POST(request) {
                 data: { estado: 'Pagado' }
             });
 
-            // 2. Crear el registro de pago
-            const payment = await tx.payment.create({
-                data: {
-                    monto: parseFloat(monto),
-                    status: 'CONFIRMED',
-                    paymentMethodId,
-                    pedidoId: orderId,
-                    restaurantId: user.auth.restauranteId
-                }
+            // 2. Crear o actualizar el registro de pago
+            const existingPayment = await tx.payment.findUnique({
+                where: { pedidoId: orderId }
             });
+
+            let payment;
+            if (existingPayment) {
+                payment = await tx.payment.update({
+                    where: { id: existingPayment.id },
+                    data: {
+                        status: 'CONFIRMED',
+                        paymentMethodId,
+                        monto: parseFloat(monto)
+                    }
+                });
+            } else {
+                payment = await tx.payment.create({
+                    data: {
+                        monto: parseFloat(monto),
+                        status: 'CONFIRMED',
+                        paymentMethodId,
+                        pedidoId: orderId,
+                        restaurantId: user.auth.restauranteId
+                    }
+                });
+            }
 
             // 3. Liberar la mesa (solo si no hay más pedidos pendientes para esa mesa)
             if (updatedOrder.mesaId) {

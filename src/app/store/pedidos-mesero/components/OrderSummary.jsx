@@ -112,39 +112,62 @@ export default function OrderSummary({
                         <p className="text-xs">Añade platos del menú</p>
                     </div>
                 ) : (
-                    order.map((item) => (
-                        <div key={item.id} className="flex gap-4 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm">
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-sm text-gray-900 dark:text-white truncate">{item.nombre}</h4>
-                                <p className="text-xs text-orange-600 font-bold">${item.precio.toFixed(2)}</p>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-                                    <button
-                                        onClick={() => onUpdateQuantity(item.id, -1)}
-                                        className="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md transition-colors"
-                                    >
-                                        <Minus className="h-3 w-3" />
-                                    </button>
-                                    <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
-                                    <button
-                                        onClick={() => onUpdateQuantity(item.id, 1)}
-                                        className="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md transition-colors"
-                                    >
-                                        <Plus className="h-3 w-3" />
-                                    </button>
+                    <div className="space-y-3">
+                        {order.map((item) => (
+                            <div key={item.id} className="group flex gap-4 p-4 rounded-3xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm hover:border-orange-200 transition-all animate-in slide-in-from-right-4 duration-300">
+                                {/* Item Image */}
+                                <div className="h-16 w-16 flex-shrink-0 bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-50 dark:border-gray-800">
+                                    {item.image ? (
+                                        <img
+                                            src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${item.image}`}
+                                            alt={item.nombre}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="h-full w-full flex items-center justify-center">
+                                            <ShoppingBag className="h-6 w-6 text-gray-200" />
+                                        </div>
+                                    )}
                                 </div>
 
-                                <button
-                                    onClick={() => onRemoveItem(item.id)}
-                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </button>
+                                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                    <h4 className="font-black text-xs md:text-sm text-gray-900 dark:text-white uppercase tracking-tighter truncate group-hover:text-orange-600 transition-colors">
+                                        {item.nombre}
+                                    </h4>
+                                    <p className="text-sm font-black text-orange-600 tracking-tighter mt-1">
+                                        ${(item.precio * item.quantity).toFixed(2)}
+                                        <span className="text-[10px] text-gray-400 font-bold ml-2 uppercase">(${item.precio.toFixed(2)} c/u)</span>
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col items-end justify-between">
+                                    <button
+                                        onClick={() => onRemoveItem(item.id)}
+                                        className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                                        title="Eliminar ítem"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+
+                                    <div className="flex items-center bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl p-1 shadow-lg">
+                                        <button
+                                            onClick={() => onUpdateQuantity(item.id, -1)}
+                                            className="p-1 hover:bg-white/20 dark:hover:bg-gray-100 rounded-lg transition-colors"
+                                        >
+                                            <Minus className="h-3 w-3" />
+                                        </button>
+                                        <span className="w-8 text-center text-sm font-black">{item.quantity}</span>
+                                        <button
+                                            onClick={() => onUpdateQuantity(item.id, 1)}
+                                            className="p-1 hover:bg-white/20 dark:hover:bg-gray-100 rounded-lg transition-colors"
+                                        >
+                                            <Plus className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    ))
+                        ))}
+                    </div>
                 )}
             </div>
 

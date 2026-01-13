@@ -17,7 +17,11 @@ import {
     History,
     UtensilsCrossed,
     MapPin,
-    Hash
+    Hash,
+    Eye,
+    ExternalLink,
+    AlertCircle,
+    Image as ImageIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -318,7 +322,7 @@ export default function CajaPage() {
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     title={activeTab === 'mesa' ? `Confirmar Pago - Mesa ${selectedOrder.mesa?.numero}` : `Confirmar Pago - Domicilio #${selectedOrder.id}`}
-                    maxWidth="max-w-md"
+                    maxWidth="max-w-2xl"
                 >
                     <div className="space-y-8">
                         <div className="bg-gray-900 text-white p-8 rounded-[2rem] text-center shadow-2xl shadow-gray-900/20 relative overflow-hidden">
@@ -336,32 +340,105 @@ export default function CajaPage() {
 
                         <div className="space-y-4">
                             <div className="flex items-center justify-between px-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Selección de Medio</label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                                    {selectedOrder.Payment ? 'Verificación de Pago' : 'Selección de Medio'}
+                                </label>
                                 <span className="text-[9px] font-bold text-green-500">SEGURO</span>
                             </div>
+
+                            {selectedOrder.Payment && (
+                                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 space-y-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Cargado por Cliente</p>
+                                            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white uppercase tracking-tighter">
+                                                {selectedOrder.Payment.paymentMethod?.label || 'Método no especificado'}
+                                            </h4>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase">
+                                                {selectedOrder.Payment.paymentMethod?.type?.replace('_', ' ') || 'S/N'}
+                                            </p>
+                                        </div>
+                                        <div className="bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded text-[10px] font-black text-amber-700 uppercase">
+                                            {selectedOrder.Payment.status}
+                                        </div>
+                                    </div>
+
+                                    {(selectedOrder.Payment.paymentMethod?.type === 'PAGO_MOVIL' || selectedOrder.Payment.paymentMethod?.type === 'TRANSFERENCIA') && (
+                                        <div className="space-y-3">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
+                                                <ImageIcon className="h-3 w-3" /> Comprobante Adjunto
+                                            </p>
+                                            {selectedOrder.Payment.receiptUrl ? (
+                                                <div className="relative group rounded-xl overflow-hidden border-2 border-white dark:border-gray-800 shadow-lg bg-white">
+                                                    <img
+                                                        src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${selectedOrder.Payment.receiptUrl}`}
+                                                        alt="Comprobante de pago"
+                                                        className="w-full aspect-video object-cover transition-transform group-hover:scale-105"
+                                                    />
+                                                    <a
+                                                        href={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${selectedOrder.Payment.receiptUrl}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs"
+                                                    >
+                                                        <ExternalLink className="h-4 w-4" />
+                                                        Ver Ampliado
+                                                    </a>
+                                                </div>
+                                            ) : (
+                                                <div className="p-8 text-center bg-gray-100 dark:bg-black/20 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+                                                    <AlertCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">Sin imagen adjunta</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <Button
+                                        onClick={() => handleConfirmPayment(selectedOrder.Payment.paymentMethodId)}
+                                        disabled={confirming}
+                                        className="w-full bg-green-600 hover:bg-green-700 h-12 font-black uppercase text-xs shadow-xl shadow-green-500/20"
+                                    >
+                                        {confirming ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                        Conformar y Finalizar
+                                    </Button>
+
+                                    <div className="relative">
+                                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                            <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+                                        </div>
+                                        <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em]">
+                                            <span className="bg-amber-50 dark:bg-gray-900 px-4 text-gray-400">O cambiar método a</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 gap-3">
                                 {paymentMethods.length > 0 ? (
-                                    paymentMethods.map((method) => (
-                                        <button
-                                            key={method.id}
-                                            disabled={confirming}
-                                            onClick={() => handleConfirmPayment(method.id)}
-                                            className="group flex items-center justify-between p-5 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-green-500 hover:shadow-xl hover:shadow-green-500/10 transition-all active:scale-[0.97] disabled:opacity-50"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-12 w-12 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-green-600 group-hover:bg-green-50 transition-all">
-                                                    <CreditCard className="h-6 w-6" />
+                                    paymentMethods
+                                        .filter(m => !selectedOrder.Payment || m.id !== selectedOrder.Payment.paymentMethodId)
+                                        .map((method) => (
+                                            <button
+                                                key={method.id}
+                                                disabled={confirming}
+                                                onClick={() => handleConfirmPayment(method.id)}
+                                                className="group flex items-center justify-between p-5 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-green-500 hover:shadow-xl hover:shadow-green-500/10 transition-all active:scale-[0.97] disabled:opacity-50"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-12 w-12 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-green-600 group-hover:bg-green-50 transition-all">
+                                                        <CreditCard className="h-6 w-6" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="font-extrabold text-gray-900 dark:text-white uppercase text-xs tracking-tighter mb-0.5">{method.label}</p>
+                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{method.type.replace('_', ' ')}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="text-left">
-                                                    <p className="font-extrabold text-gray-900 dark:text-white uppercase text-xs tracking-tighter mb-0.5">{method.label}</p>
-                                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{method.type.replace('_', ' ')}</p>
+                                                <div className="h-8 w-8 rounded-full border border-gray-100 dark:border-gray-800 flex items-center justify-center group-hover:border-green-200 group-hover:bg-green-50 transition-all">
+                                                    <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-green-500" />
                                                 </div>
-                                            </div>
-                                            <div className="h-8 w-8 rounded-full border border-gray-100 dark:border-gray-800 flex items-center justify-center group-hover:border-green-200 group-hover:bg-green-50 transition-all">
-                                                <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-green-500" />
-                                            </div>
-                                        </button>
-                                    ))
+                                            </button>
+                                        ))
                                 ) : (
                                     <div className="text-center py-10 bg-red-50/30 rounded-2xl border-2 border-dashed border-red-100">
                                         <AlertCircle className="h-8 w-8 text-red-300 mx-auto mb-2" />
