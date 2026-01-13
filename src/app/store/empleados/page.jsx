@@ -147,7 +147,8 @@ export default function EmployeeManagementPage() {
 
   const filteredEmployees = employees.filter(emp =>
     `${emp.nombre} ${emp.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.rol?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    emp.rol?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (emp.email && emp.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (

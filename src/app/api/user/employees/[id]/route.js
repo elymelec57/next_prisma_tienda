@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/libs/prisma'
+import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
 import { cookies } from 'next/headers'
 
@@ -42,17 +43,23 @@ export async function PUT(request, { params }) {
     const restaurantId = await getRestaurantId()
     if (!restaurantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { nombre, apellido, telefono, rolId, userId: employeeUserId } = await request.json();
+    const { nombre, apellido, telefono, email, password, rolId } = await request.json();
+
+    const updateData = {
+      nombre,
+      apellido,
+      telefono,
+      email,
+      rolId,
+    };
+
+    if (password) {
+      updateData.password = bcrypt.hashSync(password, 10);
+    }
 
     const updatedEmployee = await prisma.empleado.update({
       where: { id: parseInt(id), restaurantId },
-      data: {
-        nombre,
-        apellido,
-        telefono,
-        rolId,
-        userId: employeeUserId,
-      },
+      data: updateData,
       include: { rol: true }
     });
 

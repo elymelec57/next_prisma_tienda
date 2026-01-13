@@ -194,12 +194,41 @@ async function main() {
 
   // 10. Roles de Empleados y Empleado
   const rolMesero = await prisma.rol.create({ data: { nombre: 'Mesero' } });
+  const rolCocina = await prisma.rol.create({ data: { nombre: 'Cocina' } });
+  const rolCaja = await prisma.rol.create({ data: { nombre: 'Caja' } });
+  const rolDelivery = await prisma.rol.create({ data: { nombre: 'Delivery' } });
 
   await prisma.empleado.create({
     data: {
       nombre: 'Juan',
       apellido: 'Pérez',
+      email: 'mesero@gmail.com',
+      password: hash,
       rolId: rolMesero.id,
+      userId: user.id, // Vinculado al mismo usuario por simplicidad en el seed
+      restaurantId: restaurant.id
+    }
+  });
+
+  await prisma.empleado.create({
+    data: {
+      nombre: 'Juan2',
+      apellido: 'Pérez',
+      email: 'cocina@gmail.com',
+      password: hash,
+      rolId: rolCocina.id,
+      userId: user.id, // Vinculado al mismo usuario por simplicidad en el seed
+      restaurantId: restaurant.id
+    }
+  });
+
+  await prisma.empleado.create({
+    data: {
+      nombre: 'Juan3',
+      apellido: 'Pérez',
+      email: 'caja@gmail.com',
+      password: hash,
+      rolId: rolCaja.id,
       userId: user.id, // Vinculado al mismo usuario por simplicidad en el seed
       restaurantId: restaurant.id
     }

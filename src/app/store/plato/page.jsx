@@ -52,9 +52,9 @@ export default function ListProduct() {
         try {
             let res = ''
             if (params.id) {
-                res = await fetch(`/api/user/product/user/${params.id}`)
+                res = await fetch(`/api/user/product`)
             } else {
-                res = await fetch(`/api/user/product/user/${id}`)
+                res = await fetch(`/api/user/product`)
             }
 
             if (res.ok) {

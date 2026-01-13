@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from 'react';
@@ -13,25 +14,31 @@ import {
     User,
     Package,
     MessageSquare,
-    UtensilsCrossed
+    UtensilsCrossed,
+    MapPin,
+    Hash,
+    Layers
 } from 'lucide-react';
 import Modal from '@/components/Modal';
 
 export default function Orders() {
 
-    const id = useAppSelector((state) => state.auth.auth.id)
+    const user = useAppSelector((state) => state.auth.auth)
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('mesa'); // 'mesa' or 'delivery'
 
     useEffect(() => {
-        getOrders();
-    }, [])
+        if (user.restauranteId) {
+            getOrders();
+        }
+    }, [user.restauranteId])
 
     const getOrders = async () => {
         try {
-            const res = await fetch(`/api/user/orders/user/${id}`)
+            const res = await fetch(`/api/user/orders/user/${user.restauranteId}`)
             if (res.ok) {
                 const { orders } = await res.json()
                 setOrders(orders || []);
@@ -98,10 +105,15 @@ export default function Orders() {
         );
     };
 
+    const filteredOrders = orders.filter(o => {
+        if (activeTab === 'mesa') return o.mesaId !== null;
+        return o.mesaId === null;
+    });
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
             </div>
         );
     }
@@ -110,63 +122,102 @@ export default function Orders() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Pedidos</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Gestión de Pedidos</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">
                         Monitorea y gestiona los pedidos realizados en tu restaurante.
                     </p>
                 </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+            {/* Tabs */}
+            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
+                <button
+                    onClick={() => setActiveTab('mesa')}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'mesa' ? 'bg-white dark:bg-gray-700 text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    <UtensilsCrossed className="h-4 w-4" />
+                    En Mesa
+                </button>
+                <button
+                    onClick={() => setActiveTab('delivery')}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'delivery' ? 'bg-white dark:bg-gray-700 text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    <MapPin className="h-4 w-4" />
+                    Domicilio
+                </button>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950 overflow-hidden">
                 <div className="relative w-full overflow-auto">
                     <table className="w-full caption-bottom text-sm text-gray-600 dark:text-gray-400">
-                        <thead className="[&_tr]:border-b">
-                            <tr className="border-b transition-colors hover:bg-gray-100/50 dark:hover:bg-gray-800/50">
-                                <th className="h-12 px-4 text-left align-middle font-medium">ID</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium hidden sm:table-cell">Fecha</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium">Cliente</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium">Total</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium">Estado Pedido</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium">Pago</th>
-                                <th className="h-12 px-4 text-right align-middle font-medium">Acciones</th>
+                        <thead className="bg-gray-50 dark:bg-gray-900/50">
+                            <tr className="border-b transition-colors">
+                                <th className="h-12 px-4 text-left align-middle font-bold">ID</th>
+                                {activeTab === 'mesa' && <th className="h-12 px-4 text-left align-middle font-bold">Mesa</th>}
+                                <th className="h-12 px-4 text-left align-middle font-bold hidden sm:table-cell">Tiempo</th>
+                                <th className="h-12 px-4 text-left align-middle font-bold">Cliente</th>
+                                <th className="h-12 px-4 text-left align-middle font-bold">Total</th>
+                                <th className="h-12 px-4 text-left align-middle font-bold">Estado</th>
+                                <th className="h-12 px-4 text-left align-middle font-bold text-transparent">Accion</th>
                             </tr>
                         </thead>
-                        <tbody className="[&_tr:last-child]:border-0">
-                            {orders.length > 0 ? (
-                                orders.map((o) => (
-                                    <tr key={o.id} className="border-b transition-colors hover:bg-gray-100/50 dark:hover:bg-gray-800/50">
-                                        <td className="p-4 align-middle font-medium text-gray-900 dark:text-gray-100">
-                                            #{o.id}
-                                        </td>
-                                        <td className="p-4 align-middle hidden sm:table-cell">
-                                            {new Date(o.fechaHora).toLocaleDateString()}
-                                        </td>
-                                        <td className="p-4 align-middle truncate max-w-[150px]">
-                                            {o.cliente?.nombre || 'Consumidor Final'}
-                                        </td>
-                                        <td className="p-4 align-middle font-semibold text-gray-900 dark:text-gray-100">
-                                            ${o.total?.toFixed(2)}
-                                        </td>
-                                        <td className="p-4 align-middle">
-                                            {getStatusBadge(o.estado)}
-                                        </td>
-                                        <td className="p-4 align-middle">
-                                            {getPaymentStatusBadge(o.Payment)}
-                                        </td>
-                                        <td className="p-4 align-middle text-right">
-                                            <button
-                                                onClick={() => handleViewDetails(o.id)}
-                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800"
-                                            >
-                                                <Eye className="h-4 w-4 text-gray-500" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
+                        <tbody className="[&_tr:last-child]:border-0 divide-y divide-gray-100 dark:divide-gray-800">
+                            {filteredOrders.length > 0 ? (
+                                filteredOrders.map((o) => {
+                                    const minutesAgo = Math.floor((new Date() - new Date(o.fechaHora)) / 60000);
+                                    const isLate = minutesAgo > 20 && o.estado !== 'Pagado' && o.estado !== 'Servido';
+
+                                    return (
+                                        <tr key={o.id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/40">
+                                            <td className="p-4 align-middle font-medium text-gray-900 dark:text-gray-100 uppercase text-xs">
+                                                #{o.id}
+                                            </td>
+                                            {activeTab === 'mesa' && (
+                                                <td className="p-4 align-middle">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-8 w-8 rounded-lg bg-orange-100 dark:bg-orange-950 flex items-center justify-center text-orange-600 text-sm font-black ring-2 ring-orange-50 dark:ring-orange-900">
+                                                            {o.mesa?.numero}
+                                                        </div>
+                                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Mesa</span>
+                                                    </div>
+                                                </td>
+                                            )}
+                                            <td className="p-4 align-middle hidden sm:table-cell">
+                                                <div className={`flex items-center gap-1.5 font-bold text-xs ${isLate ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
+                                                    <Clock className="h-3.5 w-3.5" />
+                                                    {minutesAgo} min
+                                                </div>
+                                            </td>
+                                            <td className="p-4 align-middle truncate max-w-[150px] font-medium text-xs">
+                                                {o.nombreCliente || o.cliente?.nombre || 'Consumidor Final'}
+                                            </td>
+                                            <td className="p-4 align-middle font-black text-gray-900 dark:text-gray-100">
+                                                ${o.total?.toFixed(2)}
+                                            </td>
+                                            <td className="p-4 align-middle">
+                                                {getStatusBadge(o.estado)}
+                                            </td>
+                                            <td className="p-4 align-middle">
+                                                {getPaymentStatusBadge(o.Payment)}
+                                            </td>
+                                            <td className="p-4 align-middle text-right">
+                                                <button
+                                                    onClick={() => handleViewDetails(o.id)}
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-sm font-medium shadow-sm transition-all hover:bg-gray-50 active:scale-95 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800"
+                                                >
+                                                    <Eye className="h-4 w-4 text-gray-500" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="p-8 text-center">
-                                        No se encontraron pedidos recientes.
+                                    <td colSpan={activeTab === 'mesa' ? 8 : 7} className="p-20 text-center">
+                                        <div className="flex flex-col items-center gap-2 text-gray-400">
+                                            <Package className="h-10 w-10 opacity-20" />
+                                            <p className="font-medium">No se encontraron pedidos en {activeTab === 'mesa' ? 'mesas' : 'domicilio'}.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}
@@ -179,7 +230,7 @@ export default function Orders() {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={selectedOrder ? `Pedido #${selectedOrder.id}` : "Cargando..."}
+                title={selectedOrder ? `Detalle de Orden #${selectedOrder.id}` : "Cargando..."}
                 maxWidth="max-w-4xl"
             >
                 {selectedOrder && (
@@ -187,102 +238,125 @@ export default function Orders() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Infomación del Pedido */}
                             <div className="space-y-4">
-                                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Detalles del Pedido</h3>
-                                <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50 space-y-3">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">General</h3>
+                                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/50 space-y-4">
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500">Fecha y Hora:</span>
-                                        <span className="font-medium">{new Date(selectedOrder.fechaHora).toLocaleString()}</span>
+                                        <span className="text-gray-500 font-medium flex items-center gap-2"><Calendar className="h-4 w-4" /> Fecha:</span>
+                                        <span className="font-bold">{new Date(selectedOrder.fechaHora).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500">Cliente:</span>
-                                        <span className="font-medium">{selectedOrder.cliente?.nombre || 'Consumidor Final'}</span>
+                                        <span className="text-gray-500 font-medium flex items-center gap-2"><User className="h-4 w-4" /> Cliente:</span>
+                                        <span className="font-bold">{selectedOrder.nombreCliente || selectedOrder.cliente?.nombre || 'Consumidor Final'}</span>
                                     </div>
+                                    {selectedOrder.mesa && (
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-500 font-medium flex items-center gap-2"><Hash className="h-4 w-4" /> Ubicación:</span>
+                                            <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
+                                                Mesa {selectedOrder.mesa.numero}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {!selectedOrder.mesa && (
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-500 font-medium flex items-center gap-2"><MapPin className="h-4 w-4" /> Tipo:</span>
+                                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
+                                                Domicilio
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500">Estado del Pedido:</span>
+                                        <span className="text-gray-500 font-medium flex items-center gap-2"><Layers className="h-4 w-4" /> Estado:</span>
                                         {getStatusBadge(selectedOrder.estado)}
                                     </div>
-                                    <div className="flex justify-between items-center text-sm pt-2 border-t dark:border-gray-800">
-                                        <span className="font-bold">Total:</span>
-                                        <span className="text-lg font-bold text-blue-600 dark:text-blue-400">${selectedOrder.total?.toFixed(2)}</span>
+                                    <div className="flex justify-between items-center text-sm pt-4 border-t dark:border-gray-800">
+                                        <span className="font-bold text-gray-500">Total a Pagar:</span>
+                                        <span className="text-3xl font-black text-orange-600 dark:text-orange-400 tracking-tighter">${selectedOrder.total?.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Información del Pago */}
                             <div className="space-y-4">
-                                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Información de Pago</h3>
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Transacción</h3>
                                 {selectedOrder.Payment ? (
-                                    <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-4 dark:border-blue-900/20 dark:bg-blue-900/10 space-y-3">
+                                    <div className="rounded-2xl border border-green-100 bg-green-50/30 p-5 dark:border-green-900/20 dark:bg-green-900/10 space-y-4">
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500">Estado Pago:</span>
+                                            <span className="text-gray-500 font-medium">Estado Pago:</span>
                                             {getPaymentStatusBadge(selectedOrder.Payment)}
                                         </div>
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500">Método:</span>
-                                            <span className="font-bold text-gray-900 dark:text-white">{selectedOrder.Payment.paymentMethod?.label}</span>
+                                            <span className="text-gray-500 font-medium">Método de Pago:</span>
+                                            <div className="text-right">
+                                                <span className="font-black text-gray-900 dark:text-white block">{selectedOrder.Payment.paymentMethod?.label}</span>
+                                                <span className="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 uppercase font-black tracking-widest mt-1 inline-block">
+                                                    {selectedOrder.Payment.paymentMethod?.type.replace('_', ' ')}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500">Tipo:</span>
-                                            <span className="text-xs px-2 py-0.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 uppercase font-bold tracking-tighter">
-                                                {selectedOrder.Payment.paymentMethod?.type.replace('_', ' ')}
-                                            </span>
-                                        </div>
-                                        <div className="pt-2 border-t dark:border-gray-800">
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Detalles del Titular</p>
-                                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                                <div>
-                                                    <span className="text-gray-500 block">Nombre:</span>
-                                                    <span className="font-medium">{selectedOrder.Payment.paymentMethod?.ownerName}</span>
+                                        <div className="pt-4 border-t dark:border-gray-800">
+                                            <p className="text-[10px] text-gray-400 uppercase font-black mb-3 flex items-center gap-2">
+                                                <CheckCircle2 className="h-3 w-3" /> Datos de Verificación
+                                            </p>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
+                                                    <span className="text-[10px] text-gray-400 block font-bold">TITULAR</span>
+                                                    <span className="font-bold text-sm">{selectedOrder.Payment.paymentMethod?.ownerName}</span>
                                                 </div>
                                                 {selectedOrder.Payment.paymentMethod?.ownerId && (
-                                                    <div>
-                                                        <span className="text-gray-500 block">ID/RIF:</span>
-                                                        <span className="font-medium">{selectedOrder.Payment.paymentMethod?.ownerId}</span>
+                                                    <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
+                                                        <span className="text-[10px] text-gray-400 block font-bold">CÉDULA / ID</span>
+                                                        <span className="font-bold text-sm">{selectedOrder.Payment.paymentMethod?.ownerId}</span>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="rounded-xl border border-dashed border-gray-200 p-4 text-center py-8">
-                                        <AlertCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-500 font-medium">No hay información de pago registrada.</p>
+                                    <div className="rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 p-8 text-center flex flex-col items-center justify-center h-[calc(100%-1.75rem)] min-h-[220px]">
+                                        <div className="h-16 w-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mb-4">
+                                            <AlertCircle className="h-8 w-8 text-gray-200" />
+                                        </div>
+                                        <p className="text-sm text-gray-400 font-bold max-w-[180px]">El pago aún no ha sido procesado por caja.</p>
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Items Table */}
-                        <div className="space-y-4 pt-4 border-t dark:border-gray-800">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                        <div className="space-y-4 pt-6">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-2">
                                 <UtensilsCrossed className="h-4 w-4" />
-                                Productos del Pedido
+                                Comanda Detallada
                             </h3>
-                            <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs text-gray-500 dark:text-gray-400 uppercase font-medium border-b border-gray-200 dark:border-gray-800">
+                                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-[10px] text-gray-400 dark:text-gray-500 uppercase font-black border-b border-gray-200 dark:border-gray-800 tracking-wider">
                                         <tr>
-                                            <th className="px-4 py-3">Plato</th>
-                                            <th className="px-4 py-3 text-center">Cant.</th>
-                                            <th className="px-4 py-3 text-right">Precio</th>
-                                            <th className="px-4 py-3 text-right">Subtotal</th>
+                                            <th className="px-6 py-4">Ítem / Especificación</th>
+                                            <th className="px-6 py-4 text-center">Cant.</th>
+                                            <th className="px-6 py-4 text-right">Unitario</th>
+                                            <th className="px-6 py-4 text-right">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                         {selectedOrder.items?.map((item) => (
-                                            <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/40 transition-colors">
-                                                <td className="px-4 py-3">
-                                                    <div className="font-medium text-gray-900 dark:text-white">{item.plato?.nombre}</div>
+                                            <tr key={item.id} className="hover:bg-gray-50/30 dark:hover:bg-gray-900/20 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="font-black text-gray-900 dark:text-white uppercase text-xs">{item.plato?.nombre}</div>
                                                     {item.nota && (
-                                                        <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex items-start gap-1 p-1.5 bg-amber-50/50 dark:bg-amber-900/10 rounded border border-amber-100/50 dark:border-amber-800/10">
+                                                        <div className="text-[10px] text-orange-500 dark:text-orange-400 mt-2 flex items-start gap-1 p-2 bg-orange-50/50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-800/30">
                                                             <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
-                                                            <span>{item.nota}</span>
+                                                            <span className="font-medium italic leading-relaxed text-gray-600 dark:text-gray-400">"{item.nota}"</span>
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-3 text-center font-medium">{item.cantidad}</td>
-                                                <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400 font-mono">${item.precioUnitario?.toFixed(2)}</td>
-                                                <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white font-mono">
+                                                <td className="px-6 py-4 text-center h-full">
+                                                    <span className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full font-black text-xs">
+                                                        {item.cantidad}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right text-gray-400 font-mono text-xs">${item.precioUnitario?.toFixed(2)}</td>
+                                                <td className="px-6 py-4 text-right font-black text-gray-900 dark:text-white font-mono">
                                                     ${(item.cantidad * item.precioUnitario).toFixed(2)}
                                                 </td>
                                             </tr>
@@ -292,12 +366,12 @@ export default function Orders() {
                             </div>
                         </div>
 
-                        <div className="flex justify-end pt-4">
+                        <div className="flex justify-end pt-6 border-t dark:border-gray-800">
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-6 py-2 text-sm font-bold text-white dark:text-gray-900 shadow transition-all hover:bg-gray-800 active:scale-95"
+                                className="inline-flex h-12 items-center justify-center rounded-xl bg-orange-600 px-10 text-sm font-black text-white shadow-xl shadow-orange-500/20 transition-all hover:bg-orange-700 active:scale-95"
                             >
-                                Cerrar Detalle
+                                Entendido
                             </button>
                         </div>
                     </div>

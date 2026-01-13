@@ -1,12 +1,12 @@
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/libs/prisma';
-import { authorizeRequest }  from '@/libs/auth'
+import { authorizeRequest } from '@/libs/auth'
 
-export async function GET (request) {
+export async function GET(request) {
 
   const user = await authorizeRequest(request)
-  
+
   if (!user) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
   }
@@ -30,7 +30,7 @@ export async function GET (request) {
   }
 }
 
-export async function POST (request) {
+export async function POST(request) {
 
   const user = await authorizeRequest(request)
 

@@ -1,30 +1,18 @@
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/libs/prisma'
-import jwt from "jsonwebtoken";
-import { cookies } from 'next/headers'
-
-async function getRestaurantId() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('token')?.value
-  if (!token) return null
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_TOKEN);
-    return decoded.data.restauranteId
-  } catch (err) {
-    return null
-  }
-}
+import bcrypt from 'bcryptjs';
+import { authorizeRequest } from '@/libs/auth'
 
 export async function GET(request) {
   try {
-    const restaurantId = await getRestaurantId()
-    if (!restaurantId) {
+    const user = await authorizeRequest(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const employees = await prisma.empleado.findMany({
-      where: { restaurantId },
+      where: { restaurantId: user.auth.restauranteId },
       include: {
         rol: true,
       },
@@ -40,21 +28,23 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const restaurantId = await getRestaurantId()
-    if (!restaurantId) {
+    const user = await authorizeRequest(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { nombre, apellido, telefono, rolId, userId: employeeUserId } = await request.json();
-
+    const { nombre, apellido, telefono, email, password, rolId } = await request.json();
+    const hashedPassword = bcrypt.hashSync(password, 10);
     const newEmployee = await prisma.empleado.create({
       data: {
         nombre,
         apellido,
         telefono,
+        email,
+        password: hashedPassword,
         rolId,
-        userId: employeeUserId,
-        restaurantId,
+        userId: user.auth.id,
+        restaurantId: user.auth.restauranteId,
       },
       include: {
         rol: true

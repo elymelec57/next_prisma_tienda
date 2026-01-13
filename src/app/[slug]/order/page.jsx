@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign } from "lucide-react";
+import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
 import { useParams, useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ export default function Buy() {
     const [restaurant, setRestaurant] = useState(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [comprobanteFile, setComprobanteFile] = useState(null);
 
     const [form, setForm] = useState({
         name: '',
@@ -24,7 +25,8 @@ export default function Buy() {
         slug: params.slug,
         total: 0,
         order: {},
-        paymentMethodId: ''
+        paymentMethodId: '',
+        comprobanteUrl: ''
     });
 
     useEffect(() => {
@@ -53,12 +55,22 @@ export default function Buy() {
         })
     }
 
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setComprobanteFile(e.target.files[0]);
+        }
+    }
+
     const handlePaymentSelect = (method) => {
         setSelectedPaymentMethod(method);
         setForm({
             ...form,
             paymentMethodId: method.id
         });
+        // Reset file if method changes and it's not a transfer/mobile payment
+        if (method.type !== 'PAGO_MOVIL' && method.type !== 'TRANSFERENCIA') {
+            setComprobanteFile(null);
+        }
     }
 
     const orderList = useAppSelector((state) => state.order.order)
@@ -140,18 +152,39 @@ export default function Buy() {
             return;
         }
 
+        if ((selectedPaymentMethod.type === 'PAGO_MOVIL' || selectedPaymentMethod.type === 'TRANSFERENCIA') && !comprobanteFile) {
+            alert("Por favor sube una foto del comprobante de pago");
+            return;
+        }
+
         setIsLoading(true);
         form.order = orderList
 
         try {
+            const finalForm = { ...form };
+
             const OrderSolicitud = await fetch('/api/buy/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form, pago: form.paymentMethodId })
+                body: JSON.stringify({ form: finalForm, pago: form.paymentMethodId })
             })
 
             const res = await OrderSolicitud.json()
             if (res.status) {
+
+                if (comprobanteFile) {
+                    await fetch(`/api/avatar/upload?filename=${comprobanteFile.name}&model=payment&id=${res.paymentId}`,
+                        { method: 'POST', body: comprobanteFile },
+                    );
+
+                    // const uploadData = await uploadRes.json();
+                    // if (uploadData.status) {
+                    //     comprobanteUrl = uploadData.url;
+                    // } else {
+                    //     throw new Error("Error al subir el comprobante");
+                    // }
+                }
+
                 alert("Pedido realizado con éxito!");
                 dispatch(reset())
                 localStorage.removeItem('order');
@@ -162,7 +195,7 @@ export default function Buy() {
             }
         } catch (error) {
             console.error("Error submitting order:", error);
-            alert("Ocurrió un error al procesar el pedido.");
+            alert(error.message || "Ocurrió un error al procesar el pedido.");
         } finally {
             setIsLoading(false);
         }
@@ -389,6 +422,46 @@ export default function Buy() {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {(selectedPaymentMethod.type === 'PAGO_MOVIL' || selectedPaymentMethod.type === 'TRANSFERENCIA') && (
+                                            <div className="mt-6 pt-6 border-t border-slate-800">
+                                                <label className="block text-xs font-black text-blue-400 uppercase tracking-widest mb-3">
+                                                    Adjuntar Comprobante de Pago
+                                                </label>
+                                                <div className="relative group">
+                                                    <input
+                                                        type="file"
+                                                        id="comprobante"
+                                                        accept="image/*"
+                                                        onChange={handleFileChange}
+                                                        className="hidden"
+                                                    />
+                                                    <label
+                                                        htmlFor="comprobante"
+                                                        className={`flex flex-col items-center justify-center w-full p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${comprobanteFile
+                                                            ? 'border-green-500 bg-green-500/10 text-green-400'
+                                                            : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-blue-500 hover:bg-slate-800'
+                                                            }`}
+                                                    >
+                                                        {comprobanteFile ? (
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <Check className="h-8 w-8" />
+                                                                <span className="font-bold text-sm truncate max-w-[200px]">
+                                                                    {comprobanteFile.name}
+                                                                </span>
+                                                                <span className="text-[10px] uppercase font-black opacity-50">Click para cambiar</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <Smartphone className="h-8 w-8 opacity-50 group-hover:scale-110 transition-transform" />
+                                                                <span className="font-bold text-sm">Subir capture o foto</span>
+                                                                <span className="text-[10px] uppercase font-black opacity-30 tracking-tighter">Formato JPG, PNG o PDF</span>
+                                                            </div>
+                                                        )}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

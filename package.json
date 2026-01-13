@@ -21,6 +21,7 @@
     "@vercel/blob": "^1.1.1",
     "bcryptjs": "^3.0.2",
     "cookies-next": "^6.1.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",

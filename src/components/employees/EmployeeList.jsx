@@ -36,7 +36,7 @@ export default function EmployeeList({ employees, onEdit, onDelete }) {
                     </div>
                     <div>
                       <div className="font-medium text-gray-900 dark:text-gray-100">{`${employee.nombre} ${employee.apellido}`}</div>
-                      <div className="text-xs text-gray-500 lg:hidden">{employee.rol?.nombre}</div>
+                      <div className="text-xs text-gray-500">{employee.email || 'Sin email'}</div>
                     </div>
                   </div>
                 </td>
