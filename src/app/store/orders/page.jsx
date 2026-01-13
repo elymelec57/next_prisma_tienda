@@ -197,9 +197,9 @@ export default function Orders() {
                                             <td className="p-4 align-middle">
                                                 {getStatusBadge(o.estado)}
                                             </td>
-                                            <td className="p-4 align-middle">
+                                            {/* <td className="p-4 align-middle">
                                                 {getPaymentStatusBadge(o.Payment)}
-                                            </td>
+                                            </td> */}
                                             <td className="p-4 align-middle text-right">
                                                 <button
                                                     onClick={() => handleViewDetails(o.id)}
@@ -231,96 +231,98 @@ export default function Orders() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={selectedOrder ? `Detalle de Orden #${selectedOrder.id}` : "Cargando..."}
-                maxWidth="max-w-4xl"
+                maxWidth="max-w-6xl"
             >
                 {selectedOrder && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Infomación del Pedido */}
-                            <div className="space-y-4">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">General</h3>
-                                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/50 space-y-4">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500 font-medium flex items-center gap-2"><Calendar className="h-4 w-4" /> Fecha:</span>
-                                        <span className="font-bold">{new Date(selectedOrder.fechaHora).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500 font-medium flex items-center gap-2"><User className="h-4 w-4" /> Cliente:</span>
-                                        <span className="font-bold">{selectedOrder.nombreCliente || selectedOrder.cliente?.nombre || 'Consumidor Final'}</span>
-                                    </div>
-                                    {selectedOrder.mesa && (
+                        {['Caja', 'Administrador', 'admin'].includes(user.role) && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Infomación del Pedido */}
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">General</h3>
+                                    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/50 space-y-4">
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500 font-medium flex items-center gap-2"><Hash className="h-4 w-4" /> Ubicación:</span>
-                                            <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
-                                                Mesa {selectedOrder.mesa.numero}
-                                            </span>
-                                        </div>
-                                    )}
-                                    {!selectedOrder.mesa && (
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500 font-medium flex items-center gap-2"><MapPin className="h-4 w-4" /> Tipo:</span>
-                                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
-                                                Domicilio
-                                            </span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500 font-medium flex items-center gap-2"><Layers className="h-4 w-4" /> Estado:</span>
-                                        {getStatusBadge(selectedOrder.estado)}
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm pt-4 border-t dark:border-gray-800">
-                                        <span className="font-bold text-gray-500">Total a Pagar:</span>
-                                        <span className="text-3xl font-black text-orange-600 dark:text-orange-400 tracking-tighter">${selectedOrder.total?.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Información del Pago */}
-                            <div className="space-y-4">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Transacción</h3>
-                                {selectedOrder.Payment ? (
-                                    <div className="rounded-2xl border border-green-100 bg-green-50/30 p-5 dark:border-green-900/20 dark:bg-green-900/10 space-y-4">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500 font-medium">Estado Pago:</span>
-                                            {getPaymentStatusBadge(selectedOrder.Payment)}
+                                            <span className="text-gray-500 font-medium flex items-center gap-2"><Calendar className="h-4 w-4" /> Fecha:</span>
+                                            <span className="font-bold">{new Date(selectedOrder.fechaHora).toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500 font-medium">Método de Pago:</span>
-                                            <div className="text-right">
-                                                <span className="font-black text-gray-900 dark:text-white block">{selectedOrder.Payment.paymentMethod?.label}</span>
-                                                <span className="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 uppercase font-black tracking-widest mt-1 inline-block">
-                                                    {selectedOrder.Payment.paymentMethod?.type.replace('_', ' ')}
+                                            <span className="text-gray-500 font-medium flex items-center gap-2"><User className="h-4 w-4" /> Cliente:</span>
+                                            <span className="font-bold">{selectedOrder.nombreCliente || selectedOrder.cliente?.nombre || 'Consumidor Final'}</span>
+                                        </div>
+                                        {selectedOrder.mesa && (
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500 font-medium flex items-center gap-2"><Hash className="h-4 w-4" /> Ubicación:</span>
+                                                <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
+                                                    Mesa {selectedOrder.mesa.numero}
                                                 </span>
                                             </div>
+                                        )}
+                                        {!selectedOrder.mesa && (
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500 font-medium flex items-center gap-2"><MapPin className="h-4 w-4" /> Tipo:</span>
+                                                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
+                                                    Domicilio
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-500 font-medium flex items-center gap-2"><Layers className="h-4 w-4" /> Estado:</span>
+                                            {getStatusBadge(selectedOrder.estado)}
                                         </div>
-                                        <div className="pt-4 border-t dark:border-gray-800">
-                                            <p className="text-[10px] text-gray-400 uppercase font-black mb-3 flex items-center gap-2">
-                                                <CheckCircle2 className="h-3 w-3" /> Datos de Verificación
-                                            </p>
-                                            <div className="grid grid-cols-1 gap-3">
-                                                <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
-                                                    <span className="text-[10px] text-gray-400 block font-bold">TITULAR</span>
-                                                    <span className="font-bold text-sm">{selectedOrder.Payment.paymentMethod?.ownerName}</span>
+                                        <div className="flex justify-between items-center text-sm pt-4 border-t dark:border-gray-800">
+                                            <span className="font-bold text-gray-500">Total a Pagar:</span>
+                                            <span className="text-3xl font-black text-orange-600 dark:text-orange-400 tracking-tighter">${selectedOrder.total?.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Información del Pago */}
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Transacción</h3>
+                                    {selectedOrder.Payment ? (
+                                        <div className="rounded-2xl border border-green-100 bg-green-50/30 p-5 dark:border-green-900/20 dark:bg-green-900/10 space-y-4">
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500 font-medium">Estado Pago:</span>
+                                                {getPaymentStatusBadge(selectedOrder.Payment)}
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500 font-medium">Método de Pago:</span>
+                                                <div className="text-right">
+                                                    <span className="font-black text-gray-900 dark:text-white block">{selectedOrder.Payment.paymentMethod?.label}</span>
+                                                    <span className="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 uppercase font-black tracking-widest mt-1 inline-block">
+                                                        {selectedOrder.Payment.paymentMethod?.type.replace('_', ' ')}
+                                                    </span>
                                                 </div>
-                                                {selectedOrder.Payment.paymentMethod?.ownerId && (
+                                            </div>
+                                            <div className="pt-4 border-t dark:border-gray-800">
+                                                <p className="text-[10px] text-gray-400 uppercase font-black mb-3 flex items-center gap-2">
+                                                    <CheckCircle2 className="h-3 w-3" /> Datos de Verificación
+                                                </p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
-                                                        <span className="text-[10px] text-gray-400 block font-bold">CÉDULA / ID</span>
-                                                        <span className="font-bold text-sm">{selectedOrder.Payment.paymentMethod?.ownerId}</span>
+                                                        <span className="text-xs text-gray-400 block font-bold">TITULAR</span>
+                                                        <span className="font-bold text-sm">{selectedOrder.Payment.paymentMethod?.ownerName}</span>
                                                     </div>
-                                                )}
+                                                    {selectedOrder.Payment.paymentMethod?.ownerId && (
+                                                        <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
+                                                            <span className="text-xs text-gray-400 block font-bold">CÉDULA / ID</span>
+                                                            <span className="font-bold text-sm">{selectedOrder.Payment.paymentMethod?.ownerId}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 p-8 text-center flex flex-col items-center justify-center h-[calc(100%-1.75rem)] min-h-[220px]">
-                                        <div className="h-16 w-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mb-4">
-                                            <AlertCircle className="h-8 w-8 text-gray-200" />
+                                    ) : (
+                                        <div className="rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 p-8 text-center flex flex-col items-center justify-center h-[calc(100%-1.75rem)] min-h-[220px]">
+                                            <div className="h-16 w-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mb-4">
+                                                <AlertCircle className="h-8 w-8 text-gray-200" />
+                                            </div>
+                                            <p className="text-sm text-gray-400 font-bold max-w-[180px]">El pago aún no ha sido procesado por caja.</p>
                                         </div>
-                                        <p className="text-sm text-gray-400 font-bold max-w-[180px]">El pago aún no ha sido procesado por caja.</p>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Items Table */}
                         <div className="space-y-4 pt-6">
@@ -330,7 +332,7 @@ export default function Orders() {
                             </h3>
                             <div className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-[10px] text-gray-400 dark:text-gray-500 uppercase font-black border-b border-gray-200 dark:border-gray-800 tracking-wider">
+                                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs text-gray-400 dark:text-gray-500 uppercase font-black border-b border-gray-200 dark:border-gray-800 tracking-wider">
                                         <tr>
                                             <th className="px-6 py-4">Ítem / Especificación</th>
                                             <th className="px-6 py-4 text-center">Cant.</th>
@@ -344,7 +346,7 @@ export default function Orders() {
                                                 <td className="px-6 py-4">
                                                     <div className="font-black text-gray-900 dark:text-white uppercase text-xs">{item.plato?.nombre}</div>
                                                     {item.nota && (
-                                                        <div className="text-[10px] text-orange-500 dark:text-orange-400 mt-2 flex items-start gap-1 p-2 bg-orange-50/50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-800/30">
+                                                        <div className="text-xs text-orange-500 dark:text-orange-400 mt-2 flex items-start gap-1 p-2 bg-orange-50/50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-800/30">
                                                             <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
                                                             <span className="font-medium italic leading-relaxed text-gray-600 dark:text-gray-400">"{item.nota}"</span>
                                                         </div>

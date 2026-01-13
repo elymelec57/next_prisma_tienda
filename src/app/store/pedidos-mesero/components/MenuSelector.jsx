@@ -41,6 +41,9 @@ export default function MenuSelector({ onAddItem, userId }) {
         return matchesSearch && matchesCategory && p.disponible
     })
 
+    // Definimos si mostramos la lista (solo si hay algo en el buscador o se seleccionó una categoría específica)
+    const shouldShowProducts = searchTerm.length > 0 || selectedCategory !== 'all'
+
     if (loading) {
         return (
             <div className="flex flex-col justify-center items-center py-24 gap-4">
@@ -54,24 +57,24 @@ export default function MenuSelector({ onAddItem, userId }) {
         <div className="space-y-8">
             {/* Search & Categories */}
             <div className="space-y-6">
-                <div className="relative group max-w-md">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-orange-600 transition-colors" />
+                <div className="relative group max-w-2xl mx-auto">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400 group-focus-within:text-orange-600 transition-all" />
                     <Input
-                        placeholder="Buscar por nombre del plato..."
+                        placeholder="Escribe para buscar un plato (ej. Pizza, Burger, Jugo...)"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-12 h-14 bg-white dark:bg-gray-950 border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm focus:ring-orange-500/20 text-sm font-medium"
+                        className="pl-16 h-16 bg-white dark:bg-gray-950 border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl focus:ring-orange-500/20 text-lg font-bold placeholder:text-gray-300 transition-all"
                     />
                 </div>
 
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none justify-center">
                     <button
                         onClick={() => setSelectedCategory('all')}
                         className={`
-                            px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap
+                            px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2
                             ${selectedCategory === 'all'
-                                ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 scale-105'
-                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700'}
+                                ? 'bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-500/20 scale-105'
+                                : 'bg-gray-50 dark:bg-gray-900 text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}
                         `}
                     >
                         Todos
@@ -81,10 +84,10 @@ export default function MenuSelector({ onAddItem, userId }) {
                             key={cat.id}
                             onClick={() => setSelectedCategory(cat.id.toString())}
                             className={`
-                                px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap
+                                px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2
                                 ${selectedCategory === cat.id.toString()
-                                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 scale-105'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700'}
+                                    ? 'bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-500/20 scale-105'
+                                    : 'bg-gray-50 dark:bg-gray-900 text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}
                             `}
                         >
                             {cat.nombre}
@@ -93,67 +96,73 @@ export default function MenuSelector({ onAddItem, userId }) {
                 </div>
             </div>
 
-            {/* Products Grid - Now with 3 columns on large screens */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {filteredProducts.map((product) => (
-                    <div
-                        key={product.id}
-                        className="group flex flex-col p-4 border border-gray-100 dark:border-gray-800 rounded-[2rem] bg-white dark:bg-gray-950 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-none transition-all hover:-translate-y-1 relative overflow-hidden"
-                    >
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="h-20 w-20 flex-shrink-0 bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-50 dark:border-gray-800 transition-transform group-hover:scale-105">
-                                {product.mainImage ? (
-                                    <img
-                                        src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${product.mainImage.url}`}
-                                        alt={product.nombre}
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="h-full w-full flex items-center justify-center">
-                                        <Utensils className="h-8 w-8 text-gray-200" />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <h3 className="font-black text-gray-900 dark:text-white uppercase text-xs tracking-tight leading-tight mb-1">
-                                    {product.nombre}
-                                </h3>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded font-bold text-gray-400">
-                                        {categories.find(c => c.id === product.categoriaId)?.nombre || 'Menú'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between mt-auto">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-gray-300 uppercase leading-none mb-1">Precio</span>
-                                <span className="text-xl font-black text-orange-600 tracking-tighter">
-                                    ${product.precio.toFixed(2)}
-                                </span>
-                            </div>
-
+            {/* Products Search Results - Now a vertical integrated list */}
+            {shouldShowProducts ? (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center justify-between px-2">
+                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Resultados de búsqueda ({filteredProducts.length})</p>
+                    </div>
+                    <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {filteredProducts.map((product) => (
                             <button
+                                key={product.id}
                                 onClick={() => onAddItem(product)}
-                                className="h-12 w-12 flex items-center justify-center bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl shadow-lg transition-all hover:bg-orange-600 hover:text-white active:scale-90"
-                                title="Añadir al pedido"
+                                className="group flex items-center gap-4 p-3 border border-gray-100 dark:border-gray-800 rounded-2xl bg-white dark:bg-gray-950 hover:border-orange-200 hover:bg-orange-50/10 transition-all active:scale-[0.99] w-full text-left shadow-sm"
                             >
-                                <Plus className="h-6 w-6" />
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                                {/* Compact Image */}
+                                <div className="h-14 w-14 flex-shrink-0 bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-50 dark:border-gray-800">
+                                    {product.mainImage ? (
+                                        <img
+                                            src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${product.mainImage.url}`}
+                                            alt={product.nombre}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="h-full w-full flex items-center justify-center">
+                                            <Utensils className="h-6 w-6 text-gray-200" />
+                                        </div>
+                                    )}
+                                </div>
 
-            {filteredProducts.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 dark:bg-gray-900/10 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in duration-300">
-                    <div className="h-20 w-20 bg-white dark:bg-gray-950 rounded-full flex items-center justify-center shadow-sm mb-4 border border-gray-100 dark:border-gray-800">
-                        <LayoutGrid className="h-10 w-10 text-gray-200" />
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-extrabold text-gray-900 dark:text-white uppercase text-sm tracking-tight leading-tight group-hover:text-orange-600 transition-colors">
+                                        {product.nombre}
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-black text-gray-400">
+                                            {categories.find(c => c.id === product.categoriaId)?.nombre || 'Menú'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <span className="text-lg font-black text-orange-600 tracking-tighter">
+                                        ${product.precio.toFixed(2)}
+                                    </span>
+                                    <div className="h-10 w-10 flex items-center justify-center bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl shadow-md transition-all group-hover:bg-orange-600 group-hover:text-white">
+                                        <Plus className="h-5 w-5" />
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
                     </div>
-                    <p className="font-black text-gray-400 uppercase tracking-widest text-xs">Sin coincidencias</p>
-                    <p className="text-[10px] text-gray-400 mt-1 font-bold">Prueba con otra categoría o nombre.</p>
+
+                    {filteredProducts.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 dark:bg-gray-900/10 rounded-[2rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                            <Search className="h-8 w-8 text-gray-200 mb-2" />
+                            <p className="font-black text-gray-400 uppercase tracking-widest text-[10px]">Sin coincidencias</p>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center py-16 bg-gray-50/50 dark:bg-gray-900/10 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="h-20 w-20 bg-white dark:bg-gray-950 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-gray-200/50 dark:shadow-none mb-4 border border-gray-100 dark:border-gray-800">
+                        <Utensils className="h-10 w-10 text-orange-600" />
+                    </div>
+                    <h2 className="font-extrabold text-gray-900 dark:text-white uppercase tracking-tighter text-lg">Busca para añadir</h2>
+                    <p className="text-gray-400 font-bold uppercase tracking-widest text-[9px] max-w-xs text-center">
+                        Encuentra platos rápidamente usando el buscador
+                    </p>
                 </div>
             )}
         </div>

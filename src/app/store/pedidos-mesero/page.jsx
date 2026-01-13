@@ -131,32 +131,41 @@ export default function PedidosMesero() {
                 {!currentTable ? (
                     <TableSelector onSelectTable={handleSelectTable} />
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-                        {/* Menu Section - Expanded to 8 columns */}
-                        <div className="lg:col-span-8 space-y-4 flex flex-col h-[calc(100vh-14rem)]">
-                            <div className="flex items-center justify-between mb-2">
-                                <button
-                                    onClick={() => dispatch(setCurrentTable(null))}
-                                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-orange-600 transition-all group"
-                                >
-                                    <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-xl group-hover:bg-orange-100 dark:group-hover:bg-orange-950 transition-colors">
-                                        <ChevronLeft className="h-3 w-3" />
-                                    </div>
-                                    Volver al Mapa de Mesas
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-10">
-                                <MenuSelector
-                                    onAddItem={handleAddItem}
-                                    userId={user.id}
-                                />
+                    <div className="max-w-4xl mx-auto space-y-8 pb-20">
+                        {/* Volver button and Table Info */}
+                        <div className="flex items-center justify-between bg-white dark:bg-gray-950 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                            <button
+                                onClick={() => dispatch(setCurrentTable(null))}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-orange-600 transition-all group"
+                            >
+                                <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-xl group-hover:bg-orange-100 dark:group-hover:bg-orange-950 transition-colors">
+                                    <ChevronLeft className="h-3 w-3" />
+                                </div>
+                                Volver al Mapa
+                            </button>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mesa Seleccionada:</span>
+                                <span className="bg-orange-600 text-white px-4 py-1.5 rounded-xl font-black text-sm shadow-lg shadow-orange-500/20">
+                                    Nº {currentTable.numero}
+                                </span>
                             </div>
                         </div>
 
-                        {/* Sticky Order Summary - 4 columns */}
-                        <div className="lg:col-span-4 h-[calc(100vh-14rem)]">
-                            <div className="bg-white dark:bg-gray-950 rounded-[2rem] border border-gray-100 dark:border-gray-800 h-full overflow-hidden shadow-2xl shadow-gray-200/50 dark:shadow-none translate-y-0 hover:-translate-y-1 transition-transform">
+                        {/* Search and Product List Section */}
+                        <div className="bg-white dark:bg-gray-950 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 md:p-8 shadow-xl">
+                            <MenuSelector
+                                onAddItem={handleAddItem}
+                                userId={user.id}
+                            />
+                        </div>
+
+                        {/* Order Summary (Cart) - Now Central */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 px-6">
+                                <ShoppingBag className="h-5 w-5 text-orange-600" />
+                                <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-lg">Resumen del Pedido</h3>
+                            </div>
+                            <div className="bg-white dark:bg-gray-950 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-2xl">
                                 <OrderSummary
                                     order={currentOrder}
                                     table={currentTable}
