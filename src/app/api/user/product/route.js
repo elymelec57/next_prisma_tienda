@@ -1,18 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/libs/prisma';
+import { authorizeRequest } from '@/libs/auth'
 
-export async function GET(request, segmentData) {
+export async function GET(request) {
 
-    const params = await segmentData.params
+    const user = await authorizeRequest(request)
 
-    const rest = await prisma.restaurant.findUnique({
-        where: {
-            userId: Number(params.id)
-        },
-        select: {
-            id: true
-        }
-    })
+    if (!user) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
+    }
 
     const platos = await prisma.plato.findMany({
         select: {
@@ -24,7 +20,7 @@ export async function GET(request, segmentData) {
             mainImageId: true,
         },
         where: {
-            restaurantId: Number(rest.id)
+            restaurantId: user.auth.restauranteId
         },
     });
 
@@ -43,7 +39,7 @@ export async function GET(request, segmentData) {
             id: {
                 in: imageIds, // Filtrar por los IDs que acabamos de extraer
             },
-            modelType: 'Plato',
+            modelType: 'plato',
         },
         select: {
             id: true, // Incluir el ID para mapear
@@ -59,5 +55,6 @@ export async function GET(request, segmentData) {
         ...plato,
         mainImage: plato.mainImageId ? imageMap.get(plato.mainImageId) : null,
     }));
+
     return NextResponse.json({ dataPlatos })
 }

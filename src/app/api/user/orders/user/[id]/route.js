@@ -9,7 +9,9 @@ export async function GET(request, segmentData) {
             restaurantId: Number(params.id)
         },
         include: {
-            cliente: true
+            cliente: true,
+            Payment: true,
+            mesa: true
         }
     });
 

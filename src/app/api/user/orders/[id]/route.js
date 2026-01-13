@@ -15,7 +15,12 @@ export async function GET(request, { params }) {
                     }
                 },
                 cliente: true,
-                mesa: true
+                mesa: true,
+                Payment: {
+                    include: {
+                        paymentMethod: true
+                    }
+                }
             }
         });
 

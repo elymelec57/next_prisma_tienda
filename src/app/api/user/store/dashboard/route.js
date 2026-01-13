@@ -11,12 +11,12 @@ export async function GET(request) {
       return NextResponse.json({ message: 'No autenticado' }, { status: 401 });
     }
 
-    const user = await verifyToken(origin,token);
+    const user = await verifyToken(origin, token);
 
     if (!user) {
       return NextResponse.json({ message: 'Token inválido' }, { status: 401 });
     }
-    
+
     const restaurant = await prisma.restaurant.findUnique({
       where: {
         userId: user.auth.id,
@@ -31,6 +31,21 @@ export async function GET(request) {
         cliente: true,
       },
     });
+
+    if (restaurant.mainImageId != null) {
+      const image = await prisma.image.findUnique({
+        where: {
+          id: restaurant.mainImageId
+        },
+        select: {
+          id: true,
+          url: true
+        }
+      });
+      restaurant.url = image.url
+    } else {
+      restaurant.url = null
+    }
 
     if (!restaurant) {
       return NextResponse.json({ message: 'Restaurante no encontrado para el usuario' }, { status: 404 });
@@ -47,7 +62,7 @@ export async function GET(request) {
       restaurant: {
         name: restaurant.name,
         slogan: restaurant.slogan,
-        logo: restaurant.logo,
+        logo: restaurant.url,
       },
       stats: {
         totalPlatos,

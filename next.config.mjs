@@ -1,4 +1,5 @@
-//import withFlowbiteReact from "flowbite-react/class-list.json";
+
+const isProd = process.env.DEPLOY === 'production';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -15,7 +16,7 @@ const nextConfig = {
         source: "/api/admin/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "http://localhost:6001" },
+          { key: "Access-Control-Allow-Origin", value: isProd ? "https://elymelec57.github.io" : "http://localhost:6001" },
           { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT,OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
         ],
@@ -24,5 +25,4 @@ const nextConfig = {
   },
 };
 
-//export default withFlowbiteReact(nextConfig);
 export default nextConfig;

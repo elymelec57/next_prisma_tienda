@@ -45,36 +45,26 @@ export async function POST(request) {
             })
         }
 
-        // 3. Find or Create Mesa
-        let mesa = await prisma.mesa.findFirst();
-        if (!mesa) {
-            mesa = await prisma.mesa.create({
-                data: {
-                    numero: 999,
-                    capacidad: 4,
-                    estado: "Libre"
-                }
-            })
-        }
-
-        // 4. Create Pedido
+        // 3. Create Pedido (Delivery orders don't require a mesa)
         const pedido = await prisma.pedido.create({
             data: {
                 total: parseFloat(form.total),
                 estado: "Pendiente",
                 cliente: { connect: { id: cliente.id } },
                 restaurant: { connect: { id: restaurant.id } },
-                mesa: { connect: { id: mesa.id } },
             }
         })
 
-        // 5. Create Pago
+        // 5. Create Payment record
+        let payment = null;
         if (pago) {
-            await prisma.pago.create({
+            payment = await prisma.payment.create({
                 data: {
                     monto: parseFloat(form.total),
-                    metodo: "Transferencia/Digital",
-                    pedido: { connect: { id: pedido.id } }
+                    status: "PENDING",
+                    paymentMethod: { connect: { id: pago } }, // 'pago' contains the paymentMethodId
+                    pedido: { connect: { id: pedido.id } },
+                    restaurant: { connect: { id: restaurant.id } },
                 }
             })
         }
@@ -137,10 +127,10 @@ export async function POST(request) {
             }
         }
 
-        return NextResponse.json({ status: true, message: 'Orden solicitada con exito' })
+        return NextResponse.json({ status: true, message: 'Orden solicitada con exito', paymentId: payment.id })
 
     } catch (error) {
         console.error('Error creating order:', error);
-        return NextResponse.json({ status: false, message: 'Error al procesar la orden: ' + error.message })
+        return NextResponse.json({ status: false, message: 'Error al procesar la orden' })
     }
 }

@@ -1,147 +1,295 @@
 'use client'
-import ButtomEdit from '@/components/buttomEdit';
-import Link from 'next/link';
-import { useAppSelector } from "@/lib/hooks";
+
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useAppSelector } from "@/lib/hooks";
 import { toast } from 'react-toastify';
+import { Plus, Pencil, Trash, Search, Image as ImageIcon, Loader2 } from 'lucide-react';
+
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
+import Modal from '@/components/Modal';
+import ProductForm from '@/components/ProductForm';
 
 export default function ListProduct() {
 
     const params = useParams()
+    const router = useRouter()
     const id = useAppSelector((state) => state.auth.auth.id)
     const [product, setProduct] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
-    const [productToDelete, setProductToDelete] = useState(null); // State to hold product to delete
+    const [categories, setCategories] = useState([]);
+
+    // Filter states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedStatus, setSelectedStatus] = useState('all');
+
+
+    // Modals state
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState(null);
 
     useEffect(() => {
         platos();
+        fetchCategories();
     }, [])
 
-    const platos = async () => {
-        let res = ''
-        if (params.id) {
-            res = await fetch(`/api/user/product/user/${params.id}`)
-        } else {
-            res = await fetch(`/api/user/product/user/${id}`)
+    const fetchCategories = async () => {
+        try {
+            const res = await fetch('/api/category');
+            if (res.ok) {
+                const data = await res.json();
+                setCategories(data || []);
+            }
+        } catch (error) {
+            console.error("Error fetching categories:", error);
         }
-
-        const { dataPlatos } = await res.json()
-
-        setProduct(dataPlatos);
-        setLoading(false);
     }
+
+
+    const platos = async () => {
+        try {
+            let res = ''
+            if (params.id) {
+                res = await fetch(`/api/user/product`)
+            } else {
+                res = await fetch(`/api/user/product`)
+            }
+
+            if (res.ok) {
+                const { dataPlatos } = await res.json()
+                setProduct(dataPlatos || []);
+            }
+        } catch (error) {
+            console.error("Error fetching dishes:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const filteredProducts = product.filter(p => {
+        const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' || p.categoriaId === parseInt(selectedCategory);
+        const matchesStatus = selectedStatus === 'all' ||
+            (selectedStatus === 'disponible' ? p.disponible : !p.disponible);
+
+        return matchesSearch && matchesCategory && matchesStatus;
+    });
+
 
     const handleDeleteClick = (p) => {
         setProductToDelete(p);
-        setIsModalOpen(true);
     };
 
     const handleConfirmDelete = async () => {
-        setIsModalOpen(false);
         if (!productToDelete) return;
 
         const id = productToDelete.id;
-        const res = await fetch(`/api/user/product/${id}`, {
-            method: 'DELETE'
-        })
+        try {
+            const res = await fetch(`/api/user/product/${id}`, {
+                method: 'DELETE'
+            })
 
-        const eliminado = await res.json()
-        if (eliminado.status) {
-            setLoading(true)
-            platos()
-            toast.success(eliminado.message);
-        } else {
-            toast.error(eliminado.message);
+            const eliminado = await res.json()
+            if (eliminado.status) {
+                platos() // Refresh list
+                toast.success(eliminado.message);
+            } else {
+                toast.error(eliminado.message);
+            }
+        } catch (error) {
+            toast.error("Error al eliminar el producto");
+        } finally {
+            setProductToDelete(null);
         }
-
-        setProductToDelete(null); // Clear product after deletion attempt
     };
 
     const handleCancelDelete = () => {
-        setIsModalOpen(false);
         setProductToDelete(null);
     };
- 
+
+    const handleCreateSuccess = () => {
+        setIsCreateModalOpen(false);
+        platos(); // Refresh data
+    }
+
     if (loading) {
-        return <div className='container mx-auto mt-20'>Cargando...</div>;
+        return (
+            <div className="flex justify-center items-center min-h-[50vh]">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+        );
     }
 
     return (
-        <div className="container mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-            <h1 className="text-center text-3xl font-bold mb-6 text-gray-800">Lista de platos</h1>
-            <div className="mb-6">
-                <Link href={'/store/plato/new'} className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition ease-in-out duration-150">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Productos</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">
+                        Gestiona el menú de tu restaurante.
+                    </p>
+                </div>
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-gray-50 hover:bg-gray-900/90 h-10 px-4 py-2 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90"
+                >
+                    <Plus className="mr-2 h-4 w-4" />
                     Nuevo Producto
-                </Link>
+                </button>
             </div>
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
-                        <tr>
-                            <th scope="col" className="px-6 py-3">
-                                Imagen
-                            </th>
-                            <th scope="col" className="px-6 py-3">
-                                Nombre
-                            </th>
-                            <th scope="col" className="px-6 py-3">
-                                Descripción
-                            </th>
-                            <th scope="col" className="px-6 py-3">
-                                Precio
-                            </th>
-                            <th scope="col" className="px-6 py-3">
-                                Estado
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-center">
-                                Acciones
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {
-                            product.map((p) => (
-                                <tr key={p.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                    <td className="px-6 py-4">
-                                        {p.mainImage && <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`} className="w-16 h-16 object-cover rounded-full border border-gray-200" alt="" />}
-                                    </td>
-                                    <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                        {p.nombre}
-                                    </th>
-                                    <td className="px-6 py-4">
-                                        {p.descripcion}
-                                    </td>
-                                    <td className="px-6 py-4 font-semibold text-gray-900">
-                                        ${p.precio}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${p.disponible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                            {p.disponible ? 'Disponible' : 'No Disponible'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 flex items-center justify-center space-x-3">
-                                        <ButtomEdit path='/store/plato/' id={p.id} className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition ease-in-out duration-150">
-                                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.38-2.827-2.828z"></path></svg>
-                                            Editar
-                                        </ButtomEdit>
-                                        <button type="button" onClick={() => handleDeleteClick(p)} className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition ease-in-out duration-150">
-                                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z" clipRule="evenodd"></path></svg>
-                                            Eliminar
-                                        </button>
+
+            {/* Filters section */}
+            <div className="flex flex-col lg:flex-row gap-4 bg-white dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Buscar plato por nombre..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+                    />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="w-full sm:w-48">
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+                        >
+                            <option value="all">Todas las categorías</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="w-full sm:w-48">
+                        <select
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+                        >
+                            <option value="all">Todos los estados</option>
+                            <option value="disponible">Diponible</option>
+                            <option value="agotado">Agotado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                <div className="relative w-full overflow-auto">
+                    <table className="w-full caption-bottom text-sm">
+                        <thead className="[&_tr]:border-b">
+                            <tr className="border-b transition-colors hover:bg-gray-100/50 data-[state=selected]:bg-gray-100 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800">
+                                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 [&:has([role=checkbox])]:pr-0 dark:text-gray-400 w-[80px]">
+                                    Imagen
+                                </th>
+                                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 [&:has([role=checkbox])]:pr-0 dark:text-gray-400">
+                                    Nombre
+                                </th>
+                                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 [&:has([role=checkbox])]:pr-0 dark:text-gray-400 hidden md:table-cell">
+                                    Descripción
+                                </th>
+                                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 [&:has([role=checkbox])]:pr-0 dark:text-gray-400">
+                                    Precio
+                                </th>
+                                <th className="h-12 px-4 text-left align-middle font-medium text-gray-500 [&:has([role=checkbox])]:pr-0 dark:text-gray-400">
+                                    Estado
+                                </th>
+                                <th className="h-12 px-4 text-right align-middle font-medium text-gray-500 [&:has([role=checkbox])]:pr-0 dark:text-gray-400">
+                                    Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="[&_tr:last-child]:border-0">
+                            {filteredProducts.length > 0 ? (
+                                filteredProducts.map((p) => (
+                                    <tr key={p.id} className="border-b transition-colors hover:bg-gray-100/50 data-[state=selected]:bg-gray-100 dark:hover:bg-gray-800/50 dark:data-[state=selected]:bg-gray-800">
+                                        <td className="p-4 align-middle">
+                                            {p.mainImage ? (
+                                                <img
+                                                    src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${p.mainImage.url}`}
+                                                    className="aspect-square rounded-md object-cover h-12 w-12 border border-gray-200"
+                                                    alt={p.nombre}
+                                                />
+                                            ) : (
+                                                <div className="h-12 w-12 rounded-md bg-gray-100 flex items-center justify-center border border-gray-200 text-gray-400">
+                                                    <ImageIcon className="h-6 w-6" />
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="p-4 align-middle font-medium text-gray-900 dark:text-gray-100">
+                                            {p.nombre}
+                                        </td>
+                                        <td className="p-4 align-middle text-gray-500 dark:text-gray-400 max-w-[200px] truncate hidden md:table-cell">
+                                            {p.descripcion}
+                                        </td>
+                                        <td className="p-4 align-middle font-medium">
+                                            ${p.precio.toFixed(2)}
+                                        </td>
+                                        <td className="p-4 align-middle">
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm
+                                                ${p.disponible
+                                                    ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                                                    : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+                                                }`}
+                                            >
+                                                {p.disponible ? 'Disponible' : 'Agotado'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 align-middle text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Link
+                                                    href={`/store/plato/${p.id}`}
+                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-medium transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800"
+                                                >
+                                                    <Pencil className="h-4 w-4 text-gray-500" />
+                                                    <span className="sr-only">Editar</span>
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDeleteClick(p)}
+                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                                                >
+                                                    <Trash className="h-4 w-4" />
+                                                    <span className="sr-only">Eliminar</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={6} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                        No hay productos registrados. ¡Agrega el primero!
                                     </td>
                                 </tr>
-                            ))
-                        }
-                    </tbody>
-                </table>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            
+
+            {/* Modal for Creating New Product */}
+            <Modal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                title="Crear Nuevo Producto"
+            >
+                <div className="mt-2">
+                    <ProductForm
+                        onSuccess={handleCreateSuccess}
+                        onCancel={() => setIsCreateModalOpen(false)}
+                    />
+                </div>
+            </Modal>
+
+            {/* Confirmation Modal for Deleting */}
             <DeleteConfirmationModal
-                isOpen={isModalOpen}
+                isOpen={!!productToDelete}
                 onClose={handleCancelDelete}
                 onConfirm={handleConfirmDelete}
                 productName={productToDelete?.nombre}

@@ -1,9 +1,6 @@
 import { prisma } from "@/libs/prisma";
 import { NextResponse } from "next/server"
 import slugify from 'slugify';
-import path from 'path';
-import fs from 'fs';
-import sharp from 'sharp';
 
 export async function GET(request, segmentData) {
     const params = await segmentData.params;
@@ -11,8 +8,20 @@ export async function GET(request, segmentData) {
     const rest = await prisma.restaurant.findUnique({
         where: {
             userId: Number(params.id)
+        },
+        include: {
+            restaurantHours: {
+                orderBy: {
+                    dayOfWeek: 'asc'
+                }
+            },
+            paymentMethods: true
         }
     })
+
+    if (!rest) {
+        return NextResponse.json({ status: false, message: 'Business not found' })
+    }
 
     if (rest.mainImageId != null) {
         const image = await prisma.image.findUnique({
