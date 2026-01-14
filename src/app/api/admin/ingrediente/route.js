@@ -3,8 +3,12 @@ import { prisma } from '../../../../libs/prisma.js'
 
 export async function GET () {
   try {
-    const ingredientes = await prisma.ingrediente.findMany()
-    return NextResponse.json(ingredientes)
+    const ingredientes = await prisma.ingrediente.findMany({
+      include:{
+        categoriaIngrediente: true
+      }
+    })
+    return NextResponse.json({status: true, ingredientes})
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -23,7 +27,30 @@ export async function POST (request) {
         }
       }
     })
-    return NextResponse.json(newIngrediente)
+    return NextResponse.json({status: true})
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+export async function PUT (request) {
+  try {
+    const { nombre, categoriaIngredienteId, id } = await request.json()
+    
+    const updatedIngrediente = await prisma.ingrediente.update({
+      where: {
+        id: id
+      },
+      data: {
+        nombre,
+        categoriaIngrediente: {
+          connect: {
+            id: categoriaIngredienteId
+          }
+        }
+      }
+    })
+    return NextResponse.json({status: true})
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

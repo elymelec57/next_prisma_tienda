@@ -17,23 +17,6 @@ export async function GET (request, { params }) {
   }
 }
 
-export async function PUT (request, { params }) {
-  try {
-    const { nombre } = await request.json()
-    const updatedCategoria = await prisma.categoria.update({
-      where: {
-        id: Number(params.id)
-      },
-      data: {
-        nombre
-      }
-    })
-    return NextResponse.json(updatedCategoria)
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
 export async function DELETE (request, { params }) {
   try {
     const deletedCategoria = await prisma.categoria.delete({

@@ -17,28 +17,6 @@ export async function GET (request, { params }) {
   }
 }
 
-export async function PUT (request, { params }) {
-  try {
-    const { nombre, categoriaIngredienteId } = await request.json()
-    const updatedIngrediente = await prisma.ingrediente.update({
-      where: {
-        id: Number(params.id)
-      },
-      data: {
-        nombre,
-        categoriaIngrediente: {
-          connect: {
-            id: categoriaIngredienteId
-          }
-        }
-      }
-    })
-    return NextResponse.json(updatedIngrediente)
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
 export async function DELETE (request, { params }) {
   try {
     const deletedIngrediente = await prisma.ingrediente.delete({
@@ -46,7 +24,7 @@ export async function DELETE (request, { params }) {
         id: Number(params.id)
       }
     })
-    return NextResponse.json(deletedIngrediente)
+    return NextResponse.json({status:true})
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

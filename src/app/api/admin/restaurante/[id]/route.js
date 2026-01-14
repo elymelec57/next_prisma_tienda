@@ -17,38 +17,6 @@ export async function GET (request, { params }) {
   }
 }
 
-export async function PUT (request, { params }) {
-  try {
-    const { slug, name, slogan, phone, direcction, userId, categoriaRestaurant, paymentMethods } = await request.json()
-    const updatedRestaurante = await prisma.restaurant.update({
-      where: {
-        id: Number(params.id)
-      },
-      data: {
-        slug,
-        name,
-        slogan,
-        phone,
-        direcction,
-        user: {
-          connect: {
-            id: userId
-          }
-        },
-        categoriaRestaurant: {
-          set: categoriaRestaurant.map(id => ({ id }))
-        },
-        paymentMethods: {
-          set: paymentMethods.map(id => ({ id }))
-        }
-      }
-    })
-    return NextResponse.json(updatedRestaurante)
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
 export async function DELETE (request, { params }) {
   try {
     const deletedRestaurante = await prisma.restaurant.delete({
@@ -56,7 +24,7 @@ export async function DELETE (request, { params }) {
         id: Number(params.id)
       }
     })
-    return NextResponse.json(deletedRestaurante)
+    return NextResponse.json({status: true})
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
