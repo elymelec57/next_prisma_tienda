@@ -174,7 +174,7 @@ async function main() {
   await prisma.mesa.createMany({
     data: [
       { numero: 1, capacidad: 4, estado: 'Libre', restaurantId: restaurant.id },
-      { numero: 2, capacidad: 2, estado: 'Ocupada', restaurantId: restaurant.id },
+      { numero: 2, capacidad: 2, estado: 'Libre', restaurantId: restaurant.id },
       { numero: 3, capacidad: 6, estado: 'Libre', restaurantId: restaurant.id },
     ]
   });
