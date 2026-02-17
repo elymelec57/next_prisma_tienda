@@ -1,41 +1,41 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../libs/prisma.js'
 
-export async function GET () {
+export async function GET() {
   try {
     const roles = await prisma.rol.findMany()
-    return NextResponse.json({status: true, roles})
+    return NextResponse.json({ status: true, roles })
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
-export async function POST (request) {
+export async function POST(request) {
   try {
-    const { nombre } = await request.json()
+    const { name } = await request.json()
     const newRol = await prisma.rol.create({
       data: {
-        nombre
+        name
       }
     })
-    return NextResponse.json({status:true})
+    return NextResponse.json({ status: true })
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
-export async function PUT (request, { params }) {
+export async function PUT(request, { params }) {
   try {
-    const { nombre, id } = await request.json()
+    const { name, id } = await request.json()
     const updatedRol = await prisma.rol.update({
       where: {
         id: id
       },
       data: {
-        nombre
+        name
       }
     })
-    return NextResponse.json({status: true})
+    return NextResponse.json({ status: true })
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

@@ -319,7 +319,7 @@ model Reserva {
 
 model Rol {
   id        Int        @id @default(autoincrement())
-  nombre    String     @unique // Ej: "Mesero", "Cocinero", "Administrador"
+  name      String     @unique // Ej: "Mesero", "Cocinero", "Administrador"
   empleados Empleado[] // Relación: Un rol tiene muchos empleados
 }
 

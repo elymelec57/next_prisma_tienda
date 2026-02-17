@@ -193,10 +193,10 @@ async function main() {
   });
 
   // 10. Roles de Empleados y Empleado
-  const rolMesero = await prisma.rol.create({ data: { nombre: 'Mesero' } });
-  const rolCocina = await prisma.rol.create({ data: { nombre: 'Cocina' } });
-  const rolCaja = await prisma.rol.create({ data: { nombre: 'Caja' } });
-  const rolDelivery = await prisma.rol.create({ data: { nombre: 'Delivery' } });
+  const rolMesero = await prisma.rol.create({ data: { name: 'Mesero' } });
+  const rolCocina = await prisma.rol.create({ data: { name: 'Cocina' } });
+  const rolCaja = await prisma.rol.create({ data: { name: 'Caja' } });
+  const rolDelivery = await prisma.rol.create({ data: { name: 'Delivery' } });
 
   await prisma.empleado.create({
     data: {

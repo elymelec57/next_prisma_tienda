@@ -131,7 +131,7 @@ export default function EmployeeForm({ employee, onSave, onCancel }) {
           >
             <option value="">Selecciona un rol</option>
             {roles.map((role) => (
-              <option key={role.id} value={role.id}>{role.nombre}</option>
+              <option key={role.id} value={role.id}>{role.name}</option>
             ))}
           </select>
           {errors.rolId && <p className="text-red-500 text-xs">{errors.rolId.message}</p>}

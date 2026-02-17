@@ -239,7 +239,7 @@ CREATE TABLE "Reserva" (
 -- CreateTable
 CREATE TABLE "Rol" (
     "id" SERIAL NOT NULL,
-    "nombre" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
 
     CONSTRAINT "Rol_pkey" PRIMARY KEY ("id")
 );
@@ -346,7 +346,7 @@ CREATE UNIQUE INDEX "Payment_pedidoId_key" ON "Payment"("pedidoId");
 CREATE UNIQUE INDEX "Reserva_fechaHora_mesaId_key" ON "Reserva"("fechaHora", "mesaId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Rol_nombre_key" ON "Rol"("nombre");
+CREATE UNIQUE INDEX "Rol_name_key" ON "Rol"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Empleado_telefono_key" ON "Empleado"("telefono");
