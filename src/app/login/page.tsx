@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema } from '../schemas/authSchema';
+import { loginSchema, LoginProps } from '../schemas/authSchema';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useState } from "react";
 
@@ -17,7 +17,7 @@ export default function Login() {
         register,
         handleSubmit,
         formState: { errors },
-    } = useForm({
+    } = useForm<LoginProps>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
             email: '',
@@ -25,21 +25,27 @@ export default function Login() {
         },
     });
 
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: LoginProps) => {
         setIsLoading(true);
-        const res = await fetch('/api/user/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ form: data })
-        });
+        try {
+            const res = await fetch('/api/user/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ form: data })
+            });
 
-        const login = await res.json();
-        setIsLoading(false);
+            const login = await res.json() as { status: boolean; message: string; auth?: any };
 
-        if (login.status) {
-            router.push('/store');
-        } else {
-            alert(login.message);
+            if (login.status) {
+                router.push('/store');
+            } else {
+                alert(login.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error al iniciar sesión");
+        } finally {
+            setIsLoading(false);
         }
     };
 

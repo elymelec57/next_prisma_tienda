@@ -7,4 +7,4 @@ export const loginSchema = z.object({
 });
 
 // Define el tipo de dato inferido desde el esquema, útil para TypeScript
-//export const LoginSchemaType = z.infer<typeof loginSchema>;
+export type LoginProps = z.infer<typeof loginSchema>;

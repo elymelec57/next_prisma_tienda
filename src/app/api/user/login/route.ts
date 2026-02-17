@@ -3,18 +3,27 @@ import { prisma } from '@/libs/prisma'
 import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
 import { cookies } from 'next/headers'
+import { loginSchema } from "@/app/schemas/authSchema";
 
-export async function POST(request) {
+export async function POST(request: Request) {
     const { form } = await request.json()
     const cookieStore = await cookies()
 
-    if (form.email === '' || form.password === '') {
-        return NextResponse.json({ status: false, message: 'Enter data' })
+    // Validar datos con Zod
+    const validation = loginSchema.safeParse(form);
+
+    if (!validation.success) {
+        return NextResponse.json({
+            status: false,
+            message: validation.error.issues[0].message
+        }, { status: 400 });
     }
+
+    const { email, password } = validation.data;
 
     // 1. Intentar buscar en la tabla de Usuarios (Administradores/Dueños)
     let authenticatedUser = await prisma.user.findUnique({
-        where: { email: form.email },
+        where: { email: email },
         select: {
             id: true,
             name: true,
@@ -27,7 +36,7 @@ export async function POST(request) {
     let userData = null;
 
     if (authenticatedUser) {
-        const match = bcrypt.compareSync(form.password, authenticatedUser.password);
+        const match = bcrypt.compareSync(password, authenticatedUser.password);
         if (match) {
             const restaurante = await prisma.restaurant.findUnique({
                 where: { userId: authenticatedUser.id },
@@ -48,12 +57,12 @@ export async function POST(request) {
 
     if (!userData) {
         const employee = await prisma.empleado.findUnique({
-            where: { email: form.email },
+            where: { email: email },
             include: { rol: true }
         });
 
         if (employee) {
-            const match2 = bcrypt.compareSync(form.password, employee.password);
+            const match2 = bcrypt.compareSync(password, employee.password);
             if (match2) {
                 userData = {
                     id: employee.id, // ID del empleado (o podrías usar un prefijo si es necesario)
@@ -70,7 +79,7 @@ export async function POST(request) {
         const token = jwt.sign({
             exp: Math.floor(Date.now() / 1000) + (60 * 60 * 1), // 8 horas de sesión
             data: userData
-        }, process.env.JWT_TOKEN);
+        }, process.env.JWT_TOKEN as string);
 
         cookieStore.set({
             name: 'token',
