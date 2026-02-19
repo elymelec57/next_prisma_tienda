@@ -337,9 +337,6 @@ CREATE UNIQUE INDEX "Cliente_telefono_key" ON "Cliente"("telefono");
 CREATE UNIQUE INDEX "Cliente_email_key" ON "Cliente"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ItemPedido_pedidoId_platoId_key" ON "ItemPedido"("pedidoId", "platoId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Payment_pedidoId_key" ON "Payment"("pedidoId");
 
 -- CreateIndex

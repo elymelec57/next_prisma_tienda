@@ -11,7 +11,9 @@ import {
     addAccountToTable,
     removeAccountFromTable,
     setActiveAccount,
-    updateAccountName
+    updateAccountName,
+    updateItemNote,
+    loadOrderIntoAccount
 } from '@/lib/features/waiter/waiterSlice'
 import TableSelector from './components/TableSelector'
 import MenuSelector from './components/MenuSelector'
@@ -65,6 +67,15 @@ export default function PedidosMesero() {
         dispatch(updateAccountName({ tableId: currentTable.id, accountIndex: index, name }))
     }
 
+    const handleUpdateNote = (itemId, noteIndex, note) => {
+        dispatch(updateItemNote({ tableId: currentTable.id, itemId, noteIndex, note }))
+    }
+
+    const handleEditExistingOrder = (pedido) => {
+        dispatch(loadOrderIntoAccount({ tableId: currentTable.id, pedido }))
+        toast.info(`Editando pedido #${pedido.id}`, { position: "top-center" })
+    }
+
     const handleSendOrder = async () => {
         if (currentOrder.length === 0) return
 
@@ -77,16 +88,24 @@ export default function PedidosMesero() {
                 total: currentOrder.reduce((sum, item) => sum + (item.precio * item.quantity), 0),
                 estado: 'Pendiente',
                 mesaId: currentTable.id,
-                items: currentOrder.map(item => ({
-                    platoId: item.id,
-                    cantidad: item.quantity,
-                    precioUnitario: item.precio,
-                    nota: ""
-                }))
+                items: currentOrder.flatMap(item => {
+                    // Split by individual notes to ensure kitchen sees each specific instruction
+                    const noteGroups = item.notes.reduce((acc, note) => {
+                        acc[note] = (acc[note] || 0) + 1;
+                        return acc;
+                    }, {});
+
+                    return Object.entries(noteGroups).map(([note, cantidad]) => ({
+                        platoId: item.id,
+                        cantidad: cantidad,
+                        precioUnitario: item.precio,
+                        nota: note
+                    }));
+                })
             }
 
-            const res = await fetch('/api/user/orders', {
-                method: 'POST',
+            const res = await fetch(currentAccount.activeOrderId ? `/api/user/orders/${currentAccount.activeOrderId}` : '/api/user/orders', {
+                method: currentAccount.activeOrderId ? 'PATCH' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderBody)
             })
@@ -172,6 +191,7 @@ export default function PedidosMesero() {
                                     accounts={accounts}
                                     activeAccountIndex={currentAccountIndex}
                                     onUpdateQuantity={handleUpdateQuantity}
+                                    onUpdateNote={handleUpdateNote}
                                     onRemoveItem={handleRemoveItem}
                                     onSendOrder={handleSendOrder}
                                     onChangeTable={() => dispatch(setCurrentTable(null))}
@@ -179,6 +199,7 @@ export default function PedidosMesero() {
                                     onAddAccount={() => dispatch(addAccountToTable(currentTable.id))}
                                     onRemoveAccount={(index) => dispatch(removeAccountFromTable({ tableId: currentTable.id, accountIndex: index }))}
                                     onRenameAccount={handleRenameAccount}
+                                    onEditExistingOrder={handleEditExistingOrder}
                                     sending={sending}
                                 />
                             </div>

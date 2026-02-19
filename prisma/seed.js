@@ -57,6 +57,7 @@ async function main() {
 
   // 4. Crear Categorías
   const catComida = await prisma.categoria.create({ data: { nombre: 'Hamburguesas' } });
+  const catPerros = await prisma.categoria.create({ data: { nombre: 'Perros' } });
   const catBebida = await prisma.categoria.create({ data: { nombre: 'Bebidas' } });
   const catIngrediente = await prisma.categoriaIngrediente.create({ data: { nombre: 'Proteínas' } });
 
@@ -166,6 +167,26 @@ async function main() {
       descripcion: 'Carne de angus con aceite de trufa',
       precio: 15.50,
       categoriaId: catComida.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato2 = await prisma.plato.create({
+    data: {
+      nombre: 'Perros calientes',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catPerros.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato3 = await prisma.plato.create({
+    data: {
+      nombre: 'Jugo de guayaba',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catBebida.id,
       restaurantId: restaurant.id,
     }
   });

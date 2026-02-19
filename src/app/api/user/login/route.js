@@ -59,7 +59,7 @@ export async function POST(request) {
                     id: employee.id, // ID del empleado (o podrías usar un prefijo si es necesario)
                     name: `${employee.nombre} ${employee.apellido}`,
                     email: employee.email,
-                    role: employee.rol?.nombre || 'empleado',
+                    role: employee.rol?.name || 'empleado',
                     restauranteId: employee.restaurantId
                 };
             }

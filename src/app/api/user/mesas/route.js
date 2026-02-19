@@ -21,7 +21,23 @@ export async function GET(request) {
     }
 
     const mesas = await prisma.mesa.findMany({
-      where: { restaurantId: restaurant.id }
+      where: { restaurantId: restaurant.id },
+      include: {
+        pedidos: {
+          where: {
+            estado: {
+              notIn: ['Pagado', 'Cancelado']
+            }
+          },
+          include: {
+            items: {
+              include: {
+                plato: true
+              }
+            }
+          }
+        }
+      }
     })
 
     return NextResponse.json(mesas)

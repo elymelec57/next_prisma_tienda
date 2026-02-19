@@ -9,7 +9,9 @@ import {
     Table as TableIcon,
     Loader2,
     Layers,
-    X
+    X,
+    ClipboardList,
+    Edit3
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
@@ -20,15 +22,20 @@ export default function OrderSummary({
     activeAccountIndex,
     onUpdateQuantity,
     onRemoveItem,
+    onUpdateNote,
     onSendOrder,
     onChangeTable,
     onSelectAccount,
     onAddAccount,
     onRemoveAccount,
     onRenameAccount,
+    onEditExistingOrder,
     sending
 }) {
     const total = order.reduce((sum, item) => sum + (item.precio * item.quantity), 0)
+
+    const existingOrdersTotal = table.pedidos?.reduce((sum, p) => sum + p.total, 0) || 0
+    const grandTotal = total + existingOrdersTotal
 
     return (
         <div className="h-full flex flex-col bg-white dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden">
@@ -103,6 +110,68 @@ export default function OrderSummary({
                 </div>
             </div>
 
+            {/* Existing Orders Section */}
+            {table.estado === 'Ocupada' && table.pedidos?.length > 0 && (
+                <div className="bg-orange-50/50 dark:bg-orange-950/10 border-b border-gray-100 dark:border-gray-800 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <ClipboardList className="h-4 w-4 text-orange-600" />
+                            <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter">
+                                Consumo en Mesa
+                            </h4>
+                        </div>
+                        <span className="text-sm font-black text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-lg">
+                            ${existingOrdersTotal.toFixed(2)}
+                        </span>
+                    </div>
+
+                    <div className="space-y-3">
+                        {table.pedidos.map((pedido) => (
+                            <div key={pedido.id} className="bg-white dark:bg-gray-900 rounded-xl p-3 border border-orange-100 dark:border-orange-900/30 shadow-sm transition-all hover:shadow-md">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <p className="text-[10px] font-black text-orange-700 dark:text-orange-400 uppercase tracking-tight">
+                                            {pedido.nombreCliente || `Orden #${pedido.id}`}
+                                        </p>
+                                        <p className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md inline-block mt-0.5
+                                            ${pedido.estado === 'Pendiente' ? 'bg-amber-100 text-amber-600' :
+                                                pedido.estado === 'Preparando' ? 'bg-blue-100 text-blue-600' :
+                                                    'bg-green-100 text-green-600'}
+                                        `}>
+                                            {pedido.estado}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => onEditExistingOrder(pedido)}
+                                        className="h-7 px-2 text-[10px] font-black text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                    >
+                                        <Edit3 className="h-3 w-3 mr-1" />
+                                        EDITAR
+                                    </Button>
+                                </div>
+                                <div className="space-y-1">
+                                    {Object.values(pedido.items.reduce((acc, item) => {
+                                        const id = item.plato.id;
+                                        if (!acc[id]) {
+                                            acc[id] = { ...item, cantidad: 0 };
+                                        }
+                                        acc[id].cantidad += item.cantidad;
+                                        return acc;
+                                    }, {})).map((item) => (
+                                        <div key={item.plato.id} className="flex justify-between text-[11px] text-gray-600 dark:text-gray-400">
+                                            <span>{item.cantidad}x {item.plato.nombre}</span>
+                                            <span className="font-medium">${(item.cantidad * item.precioUnitario).toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Items List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {order.length === 0 ? (
@@ -138,6 +207,24 @@ export default function OrderSummary({
                                         ${(item.precio * item.quantity).toFixed(2)}
                                         <span className="text-[10px] text-gray-400 font-bold ml-2 uppercase">(${item.precio.toFixed(2)} c/u)</span>
                                     </p>
+
+                                    {/* Notes Section */}
+                                    <div className="mt-3 space-y-2">
+                                        {Array.from({ length: item.quantity }).map((_, idx) => (
+                                            <div key={idx} className="relative flex items-center gap-2">
+                                                <div className="h-5 w-5 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-[9px] font-black text-orange-600">{idx + 1}</span>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={item.notes?.[idx] || ''}
+                                                    onChange={(e) => onUpdateNote(item.id, idx, e.target.value)}
+                                                    placeholder="Nota (ej. sin cebolla)"
+                                                    className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-lg px-2 py-1.5 text-[10px] font-medium focus:ring-1 focus:ring-orange-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="flex flex-col items-end justify-between">
@@ -174,8 +261,18 @@ export default function OrderSummary({
             {/* Footer */}
             <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 space-y-4">
                 <div className="flex justify-between items-center px-2">
-                    <span className="text-gray-500 font-medium">Subtotal {accounts[activeAccountIndex]?.name}</span>
-                    <span className="text-2xl font-black text-gray-900 dark:text-white">${total.toFixed(2)}</span>
+                    <div className="flex flex-col">
+                        <span className="text-gray-500 font-medium text-xs">Total {accounts[activeAccountIndex]?.name}</span>
+                        {existingOrdersTotal > 0 && (
+                            <span className="text-[10px] text-orange-600 font-bold uppercase">+ Consumo previo: ${existingOrdersTotal.toFixed(2)}</span>
+                        )}
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-2xl font-black text-gray-900 dark:text-white">${total.toFixed(2)}</span>
+                        {existingOrdersTotal > 0 && (
+                            <span className="text-xs font-bold text-gray-400">Gran Total: ${grandTotal.toFixed(2)}</span>
+                        )}
+                    </div>
                 </div>
 
                 <Button
