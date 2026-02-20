@@ -18,6 +18,7 @@ export async function GET(request) {
             precio: true,
             disponible: true,
             mainImageId: true,
+            categoriaId: true,
         },
         where: {
             restaurantId: user.auth.restauranteId

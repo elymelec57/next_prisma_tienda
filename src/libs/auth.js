@@ -1,35 +1,35 @@
 // src/libs/auth.js
 
 export const routeRoles = [
-    { href: '/store/plato', roles: ['user'] },
-    { href: '/store/ingredientes', roles: ['user'] },
-    { href: '/store/contornos', roles: ['user'] },
-    { href: '/store/orders', roles: ['user', 'cocina'] },
-    { href: '/store/pedidos-mesero', roles: ['user', 'mesero'] },
-    { href: '/store/caja', roles: ['user', 'caja'] },
-    { href: '/store/horarios', roles: ['mesero', 'caja', 'cocina'] },
-    { href: '/store/mesas', roles: ['user'] },
-    { href: '/store/clients', roles: ['user'] },
-    { href: '/store/business', roles: ['user'] },
-    { href: '/store/empleados', roles: ['user'] },
-    { href: '/store/profile', roles: ['user', 'mesero', 'caja', 'cocina'] },
-    { href: '/store', roles: ['user'] },
+  { href: '/store/plato', roles: ['user'] },
+  { href: '/store/ingredientes', roles: ['user'] },
+  { href: '/store/contornos', roles: ['user'] },
+  { href: '/store/orders', roles: ['user', 'cocina'] },
+  { href: '/store/pedidos-mesero', roles: ['user', 'mesero'] },
+  { href: '/store/caja', roles: ['user', 'caja'] },
+  { href: '/store/horarios', roles: ['mesero', 'caja', 'cocina'] },
+  { href: '/store/mesas', roles: ['user'] },
+  { href: '/store/clients', roles: ['user'] },
+  { href: '/store/business', roles: ['user'] },
+  { href: '/store/empleados', roles: ['user'] },
+  { href: '/store/profile', roles: ['user'] },
+  { href: '/store', roles: ['user'] },
 ];
 
 export function isAuthorized(userRole, pathname) {
-    if (!userRole) return false;
-    const role = userRole.toLowerCase();
+  if (!userRole) return false;
+  const role = userRole.toLowerCase();
 
-    // Sort by href length descending to match most specific route first
-    const sortedRoutes = [...routeRoles].sort((a, b) => b.href.length - a.href.length);
+  // Sort by href length descending to match most specific route first
+  const sortedRoutes = [...routeRoles].sort((a, b) => b.href.length - a.href.length);
 
-    for (const item of sortedRoutes) {
-        if (pathname.startsWith(item.href)) {
-            return item.roles.includes(role);
-        }
+  for (const item of sortedRoutes) {
+    if (pathname.startsWith(item.href)) {
+      return item.roles.includes(role);
     }
+  }
 
-    return true;
+  return true;
 }
 
 export async function authorizeRequest(request, resourceId, resourceType) {

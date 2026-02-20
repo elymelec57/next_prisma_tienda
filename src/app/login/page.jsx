@@ -37,7 +37,19 @@ export default function Login() {
         setIsLoading(false);
 
         if (login.status) {
-            router.push('/store');
+            if (login.auth.role === 'User') {
+                router.push('/store');
+            } else {
+                if (login.auth.role === 'Mesero') {
+                    router.push('/store/pedidos-mesero');
+                }
+                if (login.auth.role === 'Caja') {
+                    router.push('/store/caja');
+                }
+                if (login.auth.role === 'Cocina') {
+                    router.push('/store/cocina');
+                }
+            }
         } else {
             alert(login.message);
         }

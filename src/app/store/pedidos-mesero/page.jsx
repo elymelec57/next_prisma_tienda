@@ -137,13 +137,13 @@ export default function PedidosMesero() {
                     </p>
                 </div>
 
-                <Link
+                {/* <Link
                     href="/store/orders"
                     className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-orange-900/10 text-gray-600 dark:text-gray-400 hover:text-orange-600 transition-all rounded-2xl font-black text-xs uppercase tracking-widest border border-transparent hover:border-orange-100"
                 >
                     <ShoppingBag className="h-4 w-4" />
                     Seguimiento de Órdenes
-                </Link>
+                </Link> */}
             </div>
 
             <div className="flex-1 overflow-hidden">

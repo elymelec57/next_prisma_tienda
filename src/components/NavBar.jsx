@@ -56,7 +56,7 @@ export default function NavBar({ data }) {
         { href: '/store/clients', label: 'Clientes', icon: Users, roles: ['user'] },
         { href: '/store/business', label: 'Mi Restaurante', icon: Store, roles: ['user'] },
         { href: '/store/empleados', label: 'Empleados', icon: Users, roles: ['user'] },
-        { href: '/store/profile', label: 'Mi Perfil', icon: User, roles: ['user', 'mesero', 'caja', 'cocina'] },
+        { href: '/store/profile', label: 'Mi Perfil', icon: User, roles: ['user'] },
     ];
 
     const filteredNavItems = navItems.filter(item => {
