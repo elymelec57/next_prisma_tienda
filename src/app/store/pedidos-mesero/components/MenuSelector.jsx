@@ -17,16 +17,14 @@ export default function MenuSelector({ onAddItem, userId }) {
 
     const fetchData = async () => {
         try {
-            const [prodRes, catRes] = await Promise.all([
-                fetch(`/api/user/product`),
-                fetch('/api/category')
+            const [prodRes] = await Promise.all([
+                fetch(`/api/user/product`)
             ])
 
-            if (prodRes.ok && catRes.ok) {
+            if (prodRes.ok) {
                 const prodData = await prodRes.json()
-                const catData = await catRes.json()
                 setProducts(prodData.dataPlatos || [])
-                setCategories(catData || [])
+                setCategories(prodData.categorias || [])
             }
         } catch (err) {
             console.error(err)
@@ -41,8 +39,8 @@ export default function MenuSelector({ onAddItem, userId }) {
         return matchesSearch && matchesCategory && p.disponible
     })
 
-    // Definimos si mostramos la lista (solo si hay algo en el buscador o se seleccionó una categoría específica)
-    const shouldShowProducts = searchTerm.length > 0 || selectedCategory !== 'all'
+    // Definimos si mostramos la lista
+    const shouldShowProducts = true
 
     if (loading) {
         return (

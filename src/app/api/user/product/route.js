@@ -29,10 +29,20 @@ export async function GET(request) {
         .map((p) => p.mainImageId)
         .filter((id) => id !== null);
 
+    const categorias = await prisma.categoria.findMany({
+        where: {
+            platos: {
+                some: {
+                    restaurantId: user.auth.restauranteId
+                }
+            }
+        }
+    });
+
     if (imageIds.length === 0) {
         // No hay imágenes para buscar, devolver solo los productos
         const dataPlatos = platos.map((p) => ({ ...p, mainImage: null }));
-        return NextResponse.json({ dataPlatos })
+        return NextResponse.json({ categorias, dataPlatos })
     }
 
     const images = await prisma.image.findMany({
@@ -57,5 +67,5 @@ export async function GET(request) {
         mainImage: plato.mainImageId ? imageMap.get(plato.mainImageId) : null,
     }));
 
-    return NextResponse.json({ dataPlatos })
+    return NextResponse.json({ categorias, dataPlatos })
 }

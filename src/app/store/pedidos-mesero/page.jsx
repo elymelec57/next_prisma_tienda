@@ -76,6 +76,15 @@ export default function PedidosMesero() {
         toast.info(`Editando pedido #${pedido.id}`, { position: "top-center" })
     }
 
+    const handleCancelEdit = () => {
+        if (accounts.length > 1) {
+            dispatch(removeAccountFromTable({ tableId: currentTable.id, accountIndex: currentAccountIndex }))
+        } else {
+            dispatch(clearActiveAccount(currentTable.id))
+            dispatch(updateAccountName({ tableId: currentTable.id, accountIndex: 0, name: 'Cuenta 1' }))
+        }
+    }
+
     const handleSendOrder = async () => {
         if (currentOrder.length === 0) return
 
@@ -200,6 +209,7 @@ export default function PedidosMesero() {
                                     onRemoveAccount={(index) => dispatch(removeAccountFromTable({ tableId: currentTable.id, accountIndex: index }))}
                                     onRenameAccount={handleRenameAccount}
                                     onEditExistingOrder={handleEditExistingOrder}
+                                    onCancelEdit={handleCancelEdit}
                                     sending={sending}
                                 />
                             </div>
