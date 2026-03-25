@@ -1,6 +1,7 @@
 
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Plus,
   Users,
@@ -22,32 +23,22 @@ import { Label } from '@/components/ui/Label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card'
 
 export default function TableManager() {
-  const [mesas, setMesas] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedMesa, setSelectedMesa] = useState(null)
   const [mesaToDelete, setMesaToDelete] = useState(null)
 
-  useEffect(() => {
-    fetchMesas()
-  }, [])
-
-  const fetchMesas = async () => {
-    try {
-      const response = await fetch('/api/user/mesas')
-      if (!response.ok) {
-        throw new Error('Error al cargar las mesas')
-      }
-      const data = await response.json()
-      setMesas(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+  const { data: mesas = [], isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['mesas'],
+    queryFn: async () => {
+      const response = await fetch('/api/user/mesas');
+      if (!response.ok) throw new Error('Error al cargar las mesas');
+      return response.json();
     }
-  }
+  });
+
+  const [error, setError] = useState(null);
 
   const handleOpenModal = (mesa = null) => {
     setSelectedMesa(mesa)
@@ -59,26 +50,29 @@ export default function TableManager() {
     setIsModalOpen(false)
   }
 
-  const handleSaveMesa = async (mesaData) => {
-    const method = selectedMesa ? 'PUT' : 'POST'
-    const url = selectedMesa ? `/api/user/mesas/${selectedMesa.id}` : '/api/user/mesas'
-
-    try {
+  const saveMesaMutation = useMutation({
+    mutationFn: async (mesaData) => {
+      const method = selectedMesa ? 'PUT' : 'POST'
+      const url = selectedMesa ? `/api/user/mesas/${selectedMesa.id}` : '/api/user/mesas'
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mesaData)
       })
-
-      if (!response.ok) {
-        throw new Error('Error al guardar la mesa')
-      }
-
-      fetchMesas()
-      handleCloseModal()
-    } catch (err) {
-      setError(err.message)
+      if (!response.ok) throw new Error('Error al guardar la mesa');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mesas'] });
+      handleCloseModal();
+    },
+    onError: (err) => {
+      setError(err.message);
     }
+  });
+
+  const handleSaveMesa = (mesaData) => {
+    saveMesaMutation.mutate(mesaData);
   }
 
   const handleDeleteClick = (mesa) => {
@@ -86,24 +80,27 @@ export default function TableManager() {
     setIsDeleteModalOpen(true)
   }
 
-  const confirmDelete = async () => {
-    if (!mesaToDelete) return
-
-    try {
+  const deleteMesaMutation = useMutation({
+    mutationFn: async () => {
       const response = await fetch(`/api/user/mesas/${mesaToDelete.id}`, {
         method: 'DELETE'
       })
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar la mesa')
-      }
-
-      fetchMesas()
-      setIsDeleteModalOpen(false)
-      setMesaToDelete(null)
-    } catch (err) {
-      setError(err.message)
+      if (!response.ok) throw new Error('Error al eliminar la mesa');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mesas'] });
+      setIsDeleteModalOpen(false);
+      setMesaToDelete(null);
+    },
+    onError: (err) => {
+      setError(err.message);
     }
+  });
+
+  const confirmDelete = () => {
+    if (!mesaToDelete) return
+    deleteMesaMutation.mutate();
   }
 
   const getStatusBadge = (estado) => {
@@ -151,10 +148,10 @@ export default function TableManager() {
         </Button>
       </div>
 
-      {error && (
+      {(error || queryError) && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md flex items-center gap-3">
           <AlertCircle className="h-5 w-5 text-red-400" />
-          <p className="text-sm text-red-700">{error}</p>
+          <p className="text-sm text-red-700">{error || queryError.message}</p>
         </div>
       )}
 

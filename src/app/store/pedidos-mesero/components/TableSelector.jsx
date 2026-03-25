@@ -1,30 +1,18 @@
 
 'use client'
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Loader2, LayoutGrid, CheckCircle2, Clock, XCircle, Users } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 
 export default function TableSelector({ onSelectTable }) {
-    const [mesas, setMesas] = useState([])
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        fetchMesas()
-    }, [])
-
-    const fetchMesas = async () => {
-        try {
-            const response = await fetch('/api/user/mesas')
-            if (response.ok) {
-                const data = await response.json()
-                setMesas(data)
-            }
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setLoading(false)
+    const { data: mesas = [], isLoading: loading } = useQuery({
+        queryKey: ['mesas'],
+        queryFn: async () => {
+            const response = await fetch('/api/user/mesas');
+            if (!response.ok) throw new Error('Error al cargar mesas');
+            return response.json();
         }
-    }
+    });
 
     const getStatusColor = (estado) => {
         switch (estado) {

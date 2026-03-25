@@ -1,7 +1,8 @@
 
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAppSelector } from '@/lib/hooks'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
     Banknote,
     Clock,
@@ -29,51 +30,51 @@ import Modal from '@/components/Modal'
 import { toast } from 'react-toastify'
 
 export default function CajaPage() {
-    const [pendingOrders, setPendingOrders] = useState([])
-    const [stats, setStats] = useState({ totalIncome: 0, count: 0, byMethod: {} })
-    const [paymentMethods, setPaymentMethods] = useState([])
-    const [loading, setLoading] = useState(true)
+    const queryClient = useQueryClient();
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [confirming, setConfirming] = useState(false)
     const [activeTab, setActiveTab] = useState('mesa') // 'mesa' or 'delivery'
 
     const user = useAppSelector((state) => state.auth.auth)
 
-    useEffect(() => {
-        fetchCajaData()
-    }, [])
-
-    const fetchCajaData = async () => {
-        try {
-            const [pendingRes, statsRes, methodsRes] = await Promise.all([
-                fetch('/api/user/caja/pending'),
-                fetch('/api/user/caja/stats'),
-                fetch(`/api/user/business/payment-methods?restaurantId=${user.restauranteId}`)
-            ])
-
-            if (pendingRes.ok) setPendingOrders(await pendingRes.json())
-            if (statsRes.ok) setStats(await statsRes.json())
-            if (methodsRes.ok) {
-                const methodsData = await methodsRes.json()
-                setPaymentMethods(methodsData.data || [])
-            }
-        } catch (err) {
-            console.error(err)
-            toast.error('Error al cargar datos de caja')
-        } finally {
-            setLoading(false)
+    const { data: pendingOrders = [], isLoading: loadingPending } = useQuery({
+        queryKey: ['cajaPending'],
+        queryFn: async () => {
+            const res = await fetch('/api/user/caja/pending');
+            if (!res.ok) throw new Error('Error al cargar pedidos pendientes');
+            return res.json();
         }
-    }
+    });
+
+    const { data: stats = { totalIncome: 0, count: 0, byMethod: {} }, isLoading: loadingStats } = useQuery({
+        queryKey: ['cajaStats'],
+        queryFn: async () => {
+            const res = await fetch('/api/user/caja/stats');
+            if (!res.ok) throw new Error('Error al cargar estadísticas');
+            return res.json();
+        }
+    });
+
+    const { data: paymentMethods = [], isLoading: loadingMethods } = useQuery({
+        queryKey: ['paymentMethods', user.restauranteId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/business/payment-methods?restaurantId=${user.restauranteId}`);
+            if (!res.ok) throw new Error('Error al cargar métodos de pago');
+            const data = await res.json();
+            return data.data || [];
+        },
+        enabled: !!user.restauranteId,
+    });
+
+    const loading = loadingPending || loadingStats || loadingMethods;
 
     const handleOpenPayment = (order) => {
         setSelectedOrder(order)
         setIsModalOpen(true)
     }
 
-    const handleConfirmPayment = async (methodId) => {
-        setConfirming(true)
-        try {
+    const payMutation = useMutation({
+        mutationFn: async (methodId) => {
             const res = await fetch('/api/user/caja/pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -82,21 +83,26 @@ export default function CajaPage() {
                     paymentMethodId: methodId,
                     monto: selectedOrder.total
                 })
-            })
-
-            if (res.ok) {
-                toast.success(`Pedido #${selectedOrder.id} pagado con éxito`)
-                setIsModalOpen(false)
-                fetchCajaData()
-            } else {
-                throw new Error('Error al procesar el pago')
-            }
-        } catch (err) {
+            });
+            if (!res.ok) throw new Error('Error al procesar el pago');
+            return res.json();
+        },
+        onSuccess: () => {
+            toast.success(`Pedido #${selectedOrder.id} pagado con éxito`)
+            setIsModalOpen(false)
+            queryClient.invalidateQueries({ queryKey: ['cajaPending'] });
+            queryClient.invalidateQueries({ queryKey: ['cajaStats'] });
+        },
+        onError: (err) => {
             toast.error(err.message)
-        } finally {
-            setConfirming(false)
         }
+    });
+
+    const handleConfirmPayment = (methodId) => {
+        payMutation.mutate(methodId);
     }
+
+    const confirming = payMutation.isPending;
 
     const filteredOrders = pendingOrders.filter(o => {
         if (activeTab === 'mesa') return o.mesaId !== null;

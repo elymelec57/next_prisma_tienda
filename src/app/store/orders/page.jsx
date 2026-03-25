@@ -1,8 +1,9 @@
 
 'use client'
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppSelector } from "@/lib/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Loader2,
     Eye,
@@ -24,68 +25,59 @@ import Modal from '@/components/Modal';
 export default function Orders() {
 
     const user = useAppSelector((state) => state.auth.auth)
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
     const [selectedOrders, setSelectedOrders] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('mesa'); // 'mesa' or 'delivery'
 
-    useEffect(() => {
-        if (user.restauranteId) {
-            getOrders();
-        }
-    }, [user.restauranteId])
+    const { data: orders = [], isLoading: loading } = useQuery({
+        queryKey: ['orders', user.restauranteId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/orders/user/${user.restauranteId}`);
+            if (!res.ok) throw new Error('Error al cargar pedidos');
+            const data = await res.json();
+            return data.orders || [];
+        },
+        enabled: !!user.restauranteId,
+    });
 
-    const getOrders = async () => {
-        try {
-            const res = await fetch(`/api/user/orders/user/${user.restauranteId}`)
-            if (res.ok) {
-                const { orders } = await res.json()
-                setOrders(orders || []);
-            }
-        } catch (error) {
-            console.error("Error fetching orders:", error);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    const handleViewDetails = async (order) => {
-        try {
+    const orderDetailsMutation = useMutation({
+        mutationFn: async (order) => {
             let idsToFetch = [order.id];
-
-            // Si es mesa y tiene sub-ordenes (cuentas separadas), obtenemos los IDs de todas
             if (activeTab === 'mesa' && order.subOrders && order.subOrders.length > 0) {
                 idsToFetch = order.subOrders.map(so => so.id);
             }
-
             const promises = idsToFetch.map(id => fetch(`/api/user/orders/${id}`).then(res => res.json()));
-            const data = await Promise.all(promises);
-
+            return Promise.all(promises);
+        },
+        onSuccess: (data) => {
             setSelectedOrders(data);
             setIsModalOpen(true);
-        } catch (error) {
-            console.error("Error fetching order details:", error);
         }
+    });
+
+    const handleViewDetails = (order) => {
+        orderDetailsMutation.mutate(order);
     };
 
-    const updateOrderStatus = async (orderId, newStatus) => {
-        try {
+    const updateOrderStatusMutation = useMutation({
+        mutationFn: async ({ orderId, newStatus }) => {
             const res = await fetch(`/api/user/orders/${orderId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ estado: newStatus })
             });
-
-            if (res.ok) {
-                // Actualizar localmente en el modal
-                setSelectedOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: newStatus } : o));
-                // Actualizar grid general
-                getOrders();
-            }
-        } catch (error) {
-            console.error("Error updating order status:", error);
+            if (!res.ok) throw new Error('Error al actualizar el estado');
+            return { orderId, newStatus };
+        },
+        onSuccess: ({ orderId, newStatus }) => {
+            setSelectedOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: newStatus } : o));
+            queryClient.invalidateQueries({ queryKey: ['orders', user.restauranteId] });
         }
+    });
+
+    const updateOrderStatus = (orderId, newStatus) => {
+        updateOrderStatusMutation.mutate({ orderId, newStatus });
     };
 
     const getStatusBadge = (estado) => {

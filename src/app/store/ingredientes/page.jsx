@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { Plus, Pencil, Trash, Loader2, Package, Search } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 import Modal from '@/components/Modal'
 import IngredientForm from '@/components/IngredientForm'
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal'
 
 export default function IngredientsPage() {
-  const [ingredients, setIngredients] = useState([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient();
 
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
@@ -20,43 +20,24 @@ export default function IngredientsPage() {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [categories, setCategories] = useState([])
 
-
-  async function fetchIngredients() {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/user/ingredients')
-      if (res.ok) {
-        const data = await res.json()
-        setIngredients(data || [])
-      } else {
-        toast.error('Error al cargar ingredientes')
-      }
-    } catch (error) {
-      console.error('Error fetching ingredients:', error)
-      toast.error('Error de conexión')
-    } finally {
-      setLoading(false)
+  const { data: ingredients = [], isLoading: loading } = useQuery({
+    queryKey: ['ingredients'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/ingredients');
+      if (!res.ok) throw new Error('Error al cargar ingredientes');
+      return res.json();
     }
-  }
+  });
 
-  async function fetchCategories() {
-    try {
-      const res = await fetch('/api/user/ingredients/categories')
-      if (res.ok) {
-        const data = await res.json()
-        setCategories(data || [])
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
+  const { data: categories = [] } = useQuery({
+    queryKey: ['ingredientCategories'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/ingredients/categories');
+      if (!res.ok) throw new Error('Error al cargar categorías');
+      return res.json();
     }
-  }
-
-  useEffect(() => {
-    fetchIngredients()
-    fetchCategories()
-  }, [])
+  });
 
   const filteredIngredients = ingredients.filter(ing => {
     const matchesSearch = ing.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,33 +56,39 @@ export default function IngredientsPage() {
     setIngredientToDelete(ingredient)
   }
 
-  const handleConfirmDelete = async () => {
-    if (!ingredientToDelete) return
-
-    try {
-      const res = await fetch(`/api/user/ingredients?id=${ingredientToDelete.id}`, {
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await fetch(`/api/user/ingredients?id=${id}`, {
         method: 'DELETE',
-      })
-
-      const result = await res.json()
-
-      if (res.ok && result.status !== false) {
+      });
+      if (!res.ok) throw new Error('Error al eliminar ingrediente');
+      return res.json();
+    },
+    onSuccess: (result) => {
+      if (result.status !== false) {
         toast.success(result.message || 'Ingrediente eliminado')
-        fetchIngredients()
+        queryClient.invalidateQueries({ queryKey: ['ingredients'] });
       } else {
         toast.error(result.message || 'Error al eliminar ingrediente')
       }
-    } catch (error) {
+    },
+    onError: () => {
       toast.error('Error al eliminar ingrediente')
-    } finally {
+    },
+    onSettled: () => {
       setIngredientToDelete(null)
     }
+  });
+
+  const handleConfirmDelete = () => {
+    if (!ingredientToDelete) return
+    deleteMutation.mutate(ingredientToDelete.id);
   }
 
   const handleFormSuccess = () => {
     setIsFormModalOpen(false)
     setIngredientToEdit(null)
-    fetchIngredients()
+    queryClient.invalidateQueries({ queryKey: ['ingredients'] });
   }
 
   const handleCloseFormModal = () => {

@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAppSelector } from "@/lib/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { Plus, Pencil, Trash, Search, Loader2 } from 'lucide-react';
 
@@ -13,31 +14,23 @@ import ContornoForm from '@/components/ContornoForm';
 export default function ListContorno() {
 
     const id = useAppSelector((state) => state.auth.auth.id)
-    const [contornos, setContornos] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
 
     // Modals state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [contornoToEdit, setContornoToEdit] = useState(null);
     const [contornoToDelete, setContornoToDelete] = useState(null);
 
-    useEffect(() => {
-        getContornos();
-    }, [])
-
-    const getContornos = async () => {
-        try {
-            const res = await fetch(`/api/user/contornos/${id}`)
-            if (res.ok) {
-                const { contornos } = await res.json()
-                setContornos(contornos || []);
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const { data: contornos = [], isLoading: loading } = useQuery({
+        queryKey: ['contornos', id],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/contornos/${id}`);
+            if (!res.ok) throw new Error('Error al cargar contornos');
+            const data = await res.json();
+            return data.contornos || [];
+        },
+        enabled: !!id,
+    });
 
     const handleEditClick = (c) => {
         setContornoToEdit(c);
@@ -48,50 +41,33 @@ export default function ListContorno() {
         setContornoToDelete(p);
     };
 
-    const handleConfirmDelete = async () => {
-        if (!contornoToDelete) return;
-
-        const id = contornoToDelete.id;
-        try {
-            // NOTE: The original code used /api/user/product/${id} for deletion, 
-            // but for contornos it might be different. 
-            // Assuming it shares the same endpoint or there is a specific one.
-            // Based on original code: `/api/user/product/${id}` was used. 
-            // If that was incorrect, it should be `/api/user/contorno/${id}` presumably.
-            // However, sticking to the likely intended API `api/user/contorno/${id}` or reuse product if that's how backend is set (unlikely).
-            // Let's assume there is a specific delete endpoint for contornos or I need to check.
-            // Original code: `await fetch(/api/user/product/${id}, ...)`
-            // This looks weird. Let's try to use `/api/user/contorno/${id}` which is more logical.
-            // If the user didn't have this, I might need to check if that route exists. 
-            // But let's assume standard REST.
-
-            // Correction: Reviewing previous file content, it indeed used `/api/user/product/${id}` 
-            // which is highly likely a COPY PASTE ERROR in the original code unless `product` handles everything.
-            // Given the context of "New Contorno" used `/api/user/contornos/new` and `consultContorno` used `/api/user/contorno/${id}`, 
-            // Delete should likely be `/api/user/contorno/${id}`. 
-            // I will use `/api/user/contorno/${id}`. If it fails, the user will report it, but it's the correct semantics.
-
-            const res = await fetch(`/api/user/contornos/${id}`, {
+    const deleteMutation = useMutation({
+        mutationFn: async (contornoId) => {
+            const res = await fetch(`/api/user/contornos/${contornoId}`, {
                 method: 'DELETE'
-            })
-
-            // If the above 404s, it might be because the original code was reusing the product endpoint or I need to find the correct one.
-            // But let's try the logical one. 
-
-            const result = await res.json();
-
-            if (result.status) {
-                toast.success(result.message);
-                getContornos()
+            });
+            if (!res.ok) throw new Error('Error al eliminar contorno');
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                toast.success(data.message);
+                queryClient.invalidateQueries({ queryKey: ['contornos', id] });
             } else {
-                toast.error(result.message || "Error eliminando contorno");
+                toast.error(data.message || "Error eliminando contorno");
             }
-
-        } catch (error) {
+        },
+        onError: () => {
             toast.error("Error al eliminar");
-        } finally {
+        },
+        onSettled: () => {
             setContornoToDelete(null);
         }
+    });
+
+    const handleConfirmDelete = () => {
+        if (!contornoToDelete) return;
+        deleteMutation.mutate(contornoToDelete.id);
     };
 
     const handleCancelDelete = () => {
@@ -101,7 +77,7 @@ export default function ListContorno() {
     const handleSuccess = () => {
         setIsCreateModalOpen(false);
         setContornoToEdit(null);
-        getContornos();
+        queryClient.invalidateQueries({ queryKey: ['contornos', id] });
     }
 
     const handleCloseModal = () => {

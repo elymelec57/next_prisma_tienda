@@ -7,11 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../schemas/authSchema';
 import { Mail, Lock, Loader2 } from 'lucide-react';
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 export default function Login() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
 
     const {
         register,
@@ -25,35 +24,44 @@ export default function Login() {
         },
     });
 
-    const onSubmit = async (data) => {
-        setIsLoading(true);
-        const res = await fetch('/api/user/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ form: data })
-        });
-
-        const login = await res.json();
-        setIsLoading(false);
-
-        if (login.status) {
-            if (login.auth.role === 'User') {
-                router.push('/store');
+    const loginMutation = useMutation({
+        mutationFn: async (data) => {
+            const res = await fetch('/api/user/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ form: data })
+            });
+            return res.json();
+        },
+        onSuccess: (login) => {
+            if (login.status) {
+                if (login.auth.role === 'User') {
+                    router.push('/store');
+                } else {
+                    if (login.auth.role === 'Mesero') {
+                        router.push('/store/pedidos-mesero');
+                    }
+                    if (login.auth.role === 'Caja') {
+                        router.push('/store/caja');
+                    }
+                    if (login.auth.role === 'Cocina') {
+                        router.push('/store/cocina');
+                    }
+                }
             } else {
-                if (login.auth.role === 'Mesero') {
-                    router.push('/store/pedidos-mesero');
-                }
-                if (login.auth.role === 'Caja') {
-                    router.push('/store/caja');
-                }
-                if (login.auth.role === 'Cocina') {
-                    router.push('/store/cocina');
-                }
+                alert(login.message);
             }
-        } else {
-            alert(login.message);
+        },
+        onError: (error) => {
+            alert("Error al intentar iniciar sesión: " + error.message);
         }
+    });
+
+    const onSubmit = (data) => {
+        loginMutation.mutate(data);
     };
+
+    const isLoading = loginMutation.isPending;
 
     return (
         <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">

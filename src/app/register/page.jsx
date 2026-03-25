@@ -7,12 +7,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema } from '../schemas/registerSchema';
 import { User, Mail, Lock, Loader2 } from 'lucide-react';
-import { useState } from "react";
 import { toast } from 'react-toastify';
+import { useMutation } from "@tanstack/react-query";
 
 export default function Register() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
 
     const {
         register,
@@ -28,24 +27,33 @@ export default function Register() {
         },
     });
 
-    const onSubmit = async (data) => {
-        setIsLoading(true);
-        const res = await fetch('/api/user/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ form: data })
-        });
-
-        const registerAdmin = await res.json();
-        setIsLoading(false);
-
-        if (registerAdmin.status) {
-            toast.success(registerAdmin.message);
-            router.push('/login');
-        } else {
-            toast.error(registerAdmin.message);
+    const registerMutation = useMutation({
+        mutationFn: async (data) => {
+            const res = await fetch('/api/user/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ form: data })
+            });
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                toast.success(data.message);
+                router.push('/login');
+            } else {
+                toast.error(data.message);
+            }
+        },
+        onError: (error) => {
+            toast.error("Error al registrar: " + error.message);
         }
+    });
+
+    const onSubmit = (data) => {
+        registerMutation.mutate(data);
     }
+
+    const isLoading = registerMutation.isPending;
 
     return (
         <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">

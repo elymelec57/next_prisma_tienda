@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAppSelector } from "@/lib/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { Store, Camera, Save, ArrowLeft, ExternalLink, RefreshCw, Clock, CreditCard, Plus, Trash2, Edit2, CheckCircle2 } from "lucide-react";
 
@@ -21,6 +22,7 @@ const PAYMENT_TYPES = [
 export default function Business() {
 
     const router = useRouter()
+    const queryClient = useQueryClient();
     const userId = useAppSelector((state) => state.auth.auth.id)
 
     const [activeTab, setActiveTab] = useState("general");
@@ -51,7 +53,6 @@ export default function Business() {
         }))
     );
 
-    const [paymentMethods, setPaymentMethods] = useState([]);
     const [isEditingPayment, setIsEditingPayment] = useState(null);
     const [paymentForm, setPaymentForm] = useState({
         type: 'PAGO_MOVIL',
@@ -65,11 +66,40 @@ export default function Business() {
         isActive: true
     });
 
+    const { data: businessData, isLoading: isLoadingBusiness } = useQuery({
+        queryKey: ['business', userId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/business/user/${userId}`);
+            const data = await res.json();
+            return data;
+        },
+        enabled: !!userId,
+    });
+
     useEffect(() => {
-        if (userId) {
-            consultProduct();
+        if (businessData?.status) {
+            const rest = businessData.rest;
+            setForm({
+                id: rest.id,
+                name: rest.name,
+                slogan: rest.slogan,
+                phone: rest.phone,
+                direcction: rest.direcction,
+                slug: rest.slug
+            })
+
+            setImage({
+                mainImageId: rest.mainImageId,
+                url: rest.url,
+                image: ''
+            })
+
+            if (rest.restaurantHours && rest.restaurantHours.length > 0) {
+                const sortedHours = [...rest.restaurantHours].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+                setHours(sortedHours);
+            }
         }
-    }, [userId])
+    }, [businessData]);
 
     const onFileChange = (e) => {
         let file = e.target.files[0];
@@ -88,41 +118,6 @@ export default function Business() {
         }
     }
 
-    async function consultProduct() {
-        try {
-            const data = await fetch(`/api/user/business/user/${userId}`)
-            const rest = await data.json()
-
-            if (rest.status) {
-                setForm({
-                    id: rest.rest.id,
-                    name: rest.rest.name,
-                    slogan: rest.rest.slogan,
-                    phone: rest.rest.phone,
-                    direcction: rest.rest.direcction,
-                    slug: rest.rest.slug
-                })
-
-                setImage({
-                    mainImageId: rest.rest.mainImageId,
-                    url: rest.rest.url,
-                    image: ''
-                })
-
-                if (rest.rest.restaurantHours && rest.rest.restaurantHours.length > 0) {
-                    const sortedHours = [...rest.rest.restaurantHours].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-                    setHours(sortedHours);
-                }
-
-                if (rest.rest.paymentMethods) {
-                    setPaymentMethods(rest.rest.paymentMethods);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching business:", error);
-        }
-    }
-
     const changeImput = (e) => {
         setForm({
             ...form,
@@ -134,11 +129,8 @@ export default function Business() {
         router.push(`/${form.slug}`)
     }
 
-    const businessSave = async (e) => {
-        e.preventDefault()
-        setIsLoading(true);
-
-        try {
+    const businessMutation = useMutation({
+        mutationFn: async () => {
             if (!form.id) {
                 const storeBusiness = await fetch(`/api/user/business`, {
                     method: 'POST',
@@ -156,9 +148,8 @@ export default function Business() {
                             },
                         );
                     }
-                    toast.success('Negocio creado exitosamente')
-                    consultProduct()
                 }
+                return rest;
             } else {
                 const updateBusiness = await fetch(`/api/user/business/user/${userId}`, {
                     method: 'PUT',
@@ -177,46 +168,58 @@ export default function Business() {
                             },
                         );
                     }
-                    toast.success('Negocio actualizado correctamente')
-                    setShowImg(true)
-                    consultProduct()
                 }
+                return rest;
             }
-        } catch (error) {
-            console.log(error)
-            toast.error('Error al guardar el negocio')
-        } finally {
-            setIsLoading(false);
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                toast.success(form.id ? 'Negocio actualizado correctamente' : 'Negocio creado exitosamente');
+                setShowImg(true);
+                queryClient.invalidateQueries({ queryKey: ['business', userId] });
+            } else {
+                toast.error(data.message || 'Error al guardar el negocio');
+            }
+        },
+        onError: () => {
+            toast.error('Error al guardar el negocio');
         }
+    });
+
+    const businessSave = (e) => {
+        e.preventDefault();
+        businessMutation.mutate();
     }
 
-    const saveHours = async () => {
-        if (!form.id) return toast.error("Crea tu negocio primero");
-        setIsLoading(true);
-        try {
+    const hoursMutation = useMutation({
+        mutationFn: async () => {
             const res = await fetch('/api/user/business/hours', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ restaurantId: form.id, hours })
             });
-            const data = await res.json();
+            return res.json();
+        },
+        onSuccess: (data) => {
             if (data.status) {
                 toast.success("Horarios actualizados");
+                queryClient.invalidateQueries({ queryKey: ['business', userId] });
             } else {
                 toast.error(data.message);
             }
-        } catch (error) {
+        },
+        onError: () => {
             toast.error("Error al guardar horarios");
-        } finally {
-            setIsLoading(false);
         }
+    });
+
+    const saveHours = () => {
+        if (!form.id) return toast.error("Crea tu negocio primero");
+        hoursMutation.mutate();
     }
 
-    const handlePaymentSubmit = async (e) => {
-        e.preventDefault();
-        if (!form.id) return toast.error("Crea tu negocio primero");
-        setIsLoading(true);
-        try {
+    const paymentMutation = useMutation({
+        mutationFn: async () => {
             const url = isEditingPayment
                 ? `/api/user/business/payment-methods/${isEditingPayment}`
                 : '/api/user/business/payment-methods';
@@ -230,7 +233,9 @@ export default function Business() {
                     paymentMethod: paymentForm
                 })
             });
-            const data = await res.json();
+            return res.json();
+        },
+        onSuccess: (data) => {
             if (data.status) {
                 toast.success(isEditingPayment ? "Método actualizado" : "Método agregado");
                 setPaymentForm({
@@ -238,28 +243,43 @@ export default function Business() {
                     bankName: '', accountNumber: '', phoneNumber: '', email: '', isActive: true
                 });
                 setIsEditingPayment(null);
-                consultProduct();
+                queryClient.invalidateQueries({ queryKey: ['business', userId] });
             } else {
                 toast.error(data.message);
             }
-        } catch (error) {
+        },
+        onError: () => {
             toast.error("Error al procesar pago");
-        } finally {
-            setIsLoading(false);
         }
+    });
+
+    const handlePaymentSubmit = (e) => {
+        e.preventDefault();
+        if (!form.id) return toast.error("Crea tu negocio primero");
+        paymentMutation.mutate();
     }
 
-    const deletePayment = async (id) => {
-        if (!confirm("¿Eliminar este método de pago?")) return;
-        try {
+    const deletePaymentMutation = useMutation({
+        mutationFn: async (id) => {
             const res = await fetch(`/api/user/business/payment-methods/${id}`, { method: 'DELETE' });
-            if ((await res.json()).status) {
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
                 toast.success("Eliminado");
-                consultProduct();
+                queryClient.invalidateQueries({ queryKey: ['business', userId] });
+            } else {
+                toast.error(data.message);
             }
-        } catch (error) {
+        },
+        onError: () => {
             toast.error("Error al eliminar");
         }
+    });
+
+    const deletePayment = (id) => {
+        if (!confirm("¿Eliminar este método de pago?")) return;
+        deletePaymentMutation.mutate(id);
     }
 
     return (
@@ -372,9 +392,9 @@ export default function Business() {
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4 border-t">
-                                <button type="submit" disabled={isLoading} className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 gap-2 shadow-sm">
+                                <button type="submit" disabled={businessMutation.isPending} className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 gap-2 shadow-sm">
                                     <Save size={18} />
-                                    {isLoading ? 'Guardando...' : 'Guardar Información'}
+                                    {businessMutation.isPending ? 'Guardando...' : 'Guardar Información'}
                                 </button>
                             </div>
                         </form>
@@ -448,9 +468,9 @@ export default function Business() {
                                 ))}
                             </div>
                             <div className="flex justify-end pt-4 border-t">
-                                <button onClick={saveHours} disabled={isLoading} className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 gap-2">
+                                <button onClick={saveHours} disabled={hoursMutation.isPending} className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 gap-2">
                                     <Save size={18} />
-                                    Guardar Horarios
+                                    {hoursMutation.isPending ? 'Guardando...' : 'Guardar Horarios'}
                                 </button>
                             </div>
                         </div>
@@ -576,9 +596,9 @@ export default function Business() {
                                                 Cancelar
                                             </button>
                                         )}
-                                        <button type="submit" disabled={isLoading} className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-2">
+                                        <button type="submit" disabled={paymentMutation.isPending} className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-2">
                                             {isEditingPayment ? <Save size={16} /> : <Plus size={16} />}
-                                            {isEditingPayment ? 'Actualizar' : 'Agregar Método'}
+                                            {paymentMutation.isPending ? 'Cargando...' : isEditingPayment ? 'Actualizar' : 'Agregar Método'}
                                         </button>
                                     </div>
                                 </form>
@@ -587,11 +607,11 @@ export default function Business() {
                             {/* Lista de Métodos */}
                             <div className="space-y-4">
                                 <h3 className="font-semibold text-gray-700 dark:text-gray-300">Mis Métodos de Pago</h3>
-                                {paymentMethods.length === 0 ? (
+                                {!businessData?.rest?.paymentMethods || businessData.rest.paymentMethods.length === 0 ? (
                                     <p className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border border-dashed">No tienes métodos de pago registrados.</p>
                                 ) : (
                                     <div className="grid gap-3">
-                                        {paymentMethods.map((method) => (
+                                        {businessData.rest.paymentMethods.map((method) => (
                                             <div key={method.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl hover:shadow-sm transition-shadow">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-blue-600">

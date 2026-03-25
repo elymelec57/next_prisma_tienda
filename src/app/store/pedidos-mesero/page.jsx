@@ -2,6 +2,7 @@
 'use client'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
+import { useMutation } from '@tanstack/react-query'
 import {
     setCurrentTable,
     addItemToOrder,
@@ -26,8 +27,6 @@ export default function PedidosMesero() {
     const dispatch = useAppDispatch()
     const { currentTable, ordersByTable } = useAppSelector((state) => state.waiter)
     const user = useAppSelector((state) => state.auth.auth)
-    const [sending, setSending] = useState(false)
-
     const tableData = currentTable ? ordersByTable[currentTable.id] : null
     const currentAccountIndex = tableData?.activeAccount ?? 0
     const accounts = tableData?.accounts || []
@@ -85,11 +84,8 @@ export default function PedidosMesero() {
         }
     }
 
-    const handleSendOrder = async () => {
-        if (currentOrder.length === 0) return
-
-        setSending(true)
-        try {
+    const sendOrderMutation = useMutation({
+        mutationFn: async () => {
             const orderBody = {
                 restaurantId: user.restauranteId || 1,
                 clienteId: null,
@@ -98,7 +94,6 @@ export default function PedidosMesero() {
                 estado: 'Pendiente',
                 mesaId: currentTable.id,
                 items: currentOrder.flatMap(item => {
-                    // Split by individual notes to ensure kitchen sees each specific instruction
                     const noteGroups = item.notes.reduce((acc, note) => {
                         acc[note] = (acc[note] || 0) + 1;
                         return acc;
@@ -119,19 +114,27 @@ export default function PedidosMesero() {
                 body: JSON.stringify(orderBody)
             })
 
-            if (res.ok) {
-                toast.success(`Cuenta "${currentAccount.name}" enviada a cocina`)
-                dispatch(clearActiveAccount(currentTable.id))
-            } else {
+            if (!res.ok) {
                 const errorData = await res.json()
                 throw new Error(errorData.message || 'Error al enviar el pedido')
             }
-        } catch (err) {
+            return res.json();
+        },
+        onSuccess: () => {
+            toast.success(`Cuenta "${currentAccount.name}" enviada a cocina`)
+            dispatch(clearActiveAccount(currentTable.id))
+        },
+        onError: (err) => {
             toast.error(err.message)
-        } finally {
-            setSending(false)
         }
+    });
+
+    const handleSendOrder = () => {
+        if (currentOrder.length === 0) return
+        sendOrderMutation.mutate();
     }
+
+    const sending = sendOrderMutation.isPending;
 
     return (
         <div className="flex flex-col h-full space-y-4 md:space-y-6 max-w-[1600px] mx-auto">

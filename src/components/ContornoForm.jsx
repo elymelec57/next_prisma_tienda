@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/lib/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,12 +13,13 @@ import { Save, Loader2, X } from 'lucide-react';
 export default function ContornoForm({ contornoId = null, onSuccess, onCancel }) {
 
     const router = useRouter()
+    const queryClient = useQueryClient();
     const userId = useAppSelector((state) => state.auth.auth.id)
 
     const {
         register,
         handleSubmit,
-        formState: { errors, isSubmitting },
+        formState: { errors },
         setValue,
         reset
     } = useForm({
@@ -28,81 +30,61 @@ export default function ContornoForm({ contornoId = null, onSuccess, onCancel })
         },
     });
 
+    const { data: contornoData } = useQuery({
+        queryKey: ['contorno', contornoId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/contornos/${contornoId}`);
+            if (!res.ok) throw new Error('Error al cargar datos del contorno');
+            const data = await res.json();
+            return data.contorno;
+        },
+        enabled: !!contornoId,
+    });
+
     useEffect(() => {
-        if (contornoId) {
-            consultContorno(contornoId);
+        if (contornoData) {
+            setValue("name", contornoData.nombre)
+            setValue("price", contornoData.precio)
         }
-    }, [contornoId]);
+    }, [contornoData, setValue]);
 
-    async function consultContorno(id) {
-        try {
-            const data = await fetch(`/api/user/contornos/${id}`)
-            if (data.ok) {
-                const { contorno } = await data.json()
-                if (contorno) {
-                    setValue("name", contorno.nombre)
-                    setValue("price", contorno.precio)
+    const mutation = useMutation({
+        mutationFn: async (data) => {
+            const url = contornoId ? `/api/user/contorno/${contornoId}` : `/api/user/contornos/new`;
+            const method = contornoId ? 'PUT' : 'POST';
+            const body = contornoId ? { form: data } : { form: data, user: userId };
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) throw new Error('Error al guardar contorno');
+            return res.json();
+        },
+        onSuccess: (response) => {
+            if (response.status) {
+                toast.success(response.message);
+                queryClient.invalidateQueries({ queryKey: ['contornos', userId] });
+                if (contornoId) {
+                    queryClient.invalidateQueries({ queryKey: ['contorno', contornoId] });
                 }
-            } else {
-                toast.error("Error al cargar datos del contorno");
-            }
-        } catch (error) {
-            console.error("Error fetching contorno:", error);
-            toast.error("Error al cargar datos");
-        }
-    }
-
-    const onSubmit = async (data) => {
-        if (contornoId) {
-            return updateContorno(data)
-        }
-        return createContorno(data);
-    }
-
-    const createContorno = async (data) => {
-        try {
-            const res = await fetch(`/api/user/contornos/new`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form: data, user: userId })
-            });
-
-            const response = await res.json();
-
-            if (response.status) {
-                toast.success(response.message);
-                router.refresh();
                 if (onSuccess) onSuccess();
-                reset();
+                if (!contornoId) reset();
             } else {
                 toast.error(response.message);
             }
-        } catch (error) {
-            toast.error('Error al crear el contorno');
+        },
+        onError: () => {
+            toast.error('Error al guardar el contorno');
         }
+    });
+
+    const onSubmit = (data) => {
+        mutation.mutate(data);
     }
 
-    const updateContorno = async (data) => {
-        try {
-            const res = await fetch(`/api/user/contorno/${contornoId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form: data })
-            });
-
-            const response = await res.json();
-
-            if (response.status) {
-                toast.success(response.message);
-                router.refresh();
-                if (onSuccess) onSuccess();
-            } else {
-                toast.error(response.message);
-            }
-        } catch (error) {
-            toast.error('Error al actualizar');
-        }
-    }
+    const isSubmitting = mutation.isPending;
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
