@@ -37,7 +37,16 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
     const { id } = await params
     try {
-        const { total, items, nombreCliente } = await request.json()
+        const { total, items, nombreCliente, estado } = await request.json()
+
+        // Si se envió solo el estado (para el flujo de cocina/mesero), no actualizamos la comanda
+        if (estado && !items) {
+            const result = await prisma.pedido.update({
+                where: { id: Number(id) },
+                data: { estado }
+            })
+            return NextResponse.json({ status: true, order: result })
+        }
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Actualizar el Pedido

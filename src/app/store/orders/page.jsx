@@ -69,6 +69,25 @@ export default function Orders() {
         }
     };
 
+    const updateOrderStatus = async (orderId, newStatus) => {
+        try {
+            const res = await fetch(`/api/user/orders/${orderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: newStatus })
+            });
+
+            if (res.ok) {
+                // Actualizar localmente en el modal
+                setSelectedOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: newStatus } : o));
+                // Actualizar grid general
+                getOrders();
+            }
+        } catch (error) {
+            console.error("Error updating order status:", error);
+        }
+    };
+
     const getStatusBadge = (estado) => {
         const statuses = {
             'Pendiente': { color: 'bg-amber-50 text-amber-700 ring-amber-600/20', icon: Clock },
@@ -291,11 +310,32 @@ export default function Orders() {
                                                 - {order.nombreCliente || order.cliente?.nombre || 'Consumidor Final'}
                                             </span>
                                         </h2>
-                                        {getStatusBadge(order.estado)}
+                                        <div className="flex items-center gap-3">
+                                            {getStatusBadge(order.estado)}
+                                        </div>
                                     </div>
                                 )}
 
                                 <div className="space-y-6">
+                                    {/* Kitchen Control Area */}
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Control de Cocina / Estado</h3>
+                                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                                            {['Pendiente', 'Preparando', 'Servido'].map((status) => (
+                                                <button
+                                                    key={status}
+                                                    onClick={() => updateOrderStatus(order.id, status)}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap border-2 shadow-sm
+                                                        ${order.estado === status 
+                                                            ? 'bg-orange-600 text-white border-orange-600 ring-2 ring-orange-500/20' 
+                                                            : 'bg-white dark:bg-gray-950 text-gray-500 border-gray-200 dark:border-gray-800 hover:border-orange-300 hover:text-orange-600'}
+                                                    `}
+                                                >
+                                                    {status === 'Pendiente' ? 'Pendiente' : status === 'Preparando' ? 'En Preparación' : 'Listo para Servir'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                     {['Caja', 'Administrador', 'admin'].includes(user.role) && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {/* Infomación del Pedido */}
