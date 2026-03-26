@@ -18,6 +18,7 @@ export default function TableSelector({ onSelectTable }) {
         switch (estado) {
             case 'Libre': return 'text-green-600 bg-green-50 border-green-200 dark:bg-green-900/20 dark:text-green-400'
             case 'Ocupada': return 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400'
+            case 'Servir': return 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400'
             case 'Reservada': return 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400'
             default: return 'text-gray-600 bg-gray-50'
         }

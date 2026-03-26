@@ -61,7 +61,7 @@ export default function OrderSummary({
                 </div>
 
                 {/* Accounts Tabs */}
-                {table.estado != 'Ocupada' && table.pedidos?.length == 0 && (
+                {table.estado === 'Libre' && table.pedidos?.length === 0 ? (
                     <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2 custom-scrollbar">
                         <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
                             {accounts.map((acc, index) => (
@@ -96,10 +96,10 @@ export default function OrderSummary({
                             </button>
                         </div>
                     </div>
-                )}
+                ) : <></>}
 
                 {/* Edit Account Name */}
-                {table.estado != 'Ocupada' && table.pedidos?.length == 0 && (
+                {table.estado === 'Libre' && table.pedidos?.length === 0 ? (
                     <div className="mt-4">
                         <div className="relative group">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1 px-1">Identificador de Cuenta</label>
@@ -112,7 +112,7 @@ export default function OrderSummary({
                             />
                         </div>
                     </div>
-                )}
+                ) : <></>}
             </div>
 
             {/* Existing Orders Section */}

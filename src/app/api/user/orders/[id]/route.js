@@ -37,7 +37,7 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
     const { id } = await params
     try {
-        const { total, items, nombreCliente, estado } = await request.json()
+        const { total, items, nombreCliente, estado, mesaId } = await request.json()
 
         // Si se envió solo el estado (para el flujo de cocina/mesero), no actualizamos la comanda
         if (estado && !items) {
@@ -45,6 +45,13 @@ export async function PATCH(request, { params }) {
                 where: { id: Number(id) },
                 data: { estado }
             })
+            if (estado === 'Servido') {
+                await prisma.mesa.update({
+                    where: { id: Number(mesaId) },
+                    data: { estado: 'Servir' }
+                })
+            }
+
             return NextResponse.json({ status: true, order: result })
         }
 

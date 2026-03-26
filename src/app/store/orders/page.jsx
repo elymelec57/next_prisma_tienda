@@ -61,11 +61,11 @@ export default function Orders() {
     };
 
     const updateOrderStatusMutation = useMutation({
-        mutationFn: async ({ orderId, newStatus }) => {
+        mutationFn: async ({ orderId, newStatus, mesaId }) => {
             const res = await fetch(`/api/user/orders/${orderId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estado: newStatus })
+                body: JSON.stringify({ estado: newStatus, mesaId })
             });
             if (!res.ok) throw new Error('Error al actualizar el estado');
             return { orderId, newStatus };
@@ -76,8 +76,8 @@ export default function Orders() {
         }
     });
 
-    const updateOrderStatus = (orderId, newStatus) => {
-        updateOrderStatusMutation.mutate({ orderId, newStatus });
+    const updateOrderStatus = (orderId, newStatus, mesaId) => {
+        updateOrderStatusMutation.mutate({ orderId, newStatus, mesaId });
     };
 
     const getStatusBadge = (estado) => {
@@ -316,10 +316,10 @@ export default function Orders() {
                                             {['Pendiente', 'Preparando', 'Servido'].map((status) => (
                                                 <button
                                                     key={status}
-                                                    onClick={() => updateOrderStatus(order.id, status)}
+                                                    onClick={() => updateOrderStatus(order.id, status, order.mesa.id)}
                                                     className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap border-2 shadow-sm
-                                                        ${order.estado === status 
-                                                            ? 'bg-orange-600 text-white border-orange-600 ring-2 ring-orange-500/20' 
+                                                        ${order.estado === status
+                                                            ? 'bg-orange-600 text-white border-orange-600 ring-2 ring-orange-500/20'
                                                             : 'bg-white dark:bg-gray-950 text-gray-500 border-gray-200 dark:border-gray-800 hover:border-orange-300 hover:text-orange-600'}
                                                     `}
                                                 >

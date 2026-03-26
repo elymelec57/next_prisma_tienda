@@ -45,7 +45,7 @@ export default function Login() {
                         router.push('/store/caja');
                     }
                     if (login.auth.role === 'Cocina') {
-                        router.push('/store/cocina');
+                        router.push('/store/orders');
                     }
                 }
             } else {
