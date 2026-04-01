@@ -56,6 +56,9 @@ export default function TableSelector({ onSelectTable }) {
                                 <Users className="h-3 w-3" />
                                 {mesa.capacidad}
                             </div>
+                            <div className="flex items-center gap-1 text-[10px] uppercase font-bold opacity-70">
+                                {mesa.estado}
+                            </div>
 
                             <div className="absolute top-2 right-2">
                                 {mesa.estado === 'Libre' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
@@ -63,9 +66,6 @@ export default function TableSelector({ onSelectTable }) {
                                 {mesa.estado === 'Reservada' && <Clock className="h-4 w-4 text-amber-500" />}
                             </div>
                         </Card>
-                        <div className={`mt-2 text-center text-xs font-bold ${getStatusColor(mesa.estado).split(' ')[0]}`}>
-                            {mesa.estado}
-                        </div>
                     </button>
                 ))}
             </div>
