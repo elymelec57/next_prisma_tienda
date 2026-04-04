@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAppSelector } from "@/lib/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { Plus, Pencil, Trash, Search, Image as ImageIcon, Loader2 } from 'lucide-react';
 
@@ -15,10 +16,8 @@ export default function ListProduct() {
 
     const params = useParams()
     const router = useRouter()
+    const queryClient = useQueryClient();
     const id = useAppSelector((state) => state.auth.auth.id)
-    const [product, setProduct] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState([]);
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
@@ -30,43 +29,24 @@ export default function ListProduct() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState(null);
 
-    useEffect(() => {
-        platos();
-        fetchCategories();
-    }, [])
-
-    const fetchCategories = async () => {
-        try {
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: async () => {
             const res = await fetch('/api/category');
-            if (res.ok) {
-                const data = await res.json();
-                setCategories(data || []);
-            }
-        } catch (error) {
-            console.error("Error fetching categories:", error);
+            if (!res.ok) throw new Error('Error al cargar categorías');
+            return res.json();
         }
-    }
+    });
 
-
-    const platos = async () => {
-        try {
-            let res = ''
-            if (params.id) {
-                res = await fetch(`/api/user/product`)
-            } else {
-                res = await fetch(`/api/user/product`)
-            }
-
-            if (res.ok) {
-                const { dataPlatos } = await res.json()
-                setProduct(dataPlatos || []);
-            }
-        } catch (error) {
-            console.error("Error fetching dishes:", error);
-        } finally {
-            setLoading(false);
+    const { data: product = [], isLoading: loading } = useQuery({
+        queryKey: ['products'],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/product`);
+            if (!res.ok) throw new Error('Error al cargar platos');
+            const data = await res.json();
+            return data.dataPlatos || [];
         }
-    }
+    });
 
     const filteredProducts = product.filter(p => {
         const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -82,27 +62,33 @@ export default function ListProduct() {
         setProductToDelete(p);
     };
 
-    const handleConfirmDelete = async () => {
-        if (!productToDelete) return;
-
-        const id = productToDelete.id;
-        try {
-            const res = await fetch(`/api/user/product/${id}`, {
+    const deleteMutation = useMutation({
+        mutationFn: async (productId) => {
+            const res = await fetch(`/api/user/product/${productId}`, {
                 method: 'DELETE'
-            })
-
-            const eliminado = await res.json()
-            if (eliminado.status) {
-                platos() // Refresh list
-                toast.success(eliminado.message);
+            });
+            if (!res.ok) throw new Error('Error al eliminar el producto');
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                queryClient.invalidateQueries({ queryKey: ['products'] });
+                toast.success(data.message);
             } else {
-                toast.error(eliminado.message);
+                toast.error(data.message);
             }
-        } catch (error) {
+        },
+        onError: () => {
             toast.error("Error al eliminar el producto");
-        } finally {
+        },
+        onSettled: () => {
             setProductToDelete(null);
         }
+    });
+
+    const handleConfirmDelete = () => {
+        if (!productToDelete) return;
+        deleteMutation.mutate(productToDelete.id);
     };
 
     const handleCancelDelete = () => {
@@ -111,7 +97,7 @@ export default function ListProduct() {
 
     const handleCreateSuccess = () => {
         setIsCreateModalOpen(false);
-        platos(); // Refresh data
+        queryClient.invalidateQueries({ queryKey: ['products'] });
     }
 
     if (loading) {

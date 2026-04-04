@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAppSelector } from "@/lib/hooks";
+import { useQuery } from "@tanstack/react-query";
 import {
     Loader2,
     User,
@@ -16,39 +17,24 @@ import {
 export default function Clients() {
 
     const id = useAppSelector((state) => state.auth.auth.id)
-    const [clients, setClients] = useState([]);
-    const [filteredClients, setFilteredClients] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        getClients();
-    }, [])
+    const { data: clients = [], isLoading: loading } = useQuery({
+        queryKey: ['clients', id],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/clients/user/${id}`);
+            if (!res.ok) throw new Error('Error al cargar clientes');
+            const data = await res.json();
+            return data.restaurant.cliente || [];
+        },
+        enabled: !!id,
+    });
 
-    useEffect(() => {
-        const filtered = clients.filter(client =>
-            client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.telefono?.includes(searchTerm)
-        );
-        setFilteredClients(filtered);
-    }, [searchTerm, clients]);
-
-    const getClients = async () => {
-        try {
-            const res = await fetch(`/api/user/clients/user/${id}`)
-            if (res.ok) {
-                const { restaurant } = await res.json()
-                const clientList = restaurant.cliente || [];
-                setClients(clientList);
-                setFilteredClients(clientList);
-            }
-        } catch (error) {
-            console.error("Error fetching clients:", error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const filteredClients = clients.filter(client =>
+        client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.telefono?.includes(searchTerm)
+    );
 
     if (loading) {
         return (

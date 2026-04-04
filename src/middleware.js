@@ -35,10 +35,6 @@ export async function middleware(request) {
     }
 
     // 2. Ejecutar lógica existente (Autenticación, Redirecciones, etc.)
-    // Aquí iría tu lógica actual. Simularé un 'response' base.
-    // IMPORTANTE: Si tu middleware actual retorna un redirect o rewrite, úsalo aquí.
-    //const response = NextResponse.next();
-
     const originNext = request.nextUrl.origin
     const token = request.cookies.get('token')?.value
 
@@ -46,7 +42,12 @@ export async function middleware(request) {
         if (request.cookies.has('token')) {
             const verify = await verifytoken(originNext, token)
             if (verify.status) {
-                return NextResponse.redirect(new URL('/store', request.url))
+                // Si el rol es 'user' (dueño), redirigir al Dashboard, si no al Perfil (seguro para todos)
+                if (verify.auth.role.toLowerCase() === 'user') {
+                    return NextResponse.redirect(new URL('/store', request.url))
+                } else {
+                    return NextResponse.redirect(new URL('/store/profile', request.url))
+                }
             } else {
                 return NextResponse.next()
             }
@@ -57,11 +58,17 @@ export async function middleware(request) {
 
     if (pathname.startsWith('/store')) {
         if (request.cookies.has('token')) {
-            const verify = await verifytoken(originNext, token)
+            const verify = await verifytoken(originNext, token, pathname)
             if (verify.status) {
-                // if (verify.auth.restauranteId === null) {
-                //     return NextResponse.redirect(new URL('/info/business', request.url))
-                // }
+                if (verify.authorized === false) {
+                    const referer = request.headers.get('referer');
+                    // Si viene de otra página interna, regresarlo allá
+                    if (referer && referer.includes(originNext) && !referer.endsWith(pathname)) {
+                        return NextResponse.redirect(new URL(referer, request.url))
+                    }
+                    // Si no hay referer válido, mandarlo a su perfil
+                    return NextResponse.redirect(new URL('/store/profile', request.url))
+                }
                 return NextResponse.next()
             } else {
                 return NextResponse.redirect(new URL('/login', request.url))
@@ -72,7 +79,7 @@ export async function middleware(request) {
     }
 
     if (request.cookies.has('token')) {
-        const verify = await verifytoken(origin, token)
+        const verify = await verifytoken(originNext, token)
         if (!verify.status) {
             return NextResponse.redirect(new URL('/login', request.url))
         }

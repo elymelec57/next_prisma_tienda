@@ -238,7 +238,7 @@ model ItemPedido {
   platoId Int
   plato   Plato @relation(fields: [platoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([pedidoId, platoId]) // Un plato solo puede estar una vez en el mismo pedido
+  //@@unique([pedidoId, platoId]) // Un plato solo puede estar una vez en el mismo pedido
 }
 
 // --- Entidades de Pago y Reserva ---
@@ -319,7 +319,7 @@ model Reserva {
 
 model Rol {
   id        Int        @id @default(autoincrement())
-  nombre    String     @unique // Ej: "Mesero", "Cocinero", "Administrador"
+  name      String     @unique // Ej: "Mesero", "Cocinero", "Administrador"
   empleados Empleado[] // Relación: Un rol tiene muchos empleados
 }
 

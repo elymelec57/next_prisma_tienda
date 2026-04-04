@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/lib/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,10 +13,9 @@ import { Camera, Save, X, Loader2 } from 'lucide-react';
 export default function ProductForm({ productId = null, onSuccess, onCancel }) {
 
     const router = useRouter()
+    const queryClient = useQueryClient();
 
     // States
-    const [categories, setCategories] = useState([]);
-    const [contornos, setContornos] = useState([]);
     const [selectedContornos, setSelectedContornos] = useState([]);
     const userId = useAppSelector((state) => state.auth.auth.id);
 
@@ -31,9 +31,8 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
     const {
         register,
         handleSubmit,
-        formState: { errors, isSubmitting },
+        formState: { errors },
         setValue,
-        reset
     } = useForm({
         resolver: zodResolver(plato),
         defaultValues: {
@@ -45,67 +44,53 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
         },
     });
 
-    // Effects
-    useEffect(() => {
-        fetchCategories();
-        if (productId) {
-            consultProduct(productId);
-        }
-    }, [productId]);
-
-    useEffect(() => {
-        if (userId) {
-            fetchContornos();
-        }
-    }, [userId]);
-
-    // Data Fetching
-    async function consultProduct(id) {
-        try {
-            const data = await fetch(`/api/user/product/${id}`)
-            const { plato } = await data.json()
-
-            if (plato) {
-                setValue("name", plato.nombre)
-                setValue("description", plato.descripcion)
-                setValue("price", plato.precio)
-                setValue("categoryId", plato.categoriaId)
-
-                setImage({
-                    ...image,
-                    mainImageId: plato.mainImageId,
-                    url: plato.url
-                })
-                if (plato.contornos) {
-                    setSelectedContornos(plato.contornos.map(c => c.id.toString()));
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching product:", error);
-            toast.error("Error al cargar el producto");
-        }
-    }
-
-    async function fetchCategories() {
-        try {
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: async () => {
             const res = await fetch('/api/category');
-            const data = await res.json();
-            setCategories(data);
-        } catch (error) {
-            console.error(error);
+            if (!res.ok) throw new Error('Error al cargar categorías');
+            return res.json();
         }
-    }
+    });
 
-    async function fetchContornos() {
-        if (!userId) return;
-        try {
-            const res = await fetch(`/api/user/contornos?userId=${userId}`);
+    const { data: productData } = useQuery({
+        queryKey: ['product', productId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/product/${productId}`);
+            if (!res.ok) throw new Error('Error al cargar el producto');
             const data = await res.json();
-            setContornos(data);
-        } catch (error) {
-            console.error(error);
+            return data.plato;
+        },
+        enabled: !!productId,
+    });
+
+    useEffect(() => {
+        if (productData) {
+            setValue("name", productData.nombre)
+            setValue("description", productData.descripcion)
+            setValue("price", productData.precio)
+            setValue("categoryId", productData.categoriaId)
+
+            setImage(prev => ({
+                ...prev,
+                mainImageId: productData.mainImageId,
+                url: productData.url
+            }))
+            if (productData.contornos) {
+                setSelectedContornos(productData.contornos.map(c => c.id.toString()));
+            }
         }
-    }
+    }, [productData, setValue]);
+
+    const { data: contornos = [] } = useQuery({
+        queryKey: ['contornos', userId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/contornos?userId=${userId}`);
+            if (!res.ok) throw new Error('Error al cargar contornos');
+            return res.json();
+        },
+        enabled: !!userId,
+    });
 
     // Handlers
     const onFileChange = (e) => {
@@ -120,69 +105,68 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
         }
     }
 
-    const onSubmit = async (data) => {
-        if (productId) {
-            return updatePlato(data)
-        }
-        return createPlato(data);
-    }
+    const mutation = useMutation({
+        mutationFn: async (data) => {
+            if (productId) {
+                const update = await fetch(`/api/user/product/${productId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos } })
+                });
 
-    const createPlato = async (data) => {
-        try {
-            const res = await fetch(`/api/user/product/new`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form: { ...data, contornos: selectedContornos }, user: userId })
-            });
+                const platoUpdate = await update.json()
 
-            const plato = await res.json();
-
-            if (plato.status) {
-                if (image.image) {
-                    await fetch(
-                        `/api/avatar/upload?filename=${image.image.name}&model=plato&id=${plato.id}`,
-                        { method: 'POST', body: image.image },
-                    );
+                if (platoUpdate.status) {
+                    if (image.image && image.image instanceof File) {
+                        await fetch(
+                            `/api/avatar/update?filename=${image.image.name}&model=plato&id=${platoUpdate.id}&mainImage=${platoUpdate.mainImage}`,
+                            { method: 'POST', body: image.image },
+                        );
+                    }
                 }
-                toast.success(plato.message);
-                router.refresh();
+                return platoUpdate;
+            } else {
+                const res = await fetch(`/api/user/product/new`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos }, user: userId })
+                });
+
+                const plato = await res.json();
+
+                if (plato.status) {
+                    if (image.image) {
+                        await fetch(
+                            `/api/avatar/upload?filename=${image.image.name}&model=plato&id=${plato.id}`,
+                            { method: 'POST', body: image.image },
+                        );
+                    }
+                }
+                return plato;
+            }
+        },
+        onSuccess: (result) => {
+            if (result.status) {
+                toast.success(result.message);
+                queryClient.invalidateQueries({ queryKey: ['products'] });
+                if (productId) {
+                    queryClient.invalidateQueries({ queryKey: ['product', productId] });
+                }
                 if (onSuccess) onSuccess();
             } else {
-                toast.error(plato.message);
+                toast.error(result.message);
             }
-        } catch (error) {
-            toast.error('Ocurrió un error al crear el producto');
+        },
+        onError: () => {
+            toast.error('Ocurrió un error al guardar el producto');
         }
+    });
+
+    const onSubmit = (data) => {
+        mutation.mutate(data);
     }
 
-    const updatePlato = async (data) => {
-        try {
-            const update = await fetch(`/api/user/product/${productId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form: { ...data, contornos: selectedContornos } })
-            });
-
-            const platoUpdate = await update.json()
-
-            if (platoUpdate.status) {
-                if (image.image && image.image instanceof File) {
-                    await fetch(
-                        `/api/avatar/update?filename=${image.image.name}&model=plato&id=${platoUpdate.id}&mainImage=${platoUpdate.mainImage}`,
-                        { method: 'POST', body: image.image },
-                    );
-                }
-
-                toast.success(platoUpdate.message);
-                router.refresh();
-                if (onSuccess) onSuccess();
-            } else {
-                toast.error(platoUpdate.message);
-            }
-        } catch (error) {
-            toast.error('Error al actualizar');
-        }
-    }
+    const isSubmitting = mutation.isPending;
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

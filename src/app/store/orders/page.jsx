@@ -1,8 +1,9 @@
 
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppSelector } from "@/lib/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Loader2,
     Eye,
@@ -24,43 +25,59 @@ import Modal from '@/components/Modal';
 export default function Orders() {
 
     const user = useAppSelector((state) => state.auth.auth)
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedOrder, setSelectedOrder] = useState(null);
+    const queryClient = useQueryClient();
+    const [selectedOrders, setSelectedOrders] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('mesa'); // 'mesa' or 'delivery'
 
-    useEffect(() => {
-        if (user.restauranteId) {
-            getOrders();
-        }
-    }, [user.restauranteId])
+    const { data: orders = [], isLoading: loading } = useQuery({
+        queryKey: ['orders', user.restauranteId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/orders/user/${user.restauranteId}`);
+            if (!res.ok) throw new Error('Error al cargar pedidos');
+            const data = await res.json();
+            return data.orders || [];
+        },
+        enabled: !!user.restauranteId,
+    });
 
-    const getOrders = async () => {
-        try {
-            const res = await fetch(`/api/user/orders/user/${user.restauranteId}`)
-            if (res.ok) {
-                const { orders } = await res.json()
-                setOrders(orders || []);
+    const orderDetailsMutation = useMutation({
+        mutationFn: async (order) => {
+            let idsToFetch = [order.id];
+            if (activeTab === 'mesa' && order.subOrders && order.subOrders.length > 0) {
+                idsToFetch = order.subOrders.map(so => so.id);
             }
-        } catch (error) {
-            console.error("Error fetching orders:", error);
-        } finally {
-            setLoading(false);
+            const promises = idsToFetch.map(id => fetch(`/api/user/orders/${id}`).then(res => res.json()));
+            return Promise.all(promises);
+        },
+        onSuccess: (data) => {
+            setSelectedOrders(data);
+            setIsModalOpen(true);
         }
-    }
+    });
 
-    const handleViewDetails = async (orderId) => {
-        try {
-            const res = await fetch(`/api/user/orders/${orderId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setSelectedOrder(data);
-                setIsModalOpen(true);
-            }
-        } catch (error) {
-            console.error("Error fetching order details:", error);
+    const handleViewDetails = (order) => {
+        orderDetailsMutation.mutate(order);
+    };
+
+    const updateOrderStatusMutation = useMutation({
+        mutationFn: async ({ orderId, newStatus, mesaId }) => {
+            const res = await fetch(`/api/user/orders/${orderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: newStatus, mesaId })
+            });
+            if (!res.ok) throw new Error('Error al actualizar el estado');
+            return { orderId, newStatus };
+        },
+        onSuccess: ({ orderId, newStatus }) => {
+            setSelectedOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado: newStatus } : o));
+            queryClient.invalidateQueries({ queryKey: ['orders', user.restauranteId] });
         }
+    });
+
+    const updateOrderStatus = (orderId, newStatus, mesaId) => {
+        updateOrderStatusMutation.mutate({ orderId, newStatus, mesaId });
     };
 
     const getStatusBadge = (estado) => {
@@ -105,10 +122,47 @@ export default function Orders() {
         );
     };
 
-    const filteredOrders = orders.filter(o => {
-        if (activeTab === 'mesa') return o.mesaId !== null;
-        return o.mesaId === null;
-    });
+    const filteredOrders = useMemo(() => {
+        const filtered = orders.filter(o => {
+            if (activeTab === 'mesa') return o.mesaId !== null;
+            return o.mesaId === null;
+        });
+
+        if (activeTab === 'mesa') {
+            const groups = {};
+            filtered.forEach(o => {
+                const key = o.mesaId;
+                if (!groups[key]) {
+                    groups[key] = {
+                        ...o,
+                        subOrders: [o],
+                        total: Number(o.total || 0),
+                        // Preservamos la fecha más antigua para mostrar cuánto tiempo llevan
+                        fechaHora: o.fechaHora
+                    };
+                } else {
+                    groups[key].subOrders.push(o);
+                    groups[key].total += Number(o.total || 0);
+                    // Si encontramos una orden mas vieja en la misma mesa, actualizamos la fecha del grupo
+                    if (new Date(o.fechaHora) < new Date(groups[key].fechaHora)) {
+                        groups[key].fechaHora = o.fechaHora;
+                    }
+                }
+            });
+            // Marcamos las que tienen cuentas separadas
+            return Object.values(groups).map(g => {
+                if (g.subOrders.length > 1) {
+                    return {
+                        ...g,
+                        nombreCliente: `Múltiples Cuentas (${g.subOrders.length})`
+                    };
+                }
+                return g;
+            });
+        }
+
+        return filtered;
+    }, [orders, activeTab]);
 
     if (loading) {
         return (
@@ -197,12 +251,12 @@ export default function Orders() {
                                             <td className="p-4 align-middle">
                                                 {getStatusBadge(o.estado)}
                                             </td>
-                                            <td className="p-4 align-middle">
+                                            {/* <td className="p-4 align-middle">
                                                 {getPaymentStatusBadge(o.Payment)}
-                                            </td>
+                                            </td> */}
                                             <td className="p-4 align-middle text-right">
                                                 <button
-                                                    onClick={() => handleViewDetails(o.id)}
+                                                    onClick={() => handleViewDetails(o)}
                                                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-sm font-medium shadow-sm transition-all hover:bg-gray-50 active:scale-95 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800"
                                                 >
                                                     <Eye className="h-4 w-4 text-gray-500" />
@@ -230,141 +284,187 @@ export default function Orders() {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={selectedOrder ? `Detalle de Orden #${selectedOrder.id}` : "Cargando..."}
-                maxWidth="max-w-4xl"
+                title={selectedOrders.length > 1 ? `Detalle de Mesa ${selectedOrders[0]?.mesa?.numero} (${selectedOrders.length} Cuentas)` : (selectedOrders[0] ? `Detalle de Orden #${selectedOrders[0].id}` : "Cargando...")}
+                maxWidth="max-w-6xl"
             >
-                {selectedOrder && (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Infomación del Pedido */}
-                            <div className="space-y-4">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">General</h3>
-                                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/50 space-y-4">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500 font-medium flex items-center gap-2"><Calendar className="h-4 w-4" /> Fecha:</span>
-                                        <span className="font-bold">{new Date(selectedOrder.fechaHora).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500 font-medium flex items-center gap-2"><User className="h-4 w-4" /> Cliente:</span>
-                                        <span className="font-bold">{selectedOrder.nombreCliente || selectedOrder.cliente?.nombre || 'Consumidor Final'}</span>
-                                    </div>
-                                    {selectedOrder.mesa && (
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500 font-medium flex items-center gap-2"><Hash className="h-4 w-4" /> Ubicación:</span>
-                                            <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
-                                                Mesa {selectedOrder.mesa.numero}
+                {selectedOrders.length > 0 && (
+                    <div className="space-y-8">
+                        {selectedOrders.map((order, index) => (
+                            <div key={order.id} className={index > 0 ? "pt-8 border-t-2 border-dashed border-gray-200 dark:border-gray-800" : ""}>
+                                {selectedOrders.length > 1 && (
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                            <span className="bg-orange-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                                                {index + 1}
                                             </span>
-                                        </div>
-                                    )}
-                                    {!selectedOrder.mesa && (
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500 font-medium flex items-center gap-2"><MapPin className="h-4 w-4" /> Tipo:</span>
-                                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
-                                                Domicilio
+                                            Cuenta #{order.id}
+                                            <span className="text-sm font-normal text-gray-500">
+                                                - {order.nombreCliente || order.cliente?.nombre || 'Consumidor Final'}
                                             </span>
+                                        </h2>
+                                        <div className="flex items-center gap-3">
+                                            {getStatusBadge(order.estado)}
                                         </div>
-                                    )}
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500 font-medium flex items-center gap-2"><Layers className="h-4 w-4" /> Estado:</span>
-                                        {getStatusBadge(selectedOrder.estado)}
                                     </div>
-                                    <div className="flex justify-between items-center text-sm pt-4 border-t dark:border-gray-800">
-                                        <span className="font-bold text-gray-500">Total a Pagar:</span>
-                                        <span className="text-3xl font-black text-orange-600 dark:text-orange-400 tracking-tighter">${selectedOrder.total?.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            </div>
+                                )}
 
-                            {/* Información del Pago */}
-                            <div className="space-y-4">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Transacción</h3>
-                                {selectedOrder.Payment ? (
-                                    <div className="rounded-2xl border border-green-100 bg-green-50/30 p-5 dark:border-green-900/20 dark:bg-green-900/10 space-y-4">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500 font-medium">Estado Pago:</span>
-                                            {getPaymentStatusBadge(selectedOrder.Payment)}
+                                <div className="space-y-6">
+                                    {/* Kitchen Control Area */}
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Control de Cocina / Estado</h3>
+                                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                                            {['Pendiente', 'Preparando', 'Servido'].map((status) => (
+                                                <button
+                                                    key={status}
+                                                    onClick={() => updateOrderStatus(order.id, status, order.mesa.id)}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap border-2 shadow-sm
+                                                        ${order.estado === status
+                                                            ? 'bg-orange-600 text-white border-orange-600 ring-2 ring-orange-500/20'
+                                                            : 'bg-white dark:bg-gray-950 text-gray-500 border-gray-200 dark:border-gray-800 hover:border-orange-300 hover:text-orange-600'}
+                                                    `}
+                                                >
+                                                    {status === 'Pendiente' ? 'Pendiente' : status === 'Preparando' ? 'En Preparación' : 'Listo para Servir'}
+                                                </button>
+                                            ))}
                                         </div>
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-500 font-medium">Método de Pago:</span>
-                                            <div className="text-right">
-                                                <span className="font-black text-gray-900 dark:text-white block">{selectedOrder.Payment.paymentMethod?.label}</span>
-                                                <span className="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 uppercase font-black tracking-widest mt-1 inline-block">
-                                                    {selectedOrder.Payment.paymentMethod?.type.replace('_', ' ')}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="pt-4 border-t dark:border-gray-800">
-                                            <p className="text-[10px] text-gray-400 uppercase font-black mb-3 flex items-center gap-2">
-                                                <CheckCircle2 className="h-3 w-3" /> Datos de Verificación
-                                            </p>
-                                            <div className="grid grid-cols-1 gap-3">
-                                                <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
-                                                    <span className="text-[10px] text-gray-400 block font-bold">TITULAR</span>
-                                                    <span className="font-bold text-sm">{selectedOrder.Payment.paymentMethod?.ownerName}</span>
+                                    </div>
+                                    {['Caja', 'Administrador', 'admin'].includes(user.role) && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Infomación del Pedido */}
+                                            <div className="space-y-4">
+                                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">General</h3>
+                                                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-gray-900/50 space-y-4">
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="text-gray-500 font-medium flex items-center gap-2"><Calendar className="h-4 w-4" /> Fecha:</span>
+                                                        <span className="font-bold">{new Date(order.fechaHora).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="text-gray-500 font-medium flex items-center gap-2"><User className="h-4 w-4" /> Cliente:</span>
+                                                        <span className="font-bold">{order.nombreCliente || order.cliente?.nombre || 'Consumidor Final'}</span>
+                                                    </div>
+                                                    {order.mesa && (
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-500 font-medium flex items-center gap-2"><Hash className="h-4 w-4" /> Ubicación:</span>
+                                                            <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
+                                                                Mesa {order.mesa.numero}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {!order.mesa && (
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-500 font-medium flex items-center gap-2"><MapPin className="h-4 w-4" /> Tipo:</span>
+                                                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-black text-xs uppercase underline underline-offset-4 decoration-2">
+                                                                Domicilio
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {selectedOrders.length === 1 && (
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-500 font-medium flex items-center gap-2"><Layers className="h-4 w-4" /> Estado:</span>
+                                                            {getStatusBadge(order.estado)}
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between items-center text-sm pt-4 border-t dark:border-gray-800">
+                                                        <span className="font-bold text-gray-500">Total a Pagar:</span>
+                                                        <span className="text-3xl font-black text-orange-600 dark:text-orange-400 tracking-tighter">${order.total?.toFixed(2)}</span>
+                                                    </div>
                                                 </div>
-                                                {selectedOrder.Payment.paymentMethod?.ownerId && (
-                                                    <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
-                                                        <span className="text-[10px] text-gray-400 block font-bold">CÉDULA / ID</span>
-                                                        <span className="font-bold text-sm">{selectedOrder.Payment.paymentMethod?.ownerId}</span>
+                                            </div>
+
+                                            {/* Información del Pago */}
+                                            <div className="space-y-4">
+                                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Transacción</h3>
+                                                {order.Payment ? (
+                                                    <div className="rounded-2xl border border-green-100 bg-green-50/30 p-5 dark:border-green-900/20 dark:bg-green-900/10 space-y-4">
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-500 font-medium">Estado Pago:</span>
+                                                            {getPaymentStatusBadge(order.Payment)}
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-500 font-medium">Método de Pago:</span>
+                                                            <div className="text-right">
+                                                                <span className="font-black text-gray-900 dark:text-white block">{order.Payment.paymentMethod?.label}</span>
+                                                                <span className="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 uppercase font-black tracking-widest mt-1 inline-block">
+                                                                    {order.Payment.paymentMethod?.type.replace('_', ' ')}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="pt-4 border-t dark:border-gray-800">
+                                                            <p className="text-[10px] text-gray-400 uppercase font-black mb-3 flex items-center gap-2">
+                                                                <CheckCircle2 className="h-3 w-3" /> Datos de Verificación
+                                                            </p>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
+                                                                    <span className="text-xs text-gray-400 block font-bold">TITULAR</span>
+                                                                    <span className="font-bold text-sm">{order.Payment.paymentMethod?.ownerName}</span>
+                                                                </div>
+                                                                {order.Payment.paymentMethod?.ownerId && (
+                                                                    <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-white dark:border-white/5">
+                                                                        <span className="text-xs text-gray-400 block font-bold">CÉDULA / ID</span>
+                                                                        <span className="font-bold text-sm">{order.Payment.paymentMethod?.ownerId}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 p-8 text-center flex flex-col items-center justify-center h-[calc(100%-1.75rem)] min-h-[220px]">
+                                                        <div className="h-16 w-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mb-4">
+                                                            <AlertCircle className="h-8 w-8 text-gray-200" />
+                                                        </div>
+                                                        <p className="text-sm text-gray-400 font-bold max-w-[180px]">El pago aún no ha sido procesado por caja.</p>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 p-8 text-center flex flex-col items-center justify-center h-[calc(100%-1.75rem)] min-h-[220px]">
-                                        <div className="h-16 w-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mb-4">
-                                            <AlertCircle className="h-8 w-8 text-gray-200" />
-                                        </div>
-                                        <p className="text-sm text-gray-400 font-bold max-w-[180px]">El pago aún no ha sido procesado por caja.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                                    )}
 
-                        {/* Items Table */}
-                        <div className="space-y-4 pt-6">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-2">
-                                <UtensilsCrossed className="h-4 w-4" />
-                                Comanda Detallada
-                            </h3>
-                            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-[10px] text-gray-400 dark:text-gray-500 uppercase font-black border-b border-gray-200 dark:border-gray-800 tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4">Ítem / Especificación</th>
-                                            <th className="px-6 py-4 text-center">Cant.</th>
-                                            <th className="px-6 py-4 text-right">Unitario</th>
-                                            <th className="px-6 py-4 text-right">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                        {selectedOrder.items?.map((item) => (
-                                            <tr key={item.id} className="hover:bg-gray-50/30 dark:hover:bg-gray-900/20 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="font-black text-gray-900 dark:text-white uppercase text-xs">{item.plato?.nombre}</div>
-                                                    {item.nota && (
-                                                        <div className="text-[10px] text-orange-500 dark:text-orange-400 mt-2 flex items-start gap-1 p-2 bg-orange-50/50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-800/30">
-                                                            <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
-                                                            <span className="font-medium italic leading-relaxed text-gray-600 dark:text-gray-400">"{item.nota}"</span>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 text-center h-full">
-                                                    <span className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full font-black text-xs">
-                                                        {item.cantidad}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right text-gray-400 font-mono text-xs">${item.precioUnitario?.toFixed(2)}</td>
-                                                <td className="px-6 py-4 text-right font-black text-gray-900 dark:text-white font-mono">
-                                                    ${(item.cantidad * item.precioUnitario).toFixed(2)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                    {/* Items Table */}
+                                    <div className="space-y-4 pt-6">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-2">
+                                            <UtensilsCrossed className="h-4 w-4" />
+                                            Comanda Detallada
+                                        </h3>
+                                        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs text-gray-400 dark:text-gray-500 uppercase font-black border-b border-gray-200 dark:border-gray-800 tracking-wider">
+                                                    <tr>
+                                                        <th className="px-6 py-4">Ítem / Especificación</th>
+                                                        <th className="px-6 py-4 text-center">Cant.</th>
+                                                        <th className="px-6 py-4 text-right">Unitario</th>
+                                                        <th className="px-6 py-4 text-right">Total</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                                    {order.items?.map((item) => (
+                                                        <tr key={item.id} className="hover:bg-gray-50/30 dark:hover:bg-gray-900/20 transition-colors">
+                                                            <td className="px-6 py-4">
+                                                                <div className="font-black text-gray-900 dark:text-white uppercase text-xs">{item.plato?.nombre}</div>
+                                                                {item.nota && (
+                                                                    <div className="text-xs text-orange-500 dark:text-orange-400 mt-2 flex items-start gap-1 p-2 bg-orange-50/50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-800/30">
+                                                                        <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
+                                                                        <span className="font-medium italic leading-relaxed text-gray-600 dark:text-gray-400">"{item.nota}"</span>
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-6 py-4 text-center h-full">
+                                                                <span className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full font-black text-xs">
+                                                                    {item.cantidad}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-right text-gray-400 font-mono text-xs">${item.precioUnitario?.toFixed(2)}</td>
+                                                            <td className="px-6 py-4 text-right font-black text-gray-900 dark:text-white font-mono">
+                                                                ${(item.cantidad * item.precioUnitario).toFixed(2)}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        ))}
 
                         <div className="flex justify-end pt-6 border-t dark:border-gray-800">
                             <button

@@ -1,35 +1,25 @@
 
 'use client'
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Loader2, LayoutGrid, CheckCircle2, Clock, XCircle, Users } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 
 export default function TableSelector({ onSelectTable }) {
-    const [mesas, setMesas] = useState([])
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        fetchMesas()
-    }, [])
-
-    const fetchMesas = async () => {
-        try {
-            const response = await fetch('/api/user/mesas')
-            if (response.ok) {
-                const data = await response.json()
-                setMesas(data)
-            }
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setLoading(false)
+    const { data: mesas = [], isLoading: loading } = useQuery({
+        queryKey: ['mesas'],
+        queryFn: async () => {
+            const response = await fetch('/api/user/mesas');
+            if (!response.ok) throw new Error('Error al cargar mesas');
+            return response.json();
         }
-    }
+    });
 
     const getStatusColor = (estado) => {
         switch (estado) {
             case 'Libre': return 'text-green-600 bg-green-50 border-green-200 dark:bg-green-900/20 dark:text-green-400'
             case 'Ocupada': return 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400'
+            case 'Servir': return 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400'
+            case 'Servida': return 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400'
             case 'Reservada': return 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400'
             default: return 'text-gray-600 bg-gray-50'
         }
@@ -67,16 +57,18 @@ export default function TableSelector({ onSelectTable }) {
                                 <Users className="h-3 w-3" />
                                 {mesa.capacidad}
                             </div>
+                            <div className="flex items-center gap-1 text-[10px] uppercase font-bold opacity-70">
+                                {mesa.estado}
+                            </div>
 
                             <div className="absolute top-2 right-2">
                                 {mesa.estado === 'Libre' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                                 {mesa.estado === 'Ocupada' && <XCircle className="h-4 w-4 text-red-500" />}
                                 {mesa.estado === 'Reservada' && <Clock className="h-4 w-4 text-amber-500" />}
+                                {mesa.estado === 'Servir' && <Clock className="h-4 w-4 text-blue-500" />}
+                                {mesa.estado === 'Servida' && <Clock className="h-4 w-4 text-blue-500" />}
                             </div>
                         </Card>
-                        <div className={`mt-2 text-center text-xs font-bold ${getStatusColor(mesa.estado).split(' ')[0]}`}>
-                            {mesa.estado}
-                        </div>
                     </button>
                 ))}
             </div>

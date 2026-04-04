@@ -18,6 +18,9 @@ export async function POST(request) {
             direcction: form.direcction,
             phone: form.phone,
             slug: slug,
+            categoriaRestaurant: {
+                connect: form.categoriaRestaurant?.map(id => ({ id: Number(id) })) || []
+            },
             user: {
                 connect: {
                     id: userId,
@@ -26,6 +29,7 @@ export async function POST(request) {
         },
         include: {
             user: true,
+            categoriaRestaurant: true
         },
     });
 

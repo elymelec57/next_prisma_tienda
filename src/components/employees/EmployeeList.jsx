@@ -43,7 +43,7 @@ export default function EmployeeList({ employees, onEdit, onDelete }) {
                 <td className="p-4 align-middle hidden sm:table-cell">
                   <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/20">
                     <Briefcase className="mr-1 h-3 w-3" />
-                    {employee.rol?.nombre}
+                    {employee.rol?.name}
                   </span>
                 </td>
                 <td className="p-4 align-middle hidden md:table-cell text-gray-600 dark:text-gray-400">

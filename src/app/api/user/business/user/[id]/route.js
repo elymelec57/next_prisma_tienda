@@ -15,7 +15,8 @@ export async function GET(request, segmentData) {
                     dayOfWeek: 'asc'
                 }
             },
-            paymentMethods: true
+            paymentMethods: true,
+            categoriaRestaurant: true
         }
     })
 
@@ -62,6 +63,9 @@ export async function PUT(request, segmentData) {
             direcction: form.direcction,
             phone: form.phone,
             slug: slug,
+            categoriaRestaurant: {
+                set: form.categoriaRestaurant?.map(id => ({ id: Number(id) })) || []
+            }
         },
     });
 

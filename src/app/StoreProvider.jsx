@@ -2,6 +2,7 @@
 import { useRef } from 'react'
 import { Provider } from 'react-redux'
 import { makeStore } from '../lib/store'
+import TanstackProvider from '@/components/providers/TanstackProvider'
 // import {
 //   saludo
 // } from "../lib/features/auth/authSlice";
@@ -14,5 +15,11 @@ export default function Providers({ children }) {
     // storeRef.current.dispatch(saludo(saludoo))
   }
 
-  return <Provider store={storeRef.current}>{children}</Provider>
+  return (
+    <Provider store={storeRef.current}>
+      <TanstackProvider>
+        {children}
+      </TanstackProvider>
+    </Provider>
+  )
 }

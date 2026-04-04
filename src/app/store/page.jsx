@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/lib/hooks';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import {
@@ -19,41 +19,26 @@ import Link from 'next/link';
 
 export default function Store() {
   const Authname = useAppSelector((state) => state.auth.auth.name);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isNotFound, setIsNotFound] = useState(false);
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        const response = await fetch('/api/user/store/dashboard');
-
-        if (response.status === 404) {
-          setIsNotFound(true);
-          setLoading(false);
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error('Error al cargar los datos del dashboard');
-        }
-        const data = await response.json();
-        setDashboardData(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const { data: dashboardData, isLoading, error } = useQuery({
+    queryKey: ['dashboardData'],
+    queryFn: async () => {
+      const response = await fetch('/api/user/store/dashboard');
+      if (response.status === 404) {
+        throw { status: 404 };
       }
-    }
-    fetchDashboardData();
-  }, []);
+      if (!response.ok) {
+        throw new Error('Error al cargar los datos del dashboard');
+      }
+      return response.json();
+    },
+  });
 
-  if (isNotFound) {
+  if (error?.status === 404) {
     notFound();
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
@@ -65,7 +50,7 @@ export default function Store() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[50vh] text-red-500 gap-2">
         <p className="text-xl font-medium">Error al cargar datos</p>
-        <p className="text-sm border border-red-200 bg-red-50 px-4 py-2 rounded-md dark:bg-red-900/20 dark:border-red-900">{error}</p>
+        <p className="text-sm border border-red-200 bg-red-50 px-4 py-2 rounded-md dark:bg-red-900/20 dark:border-red-900">{error.message}</p>
       </div>
     );
   }

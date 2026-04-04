@@ -1,9 +1,10 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { Plus, Search, Loader2, Users } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import EmployeeList from '@/components/employees/EmployeeList';
 import EmployeeForm from '@/components/employees/EmployeeForm';
@@ -11,125 +12,114 @@ import EmployeeSchedule from '@/components/employees/EmployeeSchedule';
 import Modal from '@/components/Modal';
 
 export default function EmployeeManagementPage() {
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [schedules, setSchedules] = useState([]);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-
-  // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchEmployees = async () => {
-    try {
-      setLoading(true);
+  const { data: employees = [], isLoading: loading } = useQuery({
+    queryKey: ['employees'],
+    queryFn: async () => {
       const response = await fetch('/api/user/employees');
-      if (response.ok) {
-        const data = await response.json();
-        setEmployees(data || []);
-      } else {
-        toast.error('Error al cargar empleados');
-      }
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-      toast.error('Error de conexión');
-    } finally {
-      setLoading(false);
+      if (!response.ok) throw new Error('Error al cargar empleados');
+      return response.json();
     }
-  };
+  });
 
-  const fetchSchedules = async (employeeId) => {
-    try {
-      const response = await fetch(`/api/user/employees/${employeeId}/schedules`);
-      if (response.ok) {
-        const data = await response.json();
-        setSchedules(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching schedules:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
+  const { data: schedules = [], refetch: fetchSchedules } = useQuery({
+    queryKey: ['employeeSchedules', selectedEmployee?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/user/employees/${selectedEmployee.id}/schedules`);
+      if (!response.ok) throw new Error('Error al cargar horarios');
+      return response.json();
+    },
+    enabled: !!selectedEmployee?.id
+  });
 
   const handleEdit = (employee) => {
     setSelectedEmployee(employee);
-    fetchSchedules(employee.id);
     setIsFormModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await fetch(`/api/user/employees/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar empleado');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success('Empleado eliminado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
+  });
+
+  const handleDelete = (id) => {
     if (confirm('¿Estás seguro de que deseas eliminar a este empleado?')) {
-      try {
-        const res = await fetch(`/api/user/employees/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-          toast.success('Empleado eliminado correctamente');
-          fetchEmployees();
-        } else {
-          toast.error('Error al eliminar empleado');
-        }
-      } catch (error) {
-        console.error('Error deleting employee:', error);
-        toast.error('Error de conexión');
-      }
+      deleteEmployeeMutation.mutate(id);
     }
   };
 
-  const handleSave = async (data) => {
-    try {
+  const saveEmployeeMutation = useMutation({
+    mutationFn: async (data) => {
       const url = selectedEmployee ? `/api/user/employees/${selectedEmployee.id}` : '/api/user/employees';
       const method = selectedEmployee ? 'PUT' : 'POST';
-
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
-      if (response.ok) {
-        toast.success(selectedEmployee ? 'Empleado actualizado' : 'Empleado creado');
-        fetchEmployees();
-        setIsFormModalOpen(false);
-        setSelectedEmployee(null);
-      } else {
-        toast.error('Error al guardar empleado');
-      }
-    } catch (error) {
-      console.error('Error saving employee:', error);
-      toast.error('Error de conexión');
+      if (!response.ok) throw new Error('Error al guardar empleado');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success(selectedEmployee ? 'Empleado actualizado' : 'Empleado creado');
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setIsFormModalOpen(false);
+      setSelectedEmployee(null);
+    },
+    onError: (error) => {
+      toast.error(error.message);
     }
+  });
+
+  const handleSave = (data) => {
+    saveEmployeeMutation.mutate(data);
   };
 
   const handleCancel = () => {
     setIsFormModalOpen(false);
     setSelectedEmployee(null);
-    setSchedules([]);
   };
 
   const handleAddNew = () => {
     setSelectedEmployee(null);
     setIsFormModalOpen(true);
-    setSchedules([]);
   };
 
-  const handleAddSchedule = async (employeeId, newShift) => {
-    try {
+  const addScheduleMutation = useMutation({
+    mutationFn: async ({ employeeId, newShift }) => {
       const res = await fetch(`/api/user/employees/${employeeId}/schedules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newShift),
       });
-      if (res.ok) {
-        toast.success('Horario añadido');
-        fetchSchedules(employeeId);
-      } else {
-        toast.error('Error al añadir horario');
-      }
-    } catch (error) {
-      console.error('Error adding schedule:', error);
+      if (!res.ok) throw new Error('Error al añadir horario');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success('Horario añadido');
+      queryClient.invalidateQueries({ queryKey: ['employeeSchedules', selectedEmployee?.id] });
+    },
+    onError: (error) => {
+      toast.error(error.message);
     }
+  });
+
+  const handleAddSchedule = (employeeId, newShift) => {
+    addScheduleMutation.mutate({ employeeId, newShift });
   };
 
   const handleDeleteSchedule = async (scheduleId) => {

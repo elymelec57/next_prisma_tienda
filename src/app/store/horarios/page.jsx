@@ -1,7 +1,8 @@
 
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAppSelector } from '@/lib/hooks'
+import { useQuery } from '@tanstack/react-query'
 import {
     CalendarDays,
     Clock,
@@ -16,28 +17,17 @@ import { format, startOfWeek, addDays, isSameDay, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export default function HorariosPage() {
-    const [schedules, setSchedules] = useState([])
-    const [loading, setLoading] = useState(true)
     const user = useAppSelector((state) => state.auth.auth)
     const [currentDate, setCurrentDate] = useState(new Date())
 
-    useEffect(() => {
-        fetchSchedules()
-    }, [])
-
-    const fetchSchedules = async () => {
-        try {
-            const res = await fetch('/api/user/employee/schedules')
-            if (res.ok) {
-                const data = await res.json()
-                setSchedules(data)
-            }
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setLoading(false)
+    const { data: schedules = [], isLoading: loading } = useQuery({
+        queryKey: ['employeeSchedules'],
+        queryFn: async () => {
+            const res = await fetch('/api/user/employee/schedules');
+            if (!res.ok) throw new Error('Error al cargar cronograma');
+            return res.json();
         }
-    }
+    });
 
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))

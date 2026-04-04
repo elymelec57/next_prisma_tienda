@@ -35,10 +35,27 @@ export async function GET() {
                         plato: true
                     }
                 },
-                Payment: true
+                Payment: {
+                    include: {
+                        paymentMethod: true
+                    }
+                }
             },
             orderBy: { fechaHora: 'desc' }
         });
+
+        // Add receipt image URL if exists
+        for (let order of orders) {
+            if (order.Payment && order.Payment.mainImageId) {
+                const image = await prisma.image.findUnique({
+                    where: { id: order.Payment.mainImageId },
+                    select: { url: true }
+                });
+                if (image) {
+                    order.Payment.receiptUrl = image.url;
+                }
+            }
+        }
 
         return NextResponse.json(orders);
     } catch (error) {

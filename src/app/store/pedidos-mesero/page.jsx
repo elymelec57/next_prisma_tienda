@@ -2,6 +2,7 @@
 'use client'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
     setCurrentTable,
     addItemToOrder,
@@ -11,7 +12,10 @@ import {
     addAccountToTable,
     removeAccountFromTable,
     setActiveAccount,
-    updateAccountName
+    updateAccountName,
+    updateItemNote,
+    loadOrderIntoAccount,
+    updateTableStatus
 } from '@/lib/features/waiter/waiterSlice'
 import TableSelector from './components/TableSelector'
 import MenuSelector from './components/MenuSelector'
@@ -24,13 +28,13 @@ export default function PedidosMesero() {
     const dispatch = useAppDispatch()
     const { currentTable, ordersByTable } = useAppSelector((state) => state.waiter)
     const user = useAppSelector((state) => state.auth.auth)
-    const [sending, setSending] = useState(false)
-
     const tableData = currentTable ? ordersByTable[currentTable.id] : null
     const currentAccountIndex = tableData?.activeAccount ?? 0
     const accounts = tableData?.accounts || []
     const currentAccount = accounts[currentAccountIndex]
     const currentOrder = currentAccount?.items || []
+
+    const queryClient = useQueryClient();
 
     const handleSelectTable = (table) => {
         dispatch(setCurrentTable(table))
@@ -65,11 +69,26 @@ export default function PedidosMesero() {
         dispatch(updateAccountName({ tableId: currentTable.id, accountIndex: index, name }))
     }
 
-    const handleSendOrder = async () => {
-        if (currentOrder.length === 0) return
+    const handleUpdateNote = (itemId, noteIndex, note) => {
+        dispatch(updateItemNote({ tableId: currentTable.id, itemId, noteIndex, note }))
+    }
 
-        setSending(true)
-        try {
+    const handleEditExistingOrder = (pedido) => {
+        dispatch(loadOrderIntoAccount({ tableId: currentTable.id, pedido }))
+        toast.info(`Editando pedido #${pedido.id}`, { position: "top-center" })
+    }
+
+    const handleCancelEdit = () => {
+        if (accounts.length > 1) {
+            dispatch(removeAccountFromTable({ tableId: currentTable.id, accountIndex: currentAccountIndex }))
+        } else {
+            dispatch(clearActiveAccount(currentTable.id))
+            dispatch(updateAccountName({ tableId: currentTable.id, accountIndex: 0, name: 'Cuenta 1' }))
+        }
+    }
+
+    const sendOrderMutation = useMutation({
+        mutationFn: async () => {
             const orderBody = {
                 restaurantId: user.restauranteId || 1,
                 clienteId: null,
@@ -77,33 +96,66 @@ export default function PedidosMesero() {
                 total: currentOrder.reduce((sum, item) => sum + (item.precio * item.quantity), 0),
                 estado: 'Pendiente',
                 mesaId: currentTable.id,
-                items: currentOrder.map(item => ({
-                    platoId: item.id,
-                    cantidad: item.quantity,
-                    precioUnitario: item.precio,
-                    nota: ""
-                }))
+                items: currentOrder.flatMap(item => {
+                    const noteGroups = item.notes.reduce((acc, note) => {
+                        acc[note] = (acc[note] || 0) + 1;
+                        return acc;
+                    }, {});
+
+                    return Object.entries(noteGroups).map(([note, cantidad]) => ({
+                        platoId: item.id,
+                        cantidad: cantidad,
+                        precioUnitario: item.precio,
+                        nota: note
+                    }));
+                })
             }
 
-            const res = await fetch('/api/user/orders', {
-                method: 'POST',
+            const res = await fetch(currentAccount.activeOrderId ? `/api/user/orders/${currentAccount.activeOrderId}` : '/api/user/orders', {
+                method: currentAccount.activeOrderId ? 'PATCH' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderBody)
             })
 
-            if (res.ok) {
-                toast.success(`Cuenta "${currentAccount.name}" enviada a cocina`)
-                dispatch(clearActiveAccount(currentTable.id))
-            } else {
+            if (!res.ok) {
                 const errorData = await res.json()
                 throw new Error(errorData.message || 'Error al enviar el pedido')
             }
-        } catch (err) {
+            return res.json();
+        },
+        onSuccess: () => {
+            toast.success(`Cuenta "${currentAccount.name}" enviada a cocina`)
+            dispatch(clearActiveAccount(currentTable.id))
+        },
+        onError: (err) => {
             toast.error(err.message)
-        } finally {
-            setSending(false)
         }
+    });
+
+    const handleSendOrder = () => {
+        if (currentOrder.length === 0) return
+        sendOrderMutation.mutate();
     }
+
+    const serveTableMutation = useMutation({
+        mutationFn: async () => {
+            const res = await fetch(`/api/user/mesas/${currentTable.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: 'Servida' })
+            })
+            if (!res.ok) throw new Error('Error al actualizar mesa')
+            return res.json()
+        },
+        onSuccess: () => {
+            dispatch(updateTableStatus({ tableId: currentTable.id, status: 'Servida' }))
+            queryClient.invalidateQueries(['mesas'])
+            toast.success(`Mesa ${currentTable.numero} servida`)
+        },
+        onError: (err) => toast.error(err.message)
+    })
+
+    const sending = sendOrderMutation.isPending;
 
     return (
         <div className="flex flex-col h-full space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
@@ -118,51 +170,61 @@ export default function PedidosMesero() {
                     </p>
                 </div>
 
-                <Link
+                {/* <Link
                     href="/store/orders"
                     className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-orange-900/10 text-gray-600 dark:text-gray-400 hover:text-orange-600 transition-all rounded-2xl font-black text-xs uppercase tracking-widest border border-transparent hover:border-orange-100"
                 >
                     <ShoppingBag className="h-4 w-4" />
                     Seguimiento de Órdenes
-                </Link>
+                </Link> */}
             </div>
 
             <div className="flex-1 overflow-hidden">
                 {!currentTable ? (
                     <TableSelector onSelectTable={handleSelectTable} />
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-                        {/* Menu Section - Expanded to 8 columns */}
-                        <div className="lg:col-span-8 space-y-4 flex flex-col h-[calc(100vh-14rem)]">
-                            <div className="flex items-center justify-between mb-2">
-                                <button
-                                    onClick={() => dispatch(setCurrentTable(null))}
-                                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-orange-600 transition-all group"
-                                >
-                                    <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-xl group-hover:bg-orange-100 dark:group-hover:bg-orange-950 transition-colors">
-                                        <ChevronLeft className="h-3 w-3" />
-                                    </div>
-                                    Volver al Mapa de Mesas
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-10">
-                                <MenuSelector
-                                    onAddItem={handleAddItem}
-                                    userId={user.id}
-                                />
+                    <div className="max-w-4xl mx-auto space-y-8 pb-20">
+                        {/* Volver button and Table Info */}
+                        <div className="flex items-center justify-between bg-white dark:bg-gray-950 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                            <button
+                                onClick={() => dispatch(setCurrentTable(null))}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-orange-600 transition-all group"
+                            >
+                                <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-xl group-hover:bg-orange-100 dark:group-hover:bg-orange-950 transition-colors">
+                                    <ChevronLeft className="h-3 w-3" />
+                                </div>
+                                Volver al Mapa
+                            </button>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mesa Seleccionada:</span>
+                                <span className="bg-orange-600 text-white px-4 py-1.5 rounded-xl font-black text-sm shadow-lg shadow-orange-500/20">
+                                    Nº {currentTable.numero}
+                                </span>
                             </div>
                         </div>
 
-                        {/* Sticky Order Summary - 4 columns */}
-                        <div className="lg:col-span-4 h-[calc(100vh-14rem)]">
-                            <div className="bg-white dark:bg-gray-950 rounded-[2rem] border border-gray-100 dark:border-gray-800 h-full overflow-hidden shadow-2xl shadow-gray-200/50 dark:shadow-none translate-y-0 hover:-translate-y-1 transition-transform">
+                        {/* Search and Product List Section */}
+                        <div className="bg-white dark:bg-gray-950 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 md:p-8 shadow-xl">
+                            <MenuSelector
+                                onAddItem={handleAddItem}
+                                userId={user.id}
+                            />
+                        </div>
+
+                        {/* Order Summary (Cart) - Now Central */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 px-6">
+                                <ShoppingBag className="h-5 w-5 text-orange-600" />
+                                <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-lg">Resumen del Pedido</h3>
+                            </div>
+                            <div className="bg-white dark:bg-gray-950 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-2xl">
                                 <OrderSummary
                                     order={currentOrder}
                                     table={currentTable}
                                     accounts={accounts}
                                     activeAccountIndex={currentAccountIndex}
                                     onUpdateQuantity={handleUpdateQuantity}
+                                    onUpdateNote={handleUpdateNote}
                                     onRemoveItem={handleRemoveItem}
                                     onSendOrder={handleSendOrder}
                                     onChangeTable={() => dispatch(setCurrentTable(null))}
@@ -170,7 +232,10 @@ export default function PedidosMesero() {
                                     onAddAccount={() => dispatch(addAccountToTable(currentTable.id))}
                                     onRemoveAccount={(index) => dispatch(removeAccountFromTable({ tableId: currentTable.id, accountIndex: index }))}
                                     onRenameAccount={handleRenameAccount}
-                                    sending={sending}
+                                    onEditExistingOrder={handleEditExistingOrder}
+                                    onCancelEdit={handleCancelEdit}
+                                    onServeTable={() => serveTableMutation.mutate()}
+                                    sending={sending || serveTableMutation.isPending}
                                 />
                             </div>
                         </div>

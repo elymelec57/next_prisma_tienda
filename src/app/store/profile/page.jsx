@@ -4,35 +4,11 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, Mail, Lock, Save, ArrowLeft } from 'lucide-react';
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 export default function Profile() {
 
     const router = useRouter()
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        consultUser()
-    }, [])
-
-    async function consultUser() {
-
-        const res = await fetch(`/api/verifyToken2`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json' // Important for JSON data
-            },
-        })
-        const { auth } = await res.json()
-
-        setForm({
-            id: auth.id,
-            name: auth.name,
-            email: auth.email,
-            password: '',
-            confirm_password: ''
-        })
-    }
-
     const [form, setForm] = useState({
         id: 0,
         name: '',
@@ -41,6 +17,30 @@ export default function Profile() {
         confirm_password: ''
     });
 
+    const { data: userData, isLoading: isLoadingUser } = useQuery({
+        queryKey: ['userProfile'],
+        queryFn: async () => {
+            const res = await fetch(`/api/verifyToken2`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+            return data.auth;
+        }
+    });
+
+    useEffect(() => {
+        if (userData) {
+            setForm({
+                id: userData.id,
+                name: userData.name,
+                email: userData.email,
+                password: '',
+                confirm_password: ''
+            })
+        }
+    }, [userData]);
+
     const changeImput = (e) => {
         setForm({
             ...form,
@@ -48,29 +48,33 @@ export default function Profile() {
         })
     }
 
-    const updateProfile = async (e) => {
-        e.preventDefault()
-        setIsLoading(true)
-
-        try {
+    const profileMutation = useMutation({
+        mutationFn: async (formData) => {
             const res = await fetch('/api/user/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form })
+                body: JSON.stringify({ form: formData })
             });
-
-            const profileUpdate = await res.json();
-            if (profileUpdate.status) {
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
                 router.push('/login')
             } else {
-                alert(profileUpdate.message)
+                alert(data.message)
             }
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setIsLoading(false)
+        },
+        onError: (error) => {
+            alert("Error al actualizar perfil: " + error.message);
         }
+    });
+
+    const updateProfile = (e) => {
+        e.preventDefault()
+        profileMutation.mutate(form);
     }
+
+    const isLoading = profileMutation.isPending || isLoadingUser;
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">

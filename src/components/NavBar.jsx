@@ -48,7 +48,7 @@ export default function NavBar({ data }) {
         { href: '/store/plato', label: 'Platos', icon: Utensils, roles: ['user'] },
         { href: '/store/ingredientes', label: 'Ingredientes', icon: Carrot, roles: ['user'] },
         { href: '/store/contornos', label: 'Contornos', icon: Salad, roles: ['user'] },
-        { href: '/store/orders', label: 'Pedidos', icon: ShoppingBag, roles: ['user', 'mesero', 'cocina'] },
+        { href: '/store/orders', label: 'Pedidos', icon: ShoppingBag, roles: ['user', 'cocina'] },
         { href: '/store/pedidos-mesero', label: 'Toma de Pedidos', icon: ClipboardList, roles: ['user', 'mesero'] },
         { href: '/store/caja', label: 'Control de Caja', icon: Banknote, roles: ['user', 'caja'] },
         { href: '/store/horarios', label: 'Mis Horarios', icon: Calendar, roles: ['mesero', 'caja', 'cocina'] },
@@ -56,7 +56,7 @@ export default function NavBar({ data }) {
         { href: '/store/clients', label: 'Clientes', icon: Users, roles: ['user'] },
         { href: '/store/business', label: 'Mi Restaurante', icon: Store, roles: ['user'] },
         { href: '/store/empleados', label: 'Empleados', icon: Users, roles: ['user'] },
-        { href: '/store/profile', label: 'Mi Perfil', icon: User, roles: ['user', 'mesero', 'caja', 'cocina'] },
+        { href: '/store/profile', label: 'Mi Perfil', icon: User, roles: ['user'] },
     ];
 
     const filteredNavItems = navItems.filter(item => {

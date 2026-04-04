@@ -1,7 +1,8 @@
 
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAppSelector } from '@/lib/hooks'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
     Banknote,
     Clock,
@@ -17,7 +18,11 @@ import {
     History,
     UtensilsCrossed,
     MapPin,
-    Hash
+    Hash,
+    Eye,
+    ExternalLink,
+    AlertCircle,
+    Image as ImageIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -25,51 +30,57 @@ import Modal from '@/components/Modal'
 import { toast } from 'react-toastify'
 
 export default function CajaPage() {
-    const [pendingOrders, setPendingOrders] = useState([])
-    const [stats, setStats] = useState({ totalIncome: 0, count: 0, byMethod: {} })
-    const [paymentMethods, setPaymentMethods] = useState([])
-    const [loading, setLoading] = useState(true)
+    const queryClient = useQueryClient();
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [confirming, setConfirming] = useState(false)
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('mesa') // 'mesa' or 'delivery'
 
     const user = useAppSelector((state) => state.auth.auth)
 
-    useEffect(() => {
-        fetchCajaData()
-    }, [])
-
-    const fetchCajaData = async () => {
-        try {
-            const [pendingRes, statsRes, methodsRes] = await Promise.all([
-                fetch('/api/user/caja/pending'),
-                fetch('/api/user/caja/stats'),
-                fetch(`/api/user/business/payment-methods?restaurantId=${user.restauranteId}`)
-            ])
-
-            if (pendingRes.ok) setPendingOrders(await pendingRes.json())
-            if (statsRes.ok) setStats(await statsRes.json())
-            if (methodsRes.ok) {
-                const methodsData = await methodsRes.json()
-                setPaymentMethods(methodsData.data || [])
-            }
-        } catch (err) {
-            console.error(err)
-            toast.error('Error al cargar datos de caja')
-        } finally {
-            setLoading(false)
+    const { data: pendingOrders = [], isLoading: loadingPending } = useQuery({
+        queryKey: ['cajaPending'],
+        queryFn: async () => {
+            const res = await fetch('/api/user/caja/pending');
+            if (!res.ok) throw new Error('Error al cargar pedidos pendientes');
+            return res.json();
         }
-    }
+    });
+
+    const { data: stats = { totalIncome: 0, count: 0, byMethod: {} }, isLoading: loadingStats } = useQuery({
+        queryKey: ['cajaStats'],
+        queryFn: async () => {
+            const res = await fetch('/api/user/caja/stats');
+            if (!res.ok) throw new Error('Error al cargar estadísticas');
+            return res.json();
+        }
+    });
+
+    const { data: paymentMethods = [], isLoading: loadingMethods } = useQuery({
+        queryKey: ['paymentMethods', user.restauranteId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/business/payment-methods?restaurantId=${user.restauranteId}`);
+            if (!res.ok) throw new Error('Error al cargar métodos de pago');
+            const data = await res.json();
+            return data.data || [];
+        },
+        enabled: !!user.restauranteId,
+    });
+
+    const loading = loadingPending || loadingStats || loadingMethods;
 
     const handleOpenPayment = (order) => {
         setSelectedOrder(order)
         setIsModalOpen(true)
     }
 
-    const handleConfirmPayment = async (methodId) => {
-        setConfirming(true)
-        try {
+    const handleOpenDetails = (order) => {
+        setSelectedOrder(order)
+        setIsDetailsModalOpen(true)
+    }
+
+    const payMutation = useMutation({
+        mutationFn: async (methodId) => {
             const res = await fetch('/api/user/caja/pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -78,21 +89,26 @@ export default function CajaPage() {
                     paymentMethodId: methodId,
                     monto: selectedOrder.total
                 })
-            })
-
-            if (res.ok) {
-                toast.success(`Pedido #${selectedOrder.id} pagado con éxito`)
-                setIsModalOpen(false)
-                fetchCajaData()
-            } else {
-                throw new Error('Error al procesar el pago')
-            }
-        } catch (err) {
+            });
+            if (!res.ok) throw new Error('Error al procesar el pago');
+            return res.json();
+        },
+        onSuccess: () => {
+            toast.success(`Pedido #${selectedOrder.id} pagado con éxito`)
+            setIsModalOpen(false)
+            queryClient.invalidateQueries({ queryKey: ['cajaPending'] });
+            queryClient.invalidateQueries({ queryKey: ['cajaStats'] });
+        },
+        onError: (err) => {
             toast.error(err.message)
-        } finally {
-            setConfirming(false)
         }
+    });
+
+    const handleConfirmPayment = (methodId) => {
+        payMutation.mutate(methodId);
     }
+
+    const confirming = payMutation.isPending;
 
     const filteredOrders = pendingOrders.filter(o => {
         if (activeTab === 'mesa') return o.mesaId !== null;
@@ -254,13 +270,24 @@ export default function CajaPage() {
                                                                 ${order.total.toFixed(2)}
                                                             </p>
                                                         </div>
-                                                        <Button
-                                                            onClick={() => handleOpenPayment(order)}
-                                                            className={`shadow-xl scale-105 px-8 font-black uppercase text-xs h-12 ${activeTab === 'mesa' ? 'shadow-orange-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}
-                                                        >
-                                                            Cobrar
-                                                            <ChevronRight className="ml-2 h-4 w-4" />
-                                                        </Button>
+                                                        <div className="flex items-center gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() => handleOpenDetails(order)}
+                                                                className="h-12 w-12 rounded-xl border-2 border-gray-100 hover:border-orange-200 hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-all shadow-sm"
+                                                                title="Ver Detalle"
+                                                            >
+                                                                <Eye className="h-5 w-5" />
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => handleOpenPayment(order)}
+                                                                className={`shadow-xl scale-105 px-8 font-black uppercase text-xs h-12 ${activeTab === 'mesa' ? 'shadow-orange-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}
+                                                            >
+                                                                Cobrar
+                                                                <ChevronRight className="ml-2 h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </Card>
@@ -318,7 +345,7 @@ export default function CajaPage() {
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     title={activeTab === 'mesa' ? `Confirmar Pago - Mesa ${selectedOrder.mesa?.numero}` : `Confirmar Pago - Domicilio #${selectedOrder.id}`}
-                    maxWidth="max-w-md"
+                    maxWidth="max-w-2xl"
                 >
                     <div className="space-y-8">
                         <div className="bg-gray-900 text-white p-8 rounded-[2rem] text-center shadow-2xl shadow-gray-900/20 relative overflow-hidden">
@@ -336,32 +363,105 @@ export default function CajaPage() {
 
                         <div className="space-y-4">
                             <div className="flex items-center justify-between px-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Selección de Medio</label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                                    {selectedOrder.Payment ? 'Verificación de Pago' : 'Selección de Medio'}
+                                </label>
                                 <span className="text-[9px] font-bold text-green-500">SEGURO</span>
                             </div>
+
+                            {selectedOrder.Payment && (
+                                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 space-y-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Cargado por Cliente</p>
+                                            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white uppercase tracking-tighter">
+                                                {selectedOrder.Payment.paymentMethod?.label || 'Método no especificado'}
+                                            </h4>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase">
+                                                {selectedOrder.Payment.paymentMethod?.type?.replace('_', ' ') || 'S/N'}
+                                            </p>
+                                        </div>
+                                        <div className="bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded text-[10px] font-black text-amber-700 uppercase">
+                                            {selectedOrder.Payment.status}
+                                        </div>
+                                    </div>
+
+                                    {(selectedOrder.Payment.paymentMethod?.type === 'PAGO_MOVIL' || selectedOrder.Payment.paymentMethod?.type === 'TRANSFERENCIA') && (
+                                        <div className="space-y-3">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
+                                                <ImageIcon className="h-3 w-3" /> Comprobante Adjunto
+                                            </p>
+                                            {selectedOrder.Payment.receiptUrl ? (
+                                                <div className="relative group rounded-xl overflow-hidden border-2 border-white dark:border-gray-800 shadow-lg bg-white">
+                                                    <img
+                                                        src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${selectedOrder.Payment.receiptUrl}`}
+                                                        alt="Comprobante de pago"
+                                                        className="w-full aspect-video object-cover transition-transform group-hover:scale-105"
+                                                    />
+                                                    <a
+                                                        href={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${selectedOrder.Payment.receiptUrl}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs"
+                                                    >
+                                                        <ExternalLink className="h-4 w-4" />
+                                                        Ver Ampliado
+                                                    </a>
+                                                </div>
+                                            ) : (
+                                                <div className="p-8 text-center bg-gray-100 dark:bg-black/20 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+                                                    <AlertCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">Sin imagen adjunta</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <Button
+                                        onClick={() => handleConfirmPayment(selectedOrder.Payment.paymentMethodId)}
+                                        disabled={confirming}
+                                        className="w-full bg-green-600 hover:bg-green-700 h-12 font-black uppercase text-xs shadow-xl shadow-green-500/20"
+                                    >
+                                        {confirming ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                        Conformar y Finalizar
+                                    </Button>
+
+                                    <div className="relative">
+                                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                            <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+                                        </div>
+                                        <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em]">
+                                            <span className="bg-amber-50 dark:bg-gray-900 px-4 text-gray-400">O cambiar método a</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 gap-3">
                                 {paymentMethods.length > 0 ? (
-                                    paymentMethods.map((method) => (
-                                        <button
-                                            key={method.id}
-                                            disabled={confirming}
-                                            onClick={() => handleConfirmPayment(method.id)}
-                                            className="group flex items-center justify-between p-5 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-green-500 hover:shadow-xl hover:shadow-green-500/10 transition-all active:scale-[0.97] disabled:opacity-50"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-12 w-12 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-green-600 group-hover:bg-green-50 transition-all">
-                                                    <CreditCard className="h-6 w-6" />
+                                    paymentMethods
+                                        .filter(m => !selectedOrder.Payment || m.id !== selectedOrder.Payment.paymentMethodId)
+                                        .map((method) => (
+                                            <button
+                                                key={method.id}
+                                                disabled={confirming}
+                                                onClick={() => handleConfirmPayment(method.id)}
+                                                className="group flex items-center justify-between p-5 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-green-500 hover:shadow-xl hover:shadow-green-500/10 transition-all active:scale-[0.97] disabled:opacity-50"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-12 w-12 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-green-600 group-hover:bg-green-50 transition-all">
+                                                        <CreditCard className="h-6 w-6" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="font-extrabold text-gray-900 dark:text-white uppercase text-xs tracking-tighter mb-0.5">{method.label}</p>
+                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{method.type.replace('_', ' ')}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="text-left">
-                                                    <p className="font-extrabold text-gray-900 dark:text-white uppercase text-xs tracking-tighter mb-0.5">{method.label}</p>
-                                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{method.type.replace('_', ' ')}</p>
+                                                <div className="h-8 w-8 rounded-full border border-gray-100 dark:border-gray-800 flex items-center justify-center group-hover:border-green-200 group-hover:bg-green-50 transition-all">
+                                                    <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-green-500" />
                                                 </div>
-                                            </div>
-                                            <div className="h-8 w-8 rounded-full border border-gray-100 dark:border-gray-800 flex items-center justify-center group-hover:border-green-200 group-hover:bg-green-50 transition-all">
-                                                <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-green-500" />
-                                            </div>
-                                        </button>
-                                    ))
+                                            </button>
+                                        ))
                                 ) : (
                                     <div className="text-center py-10 bg-red-50/30 rounded-2xl border-2 border-dashed border-red-100">
                                         <AlertCircle className="h-8 w-8 text-red-300 mx-auto mb-2" />
@@ -379,6 +479,77 @@ export default function CajaPage() {
                             >
                                 Abandonar Operación
                             </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Order Details Modal */}
+            {isDetailsModalOpen && selectedOrder && (
+                <Modal
+                    isOpen={isDetailsModalOpen}
+                    onClose={() => setIsDetailsModalOpen(false)}
+                    title={`Detalle de la Orden #${selectedOrder.id}`}
+                    maxWidth="max-w-xl"
+                >
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
+                            <div>
+                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Responsable</h4>
+                                <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                    {selectedOrder.nombreCliente || selectedOrder.cliente?.nombre || 'Consumidor Final'}
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Mesa / Destino</h4>
+                                <p className="text-sm font-black text-orange-600 uppercase tracking-tight">
+                                    {selectedOrder.mesa ? `MESA ${selectedOrder.mesa.numero}` : 'DOMICILIO'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Artículos Consumidos</h4>
+                            <div className="bg-white dark:bg-gray-950 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden">
+                                {selectedOrder.items?.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 border-b border-gray-50 dark:border-gray-900/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-10 w-10 rounded-xl bg-orange-50 dark:bg-orange-900/10 flex items-center justify-center text-orange-600 font-black text-sm">
+                                                {item.cantidad}
+                                            </div>
+                                            <div>
+                                                <h5 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-tighter leading-tight">
+                                                    {item.plato?.nombre}
+                                                </h5>
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                                    ${parseFloat(item.precioUnitario).toFixed(2)} c/u
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-black text-gray-900 dark:text-white tracking-tighter">
+                                                ${(item.cantidad * item.precioUnitario).toFixed(2)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-900 text-white p-6 rounded-[2rem] flex items-center justify-between shadow-xl shadow-gray-900/20">
+                            <div>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total Confirmado</p>
+                                <h3 className="text-3xl font-black tracking-tighter">${parseFloat(selectedOrder.total).toFixed(2)}</h3>
+                            </div>
+                            <Button 
+                                onClick={() => {
+                                    setIsDetailsModalOpen(false)
+                                    handleOpenPayment(selectedOrder)
+                                }}
+                                className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase text-[10px] px-6 rounded-xl shadow-lg shadow-orange-500/40 border-none"
+                            >
+                                Proceder al Cobro
+                            </Button>
                         </div>
                     </div>
                 </Modal>

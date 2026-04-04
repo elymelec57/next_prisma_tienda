@@ -24,10 +24,20 @@ async function main() {
   await prisma.rol.deleteMany();
   await prisma.categoria.deleteMany();
   await prisma.categoriaIngrediente.deleteMany();
+  await prisma.categoriaRestaurant.deleteMany();
 
   // 2. Crear Roles de Usuario (Sistema)
   const rolAdmin = await prisma.rolUser.create({ data: { name: 'Admin' } });
   const rolUser = await prisma.rolUser.create({ data: { name: 'User' } });
+
+  // --- Crear Categorías de Restaurante ---
+  const catItaliana = await prisma.categoriaRestaurant.create({ data: { nombre: 'Italiana' } });
+  const catHamburguesas = await prisma.categoriaRestaurant.create({ data: { nombre: 'Hamburguesas' } });
+  const catPizza = await prisma.categoriaRestaurant.create({ data: { nombre: 'Pizza' } });
+  const catSushi = await prisma.categoriaRestaurant.create({ data: { nombre: 'Sushi' } });
+  const catMexicana = await prisma.categoriaRestaurant.create({ data: { nombre: 'Mexicana' } });
+  const catCafe = await prisma.categoriaRestaurant.create({ data: { nombre: 'Cafetería' } });
+  const catComidaRapida = await prisma.categoriaRestaurant.create({ data: { nombre: 'Comida Rápida' } });
 
   // 3. Crear Usuario con Múltiples Roles
   const salt = bcrypt.genSaltSync(10);
@@ -57,7 +67,9 @@ async function main() {
 
   // 4. Crear Categorías
   const catComida = await prisma.categoria.create({ data: { nombre: 'Hamburguesas' } });
+  const catPerros = await prisma.categoria.create({ data: { nombre: 'Perros' } });
   const catBebida = await prisma.categoria.create({ data: { nombre: 'Bebidas' } });
+  const catPostres = await prisma.categoria.create({ data: { nombre: 'Postres' } });
   const catIngrediente = await prisma.categoriaIngrediente.create({ data: { nombre: 'Proteínas' } });
 
   const data = [
@@ -139,6 +151,9 @@ async function main() {
       phone: '+584120000000',
       direcction: 'Calle Falsa 123, Caracas',
       userId: user.id,
+      categoriaRestaurant: {
+        connect: [{ id: catItaliana.id }, { id: catCafe.id }]
+      },
       restaurantHours: {
         create: {
           dayOfWeek: 1, // Lunes
@@ -170,11 +185,100 @@ async function main() {
     }
   });
 
+  const plato2 = await prisma.plato.create({
+    data: {
+      nombre: 'Hamburguesa de la casa',
+      descripcion: 'Carne de angus con aceite de trufa',
+      precio: 15.50,
+      categoriaId: catComida.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato3 = await prisma.plato.create({
+    data: {
+      nombre: 'Hamburguesa 3',
+      descripcion: 'Carne de angus con aceite de trufa',
+      precio: 15.50,
+      categoriaId: catComida.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato4 = await prisma.plato.create({
+    data: {
+      nombre: 'Perros calientes',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catPerros.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato5 = await prisma.plato.create({
+    data: {
+      nombre: 'Perros 2',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catPerros.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato6 = await prisma.plato.create({
+    data: {
+      nombre: 'Perros 3',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catPerros.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato7 = await prisma.plato.create({
+    data: {
+      nombre: 'Jugo de guayaba',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catBebida.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato8 = await prisma.plato.create({
+    data: {
+      nombre: 'Jugo de pera',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catBebida.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato9 = await prisma.plato.create({
+    data: {
+      nombre: 'Jugo de naranja',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catBebida.id,
+      restaurantId: restaurant.id,
+    }
+  });
+
+  const plato10 = await prisma.plato.create({
+    data: {
+      nombre: 'Torta de ahuyama',
+      descripcion: 'todo lo mejor',
+      precio: 15.50,
+      categoriaId: catPostres.id,
+      restaurantId: restaurant.id,
+    }
+  });
   // 8. Crear Mesas
   await prisma.mesa.createMany({
     data: [
       { numero: 1, capacidad: 4, estado: 'Libre', restaurantId: restaurant.id },
-      { numero: 2, capacidad: 2, estado: 'Ocupada', restaurantId: restaurant.id },
+      { numero: 2, capacidad: 2, estado: 'Libre', restaurantId: restaurant.id },
       { numero: 3, capacidad: 6, estado: 'Libre', restaurantId: restaurant.id },
     ]
   });
@@ -193,10 +297,10 @@ async function main() {
   });
 
   // 10. Roles de Empleados y Empleado
-  const rolMesero = await prisma.rol.create({ data: { nombre: 'Mesero' } });
-  const rolCocina = await prisma.rol.create({ data: { nombre: 'Cocina' } });
-  const rolCaja = await prisma.rol.create({ data: { nombre: 'Caja' } });
-  const rolDelivery = await prisma.rol.create({ data: { nombre: 'Delivery' } });
+  const rolMesero = await prisma.rol.create({ data: { name: 'Mesero' } });
+  const rolCocina = await prisma.rol.create({ data: { name: 'Cocina' } });
+  const rolCaja = await prisma.rol.create({ data: { name: 'Caja' } });
+  const rolDelivery = await prisma.rol.create({ data: { name: 'Delivery' } });
 
   await prisma.empleado.create({
     data: {
