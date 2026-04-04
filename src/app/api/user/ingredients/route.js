@@ -36,6 +36,11 @@ export async function GET(request) {
       return NextResponse.json(ingredient)
     }
 
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { currency: true }
+    });
+
     const ingredients = await prisma.ingredienteRestaurante.findMany({
       where: { restaurantId },
       orderBy: { createdAt: 'desc' }
@@ -49,7 +54,7 @@ export async function GET(request) {
       stockMaximo: ing.stockMaximo ? Number(ing.stockMaximo) : null
     }))
 
-    return NextResponse.json(serialized)
+    return NextResponse.json({ ingredients: serialized, currency: restaurant?.currency || 'USD' })
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

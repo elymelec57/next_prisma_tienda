@@ -16,6 +16,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/utils/currency';
 
 export default function Store() {
   const Authname = useAppSelector((state) => state.auth.auth.name);
@@ -58,7 +59,7 @@ export default function Store() {
   const { restaurant, stats, platos, pedidos } = dashboardData;
 
   const statCards = [
-    { title: "Ingresos Totales", value: `$${stats.ingresosTotales.toFixed(2)}`, icon: DollarSign, color: "text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400" },
+    { title: "Ingresos Totales", value: formatCurrency(stats.ingresosTotales, restaurant.currency), icon: DollarSign, color: "text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400" },
     { title: "Pedidos Totales", value: stats.totalPedidos, icon: ShoppingBag, color: "text-blue-600 bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400" },
     { title: "Pendientes", value: stats.pedidosPendientes, icon: Clock, color: "text-orange-600 bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400" },
     { title: "Total Clientes", value: stats.totalClientes, icon: Users, color: "text-purple-600 bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400" },
@@ -145,7 +146,7 @@ export default function Store() {
                           {pedido.estado}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">${pedido.total.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">{formatCurrency(pedido.total, restaurant.currency)}</td>
                       <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                         {new Date(pedido.fechaHora).toLocaleDateString()}
                       </td>
@@ -187,7 +188,7 @@ export default function Store() {
                   {platos.slice(0, 5).map((plato) => (
                     <tr key={plato.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{plato.nombre}</td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">${plato.precio.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{formatCurrency(plato.precio, restaurant.currency)}</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <span className={`h-2 w-2 rounded-full ${plato.disponible ? 'bg-green-500' : 'bg-red-500'}`}></span>

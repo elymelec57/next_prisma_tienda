@@ -32,6 +32,10 @@ export async function GET(request) {
       },
     });
 
+    if (!restaurant) {
+      return NextResponse.json({ message: 'Restaurante no encontrado para el usuario' }, { status: 404 });
+    }
+
     if (restaurant.mainImageId != null) {
       const image = await prisma.image.findUnique({
         where: {
@@ -63,6 +67,7 @@ export async function GET(request) {
         name: restaurant.name,
         slogan: restaurant.slogan,
         logo: restaurant.url,
+        currency: restaurant.currency,
       },
       stats: {
         totalPlatos,
