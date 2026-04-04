@@ -2,9 +2,11 @@ import { BusinessData } from '@/libs/BusinessData';
 import NavBarBusiness from '@/components/NavBarBusiness';
 import Cart from '@/components/Cart';
 import { ProductsData } from '@/libs/ProductsData';
-import { MapPin, Phone, Clock, Star, UtensilsCrossed } from 'lucide-react';
+import { MapPin, Phone, Clock, Star, UtensilsCrossed, ChevronRight, LayoutGrid } from 'lucide-react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { prisma } from '@/libs/prisma';
+import Link from 'next/link';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
@@ -31,6 +33,16 @@ export default async function page({ params }) {
   }
 
   const products = await ProductsData(business.id)
+
+  const categories = await prisma.categoria.findMany({
+    where: {
+      platos: {
+        some: {
+          restaurantId: business.id
+        }
+      }
+    }
+  })
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-orange-100 selection:text-orange-900">
@@ -102,7 +114,7 @@ export default async function page({ params }) {
           </div>
         </div>
 
-        {/* Sección de Productos */}
+        {/* Sección de Productos con Sidebar */}
         <div id="menu" className="mb-20 scroll-mt-24">
           <div className="flex flex-col items-center justify-center text-center mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-sm font-bold mb-4">
@@ -110,13 +122,45 @@ export default async function page({ params }) {
               <span>Nuestra Carta</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Platillos Destacados
+              Explora Nuestro Menú
             </h2>
             <div className="h-1 w-20 bg-orange-500 rounded-full mt-4"></div>
           </div>
 
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8'>
-            <Cart products={JSON.parse(JSON.stringify(products))} />
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Sidebar de Categorías */}
+            <aside className="lg:w-64 flex-shrink-0">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sticky top-24">
+                <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-50">
+                  <LayoutGrid className="h-5 w-5 text-orange-500" />
+                  <h3 className="font-bold text-slate-800 uppercase tracking-wider text-sm">Categorías</h3>
+                </div>
+                <nav className="space-y-1">
+                  {categories.map((category) => (
+                    <Link
+                      key={category.id}
+                      href={`/${slug}/${category.nombre.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="flex items-center justify-between group px-3 py-2.5 rounded-xl hover:bg-orange-50 transition-all duration-200"
+                    >
+                      <span className="text-slate-600 group-hover:text-orange-700 font-medium transition-colors">
+                        {category.nombre}
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-orange-400 group-hover:translate-x-1 transition-all" />
+                    </Link>
+                  ))}
+                  {categories.length === 0 && (
+                    <p className="text-slate-400 text-sm italic p-2 text-center">No hay categorías disponibles</p>
+                  )}
+                </nav>
+              </div>
+            </aside>
+
+            {/* Grid de Productos */}
+            <div className="flex-grow">
+              <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6'>
+                <Cart products={JSON.parse(JSON.stringify(products))} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
