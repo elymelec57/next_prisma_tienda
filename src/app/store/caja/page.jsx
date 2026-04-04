@@ -33,6 +33,7 @@ export default function CajaPage() {
     const queryClient = useQueryClient();
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('mesa') // 'mesa' or 'delivery'
 
     const user = useAppSelector((state) => state.auth.auth)
@@ -71,6 +72,11 @@ export default function CajaPage() {
     const handleOpenPayment = (order) => {
         setSelectedOrder(order)
         setIsModalOpen(true)
+    }
+
+    const handleOpenDetails = (order) => {
+        setSelectedOrder(order)
+        setIsDetailsModalOpen(true)
     }
 
     const payMutation = useMutation({
@@ -264,13 +270,24 @@ export default function CajaPage() {
                                                                 ${order.total.toFixed(2)}
                                                             </p>
                                                         </div>
-                                                        <Button
-                                                            onClick={() => handleOpenPayment(order)}
-                                                            className={`shadow-xl scale-105 px-8 font-black uppercase text-xs h-12 ${activeTab === 'mesa' ? 'shadow-orange-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}
-                                                        >
-                                                            Cobrar
-                                                            <ChevronRight className="ml-2 h-4 w-4" />
-                                                        </Button>
+                                                        <div className="flex items-center gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() => handleOpenDetails(order)}
+                                                                className="h-12 w-12 rounded-xl border-2 border-gray-100 hover:border-orange-200 hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-all shadow-sm"
+                                                                title="Ver Detalle"
+                                                            >
+                                                                <Eye className="h-5 w-5" />
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => handleOpenPayment(order)}
+                                                                className={`shadow-xl scale-105 px-8 font-black uppercase text-xs h-12 ${activeTab === 'mesa' ? 'shadow-orange-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}
+                                                            >
+                                                                Cobrar
+                                                                <ChevronRight className="ml-2 h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </Card>
@@ -462,6 +479,77 @@ export default function CajaPage() {
                             >
                                 Abandonar Operación
                             </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Order Details Modal */}
+            {isDetailsModalOpen && selectedOrder && (
+                <Modal
+                    isOpen={isDetailsModalOpen}
+                    onClose={() => setIsDetailsModalOpen(false)}
+                    title={`Detalle de la Orden #${selectedOrder.id}`}
+                    maxWidth="max-w-xl"
+                >
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
+                            <div>
+                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Responsable</h4>
+                                <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                    {selectedOrder.nombreCliente || selectedOrder.cliente?.nombre || 'Consumidor Final'}
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Mesa / Destino</h4>
+                                <p className="text-sm font-black text-orange-600 uppercase tracking-tight">
+                                    {selectedOrder.mesa ? `MESA ${selectedOrder.mesa.numero}` : 'DOMICILIO'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Artículos Consumidos</h4>
+                            <div className="bg-white dark:bg-gray-950 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden">
+                                {selectedOrder.items?.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 border-b border-gray-50 dark:border-gray-900/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-10 w-10 rounded-xl bg-orange-50 dark:bg-orange-900/10 flex items-center justify-center text-orange-600 font-black text-sm">
+                                                {item.cantidad}
+                                            </div>
+                                            <div>
+                                                <h5 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-tighter leading-tight">
+                                                    {item.plato?.nombre}
+                                                </h5>
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                                    ${parseFloat(item.precioUnitario).toFixed(2)} c/u
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-black text-gray-900 dark:text-white tracking-tighter">
+                                                ${(item.cantidad * item.precioUnitario).toFixed(2)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-900 text-white p-6 rounded-[2rem] flex items-center justify-between shadow-xl shadow-gray-900/20">
+                            <div>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total Confirmado</p>
+                                <h3 className="text-3xl font-black tracking-tighter">${parseFloat(selectedOrder.total).toFixed(2)}</h3>
+                            </div>
+                            <Button 
+                                onClick={() => {
+                                    setIsDetailsModalOpen(false)
+                                    handleOpenPayment(selectedOrder)
+                                }}
+                                className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase text-[10px] px-6 rounded-xl shadow-lg shadow-orange-500/40 border-none"
+                            >
+                                Proceder al Cobro
+                            </Button>
                         </div>
                     </div>
                 </Modal>

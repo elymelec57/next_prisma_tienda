@@ -185,6 +185,12 @@ export const waiterSlice = createAppSlice({
                 state.currentTable = null;
             }
         },
+        updateTableStatus: (state, action) => {
+            const { tableId, status } = action.payload;
+            if (state.currentTable?.id === tableId) {
+                state.currentTable.estado = status;
+            }
+        },
         resetWaiter: (state) => {
             state.currentTable = null;
             state.ordersByTable = {};
@@ -205,6 +211,7 @@ export const {
     clearActiveAccount,
     loadOrderIntoAccount,
     clearTable,
+    updateTableStatus,
     resetWaiter
 } = waiterSlice.actions;
 

@@ -19,6 +19,7 @@ export default function TableSelector({ onSelectTable }) {
             case 'Libre': return 'text-green-600 bg-green-50 border-green-200 dark:bg-green-900/20 dark:text-green-400'
             case 'Ocupada': return 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400'
             case 'Servir': return 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400'
+            case 'Servida': return 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400'
             case 'Reservada': return 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400'
             default: return 'text-gray-600 bg-gray-50'
         }
@@ -64,6 +65,8 @@ export default function TableSelector({ onSelectTable }) {
                                 {mesa.estado === 'Libre' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                                 {mesa.estado === 'Ocupada' && <XCircle className="h-4 w-4 text-red-500" />}
                                 {mesa.estado === 'Reservada' && <Clock className="h-4 w-4 text-amber-500" />}
+                                {mesa.estado === 'Servir' && <Clock className="h-4 w-4 text-blue-500" />}
+                                {mesa.estado === 'Servida' && <Clock className="h-4 w-4 text-blue-500" />}
                             </div>
                         </Card>
                     </button>

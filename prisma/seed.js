@@ -24,10 +24,20 @@ async function main() {
   await prisma.rol.deleteMany();
   await prisma.categoria.deleteMany();
   await prisma.categoriaIngrediente.deleteMany();
+  await prisma.categoriaRestaurant.deleteMany();
 
   // 2. Crear Roles de Usuario (Sistema)
   const rolAdmin = await prisma.rolUser.create({ data: { name: 'Admin' } });
   const rolUser = await prisma.rolUser.create({ data: { name: 'User' } });
+
+  // --- Crear Categorías de Restaurante ---
+  const catItaliana = await prisma.categoriaRestaurant.create({ data: { nombre: 'Italiana' } });
+  const catHamburguesas = await prisma.categoriaRestaurant.create({ data: { nombre: 'Hamburguesas' } });
+  const catPizza = await prisma.categoriaRestaurant.create({ data: { nombre: 'Pizza' } });
+  const catSushi = await prisma.categoriaRestaurant.create({ data: { nombre: 'Sushi' } });
+  const catMexicana = await prisma.categoriaRestaurant.create({ data: { nombre: 'Mexicana' } });
+  const catCafe = await prisma.categoriaRestaurant.create({ data: { nombre: 'Cafetería' } });
+  const catComidaRapida = await prisma.categoriaRestaurant.create({ data: { nombre: 'Comida Rápida' } });
 
   // 3. Crear Usuario con Múltiples Roles
   const salt = bcrypt.genSaltSync(10);
@@ -141,6 +151,9 @@ async function main() {
       phone: '+584120000000',
       direcction: 'Calle Falsa 123, Caracas',
       userId: user.id,
+      categoriaRestaurant: {
+        connect: [{ id: catItaliana.id }, { id: catCafe.id }]
+      },
       restaurantHours: {
         create: {
           dayOfWeek: 1, // Lunes

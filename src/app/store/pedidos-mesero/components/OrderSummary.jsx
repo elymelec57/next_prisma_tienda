@@ -34,7 +34,6 @@ export default function OrderSummary({
     sending
 }) {
     const total = order.reduce((sum, item) => sum + (item.precio * item.quantity), 0)
-
     const existingOrdersTotal = table.pedidos?.reduce((sum, p) => sum + p.total, 0) || 0
     const grandTotal = total + existingOrdersTotal
 
@@ -116,7 +115,7 @@ export default function OrderSummary({
             </div>
 
             {/* Existing Orders Section */}
-            {table.estado === 'Ocupada' || table.estado === 'Servir' && table.pedidos?.length > 0 && (
+            {(table.estado === 'Ocupada' || table.estado === 'Servir') && table.pedidos?.length > 0 && (
                 <div className="bg-orange-50/50 dark:bg-orange-950/10 border-b border-gray-100 dark:border-gray-800 p-4">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">

@@ -2,7 +2,7 @@
 'use client'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
     setCurrentTable,
     addItemToOrder,
@@ -14,7 +14,8 @@ import {
     setActiveAccount,
     updateAccountName,
     updateItemNote,
-    loadOrderIntoAccount
+    loadOrderIntoAccount,
+    updateTableStatus
 } from '@/lib/features/waiter/waiterSlice'
 import TableSelector from './components/TableSelector'
 import MenuSelector from './components/MenuSelector'
@@ -32,6 +33,8 @@ export default function PedidosMesero() {
     const accounts = tableData?.accounts || []
     const currentAccount = accounts[currentAccountIndex]
     const currentOrder = currentAccount?.items || []
+
+    const queryClient = useQueryClient();
 
     const handleSelectTable = (table) => {
         dispatch(setCurrentTable(table))
@@ -134,6 +137,24 @@ export default function PedidosMesero() {
         sendOrderMutation.mutate();
     }
 
+    const serveTableMutation = useMutation({
+        mutationFn: async () => {
+            const res = await fetch(`/api/user/mesas/${currentTable.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: 'Servida' })
+            })
+            if (!res.ok) throw new Error('Error al actualizar mesa')
+            return res.json()
+        },
+        onSuccess: () => {
+            dispatch(updateTableStatus({ tableId: currentTable.id, status: 'Servida' }))
+            queryClient.invalidateQueries(['mesas'])
+            toast.success(`Mesa ${currentTable.numero} servida`)
+        },
+        onError: (err) => toast.error(err.message)
+    })
+
     const sending = sendOrderMutation.isPending;
 
     return (
@@ -213,7 +234,8 @@ export default function PedidosMesero() {
                                     onRenameAccount={handleRenameAccount}
                                     onEditExistingOrder={handleEditExistingOrder}
                                     onCancelEdit={handleCancelEdit}
-                                    sending={sending}
+                                    onServeTable={() => serveTableMutation.mutate()}
+                                    sending={sending || serveTableMutation.isPending}
                                 />
                             </div>
                         </div>

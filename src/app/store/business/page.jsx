@@ -42,6 +42,7 @@ export default function Business() {
         phone: '',
         direcction: '',
         slug: '',
+        categoriaRestaurant: [],
     });
 
     const [hours, setHours] = useState(
@@ -75,6 +76,15 @@ export default function Business() {
         },
         enabled: !!userId,
     });
+    
+    const { data: allCategories } = useQuery({
+        queryKey: ['allRestaurantCategories'],
+        queryFn: async () => {
+            const res = await fetch('/api/admin/categoria-restaurant');
+            const data = await res.json();
+            return data.categorias || [];
+        },
+    });
 
     useEffect(() => {
         if (businessData?.status) {
@@ -85,7 +95,8 @@ export default function Business() {
                 slogan: rest.slogan,
                 phone: rest.phone,
                 direcction: rest.direcction,
-                slug: rest.slug
+                slug: rest.slug,
+                categoriaRestaurant: rest.categoriaRestaurant?.map(c => c.id) || []
             })
 
             setImage({
@@ -388,6 +399,32 @@ export default function Business() {
                                 <div className="md:col-span-2 space-y-2">
                                     <label className="text-sm font-medium">Dirección Física</label>
                                     <textarea name="direcction" value={form.direcction} onChange={changeImput} rows={3} className="flex w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950" required />
+                                </div>
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="text-sm font-medium">Categorías del Restaurante</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {allCategories?.map((cat) => (
+                                            <button
+                                                key={cat.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    const isSelected = form.categoriaRestaurant.includes(cat.id);
+                                                    const newCategories = isSelected
+                                                        ? form.categoriaRestaurant.filter(id => id !== cat.id)
+                                                        : [...form.categoriaRestaurant, cat.id];
+                                                    setForm({ ...form, categoriaRestaurant: newCategories });
+                                                }}
+                                                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                                    form.categoriaRestaurant.includes(cat.id)
+                                                        ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600 ring-offset-2'
+                                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                                                }`}
+                                            >
+                                                {cat.nombre}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-[11px] text-gray-500 mt-1">Selecciona una o más categorías que describan tu negocio.</p>
                                 </div>
                             </div>
 
