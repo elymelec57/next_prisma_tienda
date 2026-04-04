@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { formatCurrency } from '@/lib/utils/currency'
 import Modal from '@/components/Modal'
 import { toast } from 'react-toastify'
 
@@ -47,7 +48,7 @@ export default function CajaPage() {
         }
     });
 
-    const { data: stats = { totalIncome: 0, count: 0, byMethod: {} }, isLoading: loadingStats } = useQuery({
+    const { data: stats = { totalIncome: 0, count: 0, byMethod: {}, currency: 'USD' }, isLoading: loadingStats } = useQuery({
         queryKey: ['cajaStats'],
         queryFn: async () => {
             const res = await fetch('/api/user/caja/stats');
@@ -158,7 +159,7 @@ export default function CajaPage() {
                     </div>
                     <div className="relative z-10">
                         <p className="text-white/70 text-xs font-black uppercase tracking-[0.2em] mb-1">Ingresos de Hoy</p>
-                        <h2 className="text-4xl font-black tracking-tighter">${stats.totalIncome.toFixed(2)}</h2>
+                        <h2 className="text-4xl font-black tracking-tighter">{formatCurrency(stats.totalIncome, stats.currency)}</h2>
                         <div className="mt-6 flex items-center gap-3">
                             <div className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">
                                 <span className="text-[10px] font-black">{stats.count} COBROS</span>
@@ -267,7 +268,7 @@ export default function CajaPage() {
                                                         <div className="text-right">
                                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Costo Total</p>
                                                             <p className="text-3xl font-black text-gray-900 dark:text-white leading-none tracking-tighter">
-                                                                ${order.total.toFixed(2)}
+                                                                {formatCurrency(order.total, stats.currency)}
                                                             </p>
                                                         </div>
                                                         <div className="flex items-center gap-2">
@@ -312,7 +313,7 @@ export default function CajaPage() {
                                     <div key={method} className="flex flex-col p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 transition-hover hover:border-green-200">
                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">{method.replace('_', ' ')}</span>
                                         <div className="flex justify-between items-end">
-                                            <span className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">${amount.toFixed(2)}</span>
+                                            <span className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{formatCurrency(amount, stats.currency)}</span>
                                             <div className="h-2 w-2 rounded-full bg-green-500"></div>
                                         </div>
                                     </div>
@@ -353,7 +354,7 @@ export default function CajaPage() {
                             <div className="relative z-10">
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Total a Recaudar</p>
                                 <h3 className="text-5xl font-black tracking-tighter">
-                                    ${parseFloat(selectedOrder.total).toFixed(2)}
+                                    {formatCurrency(selectedOrder.total, stats.currency)}
                                 </h3>
                                 <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest">
                                     <Hash className="h-3 w-3" /> Orden #{selectedOrder.id}
@@ -522,13 +523,13 @@ export default function CajaPage() {
                                                     {item.plato?.nombre}
                                                 </h5>
                                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                                    ${parseFloat(item.precioUnitario).toFixed(2)} c/u
+                                                    {formatCurrency(item.precioUnitario, stats.currency)} c/u
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-black text-gray-900 dark:text-white tracking-tighter">
-                                                ${(item.cantidad * item.precioUnitario).toFixed(2)}
+                                                {formatCurrency(item.cantidad * item.precioUnitario, stats.currency)}
                                             </p>
                                         </div>
                                     </div>
@@ -539,7 +540,7 @@ export default function CajaPage() {
                         <div className="bg-gray-900 text-white p-6 rounded-[2rem] flex items-center justify-between shadow-xl shadow-gray-900/20">
                             <div>
                                 <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total Confirmado</p>
-                                <h3 className="text-3xl font-black tracking-tighter">${parseFloat(selectedOrder.total).toFixed(2)}</h3>
+                                <h3 className="text-3xl font-black tracking-tighter">{formatCurrency(selectedOrder.total, stats.currency)}</h3>
                             </div>
                             <Button 
                                 onClick={() => {

@@ -21,12 +21,14 @@ import {
     Layers
 } from 'lucide-react';
 import Modal from '@/components/Modal';
+import { formatCurrency } from '@/lib/utils/currency';
 
 export default function Orders() {
 
     const user = useAppSelector((state) => state.auth.auth)
     const queryClient = useQueryClient();
     const [selectedOrders, setSelectedOrders] = useState([]);
+    const [currency, setCurrency] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('mesa'); // 'mesa' or 'delivery'
 
@@ -57,6 +59,7 @@ export default function Orders() {
     });
 
     const handleViewDetails = (order) => {
+        setCurrency(order.restaurant.currency)
         orderDetailsMutation.mutate(order);
     };
 
@@ -246,7 +249,7 @@ export default function Orders() {
                                                 {o.nombreCliente || o.cliente?.nombre || 'Consumidor Final'}
                                             </td>
                                             <td className="p-4 align-middle font-black text-gray-900 dark:text-gray-100">
-                                                ${o.total?.toFixed(2)}
+                                                {formatCurrency(o.total, o.restaurant.currency)}
                                             </td>
                                             <td className="p-4 align-middle">
                                                 {getStatusBadge(o.estado)}
@@ -452,9 +455,9 @@ export default function Orders() {
                                                                     {item.cantidad}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-6 py-4 text-right text-gray-400 font-mono text-xs">${item.precioUnitario?.toFixed(2)}</td>
+                                                            <td className="px-6 py-4 text-right text-gray-400 font-mono text-xs">{formatCurrency(item.precioUnitario, currency)}</td>
                                                             <td className="px-6 py-4 text-right font-black text-gray-900 dark:text-white font-mono">
-                                                                ${(item.cantidad * item.precioUnitario).toFixed(2)}
+                                                                {formatCurrency(item.cantidad * item.precioUnitario, currency)}
                                                             </td>
                                                         </tr>
                                                     ))}

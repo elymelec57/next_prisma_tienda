@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { Plus, Pencil, Trash, Loader2, Package, Search } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { formatCurrency } from '@/lib/utils/currency'
 
 import Modal from '@/components/Modal'
 import IngredientForm from '@/components/IngredientForm'
@@ -21,7 +22,7 @@ export default function IngredientsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
 
-  const { data: ingredients = [], isLoading: loading } = useQuery({
+  const { data: ingredientsData = { ingredients: [], currency: 'USD' }, isLoading: loading } = useQuery({
     queryKey: ['ingredients'],
     queryFn: async () => {
       const res = await fetch('/api/user/ingredients');
@@ -29,6 +30,8 @@ export default function IngredientsPage() {
       return res.json();
     }
   });
+
+  const ingredients = ingredientsData.ingredients || [];
 
   const { data: categories = [] } = useQuery({
     queryKey: ['ingredientCategories'],
@@ -188,7 +191,7 @@ export default function IngredientsPage() {
                       </div>
                     </td>
                     <td className="p-4 align-middle hidden md:table-cell text-gray-600 dark:text-gray-400">
-                      ${ingredient.costoUnitario?.toFixed(2)}
+                      {formatCurrency(ingredient.costoUnitario, ingredientsData.currency)}
                     </td>
                     <td className="p-4 align-middle text-right">
                       <div className="flex items-center justify-end gap-2">

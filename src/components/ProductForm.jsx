@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { plato } from '@/app/schemas/platoSchema';
 import { Camera, Save, X, Loader2 } from 'lucide-react';
+import { getCurrencySymbol } from '@/lib/utils/currency';
 
 export default function ProductForm({ productId = null, onSuccess, onCancel }) {
 
@@ -51,6 +52,16 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
             if (!res.ok) throw new Error('Error al cargar categorías');
             return res.json();
         }
+    });
+
+    const { data: businessInfo } = useQuery({
+        queryKey: ['businessInfo', userId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/business/user/${userId}`);
+            const data = await res.json();
+            return data.rest;
+        },
+        enabled: !!userId,
     });
 
     const { data: productData } = useQuery({
@@ -207,7 +218,7 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Precio</label>
+                        <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Precio ({getCurrencySymbol(businessInfo?.currency).trim()})</label>
                         <input
                             type="number"
                             step="0.01"

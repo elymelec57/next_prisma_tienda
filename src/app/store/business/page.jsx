@@ -42,6 +42,7 @@ export default function Business() {
         phone: '',
         direcction: '',
         slug: '',
+        currency: 'USD',
         categoriaRestaurant: [],
     });
 
@@ -96,6 +97,7 @@ export default function Business() {
                 phone: rest.phone,
                 direcction: rest.direcction,
                 slug: rest.slug,
+                currency: rest.currency || 'USD',
                 categoriaRestaurant: rest.categoriaRestaurant?.map(c => c.id) || []
             })
 
@@ -399,6 +401,18 @@ export default function Business() {
                                 <div className="md:col-span-2 space-y-2">
                                     <label className="text-sm font-medium">Dirección Física</label>
                                     <textarea name="direcction" value={form.direcction} onChange={changeImput} rows={3} className="flex w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Moneda del Negocio</label>
+                                    <select
+                                        name="currency"
+                                        value={form.currency}
+                                        onChange={changeImput}
+                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                    >
+                                        <option value="USD">Dólares (USD)</option>
+                                        <option value="COP">Pesos Colombianos (COP)</option>
+                                    </select>
                                 </div>
                                 <div className="md:col-span-2 space-y-3">
                                     <label className="text-sm font-medium">Categorías del Restaurante</label>

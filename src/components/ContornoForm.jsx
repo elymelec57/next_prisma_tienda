@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/lib/hooks";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,12 +9,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { contorno } from '@/app/schemas/contonoSchema';
 import { Save, Loader2, X } from 'lucide-react';
+import { getCurrencySymbol } from '@/lib/utils/currency';
 
 export default function ContornoForm({ contornoId = null, onSuccess, onCancel }) {
 
     const router = useRouter()
     const queryClient = useQueryClient();
     const userId = useAppSelector((state) => state.auth.auth.id)
+    const [currency, setCurrency] = useState('');
 
     const {
         register,
@@ -36,6 +38,7 @@ export default function ContornoForm({ contornoId = null, onSuccess, onCancel })
             const res = await fetch(`/api/user/contornos/${contornoId}`);
             if (!res.ok) throw new Error('Error al cargar datos del contorno');
             const data = await res.json();
+            setCurrency(data.currency);
             return data.contorno;
         },
         enabled: !!contornoId,
@@ -100,7 +103,7 @@ export default function ContornoForm({ contornoId = null, onSuccess, onCancel })
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Precio</label>
+                    <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Precio ({getCurrencySymbol(currency).trim()})</label>
                     <input
                         type="number"
                         step="0.01"

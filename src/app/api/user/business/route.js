@@ -17,6 +17,7 @@ export async function POST(request) {
             slogan: form.slogan,
             direcction: form.direcction,
             phone: form.phone,
+            currency: form.currency || "USD",
             slug: slug,
             categoriaRestaurant: {
                 connect: form.categoriaRestaurant?.map(id => ({ id: Number(id) })) || []

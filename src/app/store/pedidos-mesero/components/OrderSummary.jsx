@@ -14,6 +14,7 @@ import {
     Edit3
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { formatCurrency } from '@/lib/utils/currency'
 
 export default function OrderSummary({
     order,
@@ -125,7 +126,7 @@ export default function OrderSummary({
                             </h4>
                         </div>
                         <span className="text-sm font-black text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-lg">
-                            ${existingOrdersTotal.toFixed(2)}
+                            {formatCurrency(existingOrdersTotal, table.restaurant.currency)}
                         </span>
                     </div>
 
@@ -165,7 +166,7 @@ export default function OrderSummary({
                                     }, {})).map((item) => (
                                         <div key={item.plato.id} className="flex justify-between text-[11px] text-gray-600 dark:text-gray-400">
                                             <span>{item.cantidad}x {item.plato.nombre}</span>
-                                            <span className="font-medium">${(item.cantidad * item.precioUnitario).toFixed(2)}</span>
+                                            <span className="font-medium">{formatCurrency(item.cantidad * item.precioUnitario, table.restaurant.currency)}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -207,8 +208,8 @@ export default function OrderSummary({
                                         {item.nombre}
                                     </h4>
                                     <p className="text-sm font-black text-orange-600 tracking-tighter mt-1">
-                                        ${(item.precio * item.quantity).toFixed(2)}
-                                        <span className="text-[10px] text-gray-400 font-bold ml-2 uppercase">(${item.precio.toFixed(2)} c/u)</span>
+                                        {formatCurrency(item.precio * item.quantity, table.restaurant.currency)}
+                                        <span className="text-[10px] text-gray-400 font-bold ml-2 uppercase">({formatCurrency(item.precio, table.restaurant.currency)} c/u)</span>
                                     </p>
 
                                     {/* Notes Section */}
@@ -267,13 +268,13 @@ export default function OrderSummary({
                     <div className="flex flex-col">
                         <span className="text-gray-500 font-medium text-xs">Total {accounts[activeAccountIndex]?.name}</span>
                         {existingOrdersTotal > 0 && (
-                            <span className="text-[10px] text-orange-600 font-bold uppercase">+ Consumo previo: ${existingOrdersTotal.toFixed(2)}</span>
+                            <span className="text-[10px] text-orange-600 font-bold uppercase">+ Consumo previo: {formatCurrency(existingOrdersTotal, table.restaurant.currency)}</span>
                         )}
                     </div>
                     <div className="flex flex-col items-end">
-                        <span className="text-2xl font-black text-gray-900 dark:text-white">${total.toFixed(2)}</span>
+                        <span className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(total, table.restaurant.currency)}</span>
                         {existingOrdersTotal > 0 && (
-                            <span className="text-xs font-bold text-gray-400">Gran Total: ${grandTotal.toFixed(2)}</span>
+                            <span className="text-xs font-bold text-gray-400">Gran Total: {formatCurrency(existingOrdersTotal, table.restaurant.currency)}</span>
                         )}
                     </div>
                 </div>

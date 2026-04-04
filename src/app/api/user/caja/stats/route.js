@@ -50,10 +50,16 @@ export async function GET() {
             return acc;
         }, {});
 
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { id: restaurantId },
+            select: { currency: true }
+        });
+
         return NextResponse.json({
             totalIncome,
             count: payments.length,
-            byMethod
+            byMethod,
+            currency: restaurant?.currency || 'USD'
         });
     } catch (error) {
         console.error(error);

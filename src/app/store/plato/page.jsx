@@ -7,6 +7,7 @@ import { useAppSelector } from "@/lib/hooks";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { Plus, Pencil, Trash, Search, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils/currency';
 
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import Modal from '@/components/Modal';
@@ -38,15 +39,16 @@ export default function ListProduct() {
         }
     });
 
-    const { data: product = [], isLoading: loading } = useQuery({
+    const { data: productData = { dataPlatos: [], currency: 'USD' }, isLoading: loading } = useQuery({
         queryKey: ['products'],
         queryFn: async () => {
             const res = await fetch(`/api/user/product`);
             if (!res.ok) throw new Error('Error al cargar platos');
-            const data = await res.json();
-            return data.dataPlatos || [];
+            return res.json();
         }
     });
+
+    const product = productData.dataPlatos || [];
 
     const filteredProducts = product.filter(p => {
         const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -215,7 +217,7 @@ export default function ListProduct() {
                                             {p.descripcion}
                                         </td>
                                         <td className="p-4 align-middle font-medium">
-                                            ${p.precio.toFixed(2)}
+                                            {formatCurrency(p.precio, productData.currency)}
                                         </td>
                                         <td className="p-4 align-middle">
                                             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm

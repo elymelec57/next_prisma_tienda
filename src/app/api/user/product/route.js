@@ -10,6 +10,11 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
 
+    const restaurant = await prisma.restaurant.findUnique({
+        where: { id: user.auth.restauranteId },
+        select: { currency: true }
+    });
+
     const platos = await prisma.plato.findMany({
         select: {
             id: true,
@@ -67,5 +72,5 @@ export async function GET(request) {
         mainImage: plato.mainImageId ? imageMap.get(plato.mainImageId) : null,
     }));
 
-    return NextResponse.json({ categorias, dataPlatos })
+    return NextResponse.json({ categorias, dataPlatos, currency: restaurant?.currency || 'USD' })
 }

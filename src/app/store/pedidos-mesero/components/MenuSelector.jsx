@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { Search, Utensils, Loader2, Plus, Info, LayoutGrid } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
+import { formatCurrency } from '@/lib/utils/currency'
 
-export default function MenuSelector({ onAddItem, userId }) {
+export default function MenuSelector({ onAddItem, userId, currency }) {
     const [products, setProducts] = useState([])
     const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
@@ -135,7 +136,7 @@ export default function MenuSelector({ onAddItem, userId }) {
 
                                 <div className="flex items-center gap-4">
                                     <span className="text-lg font-black text-orange-600 tracking-tighter">
-                                        ${product.precio.toFixed(2)}
+                                        {formatCurrency(product.precio, currency)}
                                     </span>
                                     <div className="h-10 w-10 flex items-center justify-center bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl shadow-md transition-all group-hover:bg-orange-600 group-hover:text-white">
                                         <Plus className="h-5 w-5" />

@@ -62,6 +62,7 @@ export async function PUT(request, segmentData) {
             slogan: form.slogan,
             direcction: form.direcction,
             phone: form.phone,
+            currency: form.currency,
             slug: slug,
             categoriaRestaurant: {
                 set: form.categoriaRestaurant?.map(id => ({ id: Number(id) })) || []
