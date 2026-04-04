@@ -3,14 +3,16 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function RestaurantList() {
+export default function RestaurantList({ categoryId }) {
     const [dataRest, setDataRest] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function fetchData() {
+            setLoading(true);
             try {
-                const res = await fetch('/api/restaurants');
+                const url = categoryId ? `/api/restaurants?categoryId=${categoryId}` : '/api/restaurants';
+                const res = await fetch(url);
                 const data = await res.json();
                 setDataRest(data);
             } catch (error) {
@@ -20,13 +22,13 @@ export default function RestaurantList() {
             }
         }
         fetchData();
-    }, []);
+    }, [categoryId]);
 
     if (loading) {
         return <div className="col-span-full text-center py-10 text-slate-500">Cargando restaurantes...</div>;
     }
 
-    if (dataRest.length === 0) {
+    if (!Array.isArray(dataRest) || dataRest.length === 0) {
         return <div className="col-span-full text-center py-10 text-slate-500">No se encontraron restaurantes.</div>;
     }
 

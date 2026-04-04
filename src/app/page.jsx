@@ -1,9 +1,28 @@
+"use client"
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Utensils, Search, ArrowRight, Star, ChefHat, Clock } from 'lucide-react';
 import RestaurantList from '@/components/RestaurantList';
 
 export default function LandingPage() {
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const res = await fetch('/api/admin/categoria-restaurant');
+        const data = await res.json();
+        if (data.status) {
+          setCategories(data.categorias);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    }
+    fetchCategories();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-orange-100 selection:text-orange-900">
@@ -124,18 +143,39 @@ export default function LandingPage() {
       <section id="restaurants" className="py-24 bg-slate-50 border-t border-slate-200">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-            <div>
+            <div className="flex-1">
               <h2 className="text-3xl font-bold tracking-tight text-slate-900">Nuestros Restaurantes</h2>
               <p className="text-lg text-slate-500 mt-2">Explora las opciones mejor valoradas de la semana.</p>
             </div>
-            <Link href="#" className="flex items-center gap-2 text-sm font-bold text-orange-600 hover:text-orange-700 bg-orange-100 px-5 py-2.5 rounded-full transition-colors">
-              Ver todos los restaurantes
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="relative w-full sm:w-64">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-full px-5 py-2.5 text-sm font-semibold text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all cursor-pointer shadow-sm"
+                >
+                  <option value="">Todas las categorías</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.nombre}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+              <Link href="#" className="flex items-center gap-2 text-sm font-bold text-orange-600 hover:text-orange-700 bg-orange-100 px-5 py-2.5 rounded-full transition-colors whitespace-nowrap">
+                Ver todos
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <RestaurantList />
+            <RestaurantList categoryId={selectedCategory} />
           </div>
         </div>
       </section>

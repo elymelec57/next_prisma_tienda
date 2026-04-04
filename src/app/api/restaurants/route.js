@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/libs/prisma';
 
-export async function GET() {
+export async function GET(request) {
     try {
-        const restaurant = await prisma.restaurant.findMany();
+        const { searchParams } = new URL(request.url);
+        const categoryId = searchParams.get('categoryId');
+
+        const where = {};
+        if (categoryId) {
+            where.categoriaRestaurant = {
+                some: {
+                    id: parseInt(categoryId),
+                },
+            };
+        }
+
+        const restaurant = await prisma.restaurant.findMany({ where });
         let dataRest;
         const imageIds = restaurant
             .map((r) => r.mainImageId)
