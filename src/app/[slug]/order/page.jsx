@@ -6,6 +6,7 @@ import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { formatCurrency } from "@/lib/utils/currency";
 
 export default function Buy() {
     const dispatch = useAppDispatch()
@@ -283,9 +284,9 @@ export default function Buy() {
                                                 <div className="flex-1">
                                                     <div className="flex justify-between items-start">
                                                         <h3 className="font-bold text-lg text-slate-900">{o.name}</h3>
-                                                        <span className="font-bold text-slate-900 sm:hidden">${(o.price * o.count).toFixed(2)}</span>
+                                                        <span className="font-bold text-slate-900 sm:hidden"> {formatCurrency(parseFloat(o.price * o.count), restaurant?.currency)}</span>
                                                     </div>
-                                                    <p className="text-slate-500 text-sm mb-2">Precio unitario: ${parseFloat(o.price).toFixed(2)}</p>
+                                                    <p className="text-slate-500 text-sm mb-2">Precio unitario: {formatCurrency(parseFloat(o.price), restaurant?.currency)}</p>
 
                                                     {o.contornos && o.contornos.length > 0 && (
                                                         <div className="mt-2 pl-3 border-l-2 border-orange-100">
@@ -318,7 +319,7 @@ export default function Buy() {
                                                         </button>
                                                     </div>
                                                     <div className="text-right min-w-[80px] hidden sm:block">
-                                                        <span className="block font-bold text-lg text-slate-900">${(o.price * o.count).toFixed(2)}</span>
+                                                        <span className="block font-bold text-lg text-slate-900"> {formatCurrency(parseFloat(o.price * o.count), restaurant?.currency)}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -331,7 +332,7 @@ export default function Buy() {
                                 <div className="p-6 bg-slate-50 border-t border-slate-200">
                                     <div className="flex justify-between items-center text-lg">
                                         <span className="font-semibold text-slate-600">Total a Pagar</span>
-                                        <span className="font-bold text-2xl text-slate-900">${calculateTotal()}</span>
+                                        <span className="font-bold text-2xl text-slate-900">{formatCurrency(parseFloat(calculateTotal()), restaurant?.currency)}</span>
                                     </div>
                                 </div>
                             )}
@@ -528,7 +529,7 @@ export default function Buy() {
                                 <div className="pt-4 border-t border-slate-100 mt-6">
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="text-slate-500 font-medium">Total:</span>
-                                        <span className="text-2xl font-bold text-slate-900">${calculateTotal()}</span>
+                                        <span className="text-2xl font-bold text-slate-900">{formatCurrency(parseFloat(calculateTotal()), restaurant?.currency)}</span>
                                     </div>
                                     <button
                                         type="submit"

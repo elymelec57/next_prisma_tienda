@@ -5,8 +5,9 @@ import { useEffect, useState, Fragment } from "react";
 import AddCart from "./addCart";
 import DeleteCart from "./deleteCart";
 import { inialityCount, order } from "@/lib/features/cart/orderSlice";
+import { formatCurrency } from "@/lib/utils/currency";
 
-export default function Cart({ products }) {
+export default function Cart({ products, currency }) {
 
     const dispatch = useAppDispatch()
     useEffect(() => {
@@ -45,7 +46,7 @@ export default function Cart({ products }) {
                             </div>
                         )}
                         <div className="absolute top-3 right-3 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-xs font-bold text-slate-900 shadow-sm">
-                            {parseFloat(p.precio).toFixed(2)} $
+                            {formatCurrency(parseFloat(p.precio), currency)}
                         </div>
                     </div>
 

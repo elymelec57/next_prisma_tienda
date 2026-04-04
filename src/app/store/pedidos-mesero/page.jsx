@@ -35,7 +35,6 @@ export default function PedidosMesero() {
     const currentOrder = currentAccount?.items || []
 
     const queryClient = useQueryClient();
-
     const handleSelectTable = (table) => {
         dispatch(setCurrentTable(table))
     }
@@ -208,6 +207,7 @@ export default function PedidosMesero() {
                             <MenuSelector
                                 onAddItem={handleAddItem}
                                 userId={user.id}
+                                currency={currentTable.restaurant.currency}
                             />
                         </div>
 

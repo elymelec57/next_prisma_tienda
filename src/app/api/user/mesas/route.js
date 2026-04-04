@@ -36,6 +36,11 @@ export async function GET(request) {
               }
             }
           }
+        },
+        restaurant: {
+          select: {
+            currency: true
+          }
         }
       }
     })

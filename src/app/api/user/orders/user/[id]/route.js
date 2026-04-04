@@ -11,7 +11,12 @@ export async function GET(request, segmentData) {
         include: {
             cliente: true,
             Payment: true,
-            mesa: true
+            mesa: true,
+            restaurant: {
+                select: {
+                    currency: true
+                }
+            }
         }
     });
 

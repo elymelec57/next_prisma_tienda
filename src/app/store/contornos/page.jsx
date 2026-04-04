@@ -10,6 +10,7 @@ import { Plus, Pencil, Trash, Search, Loader2 } from 'lucide-react';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import Modal from '@/components/Modal';
 import ContornoForm from '@/components/ContornoForm';
+import { formatCurrency } from '@/lib/utils/currency';
 
 export default function ListContorno() {
 
@@ -20,6 +21,7 @@ export default function ListContorno() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [contornoToEdit, setContornoToEdit] = useState(null);
     const [contornoToDelete, setContornoToDelete] = useState(null);
+    const [currency, setCurrency] = useState('');
 
     const { data: contornos = [], isLoading: loading } = useQuery({
         queryKey: ['contornos', id],
@@ -27,6 +29,7 @@ export default function ListContorno() {
             const res = await fetch(`/api/user/contornos/${id}`);
             if (!res.ok) throw new Error('Error al cargar contornos');
             const data = await res.json();
+            setCurrency(data.currency);
             return data.contornos || [];
         },
         enabled: !!id,
@@ -135,7 +138,7 @@ export default function ListContorno() {
                                             {c.nombre}
                                         </td>
                                         <td className="p-4 align-middle text-gray-500 dark:text-gray-400">
-                                            ${c.precio}
+                                            {formatCurrency(c.price, currency)}
                                         </td>
                                         <td className="p-4 align-middle text-right">
                                             <div className="flex items-center justify-end gap-2">

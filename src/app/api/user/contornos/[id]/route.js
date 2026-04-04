@@ -6,6 +6,7 @@ export async function GET(request, segmentData) {
     const restaurant = await prisma.restaurant.findUnique({
         select: {
             id: true,
+            currency: true
         },
         where: {
             userId: Number(params.id)
@@ -23,5 +24,5 @@ export async function GET(request, segmentData) {
         }
     })
 
-    return NextResponse.json({ contornos })
+    return NextResponse.json({ contornos, currency: restaurant.currency })
 }

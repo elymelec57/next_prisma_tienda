@@ -116,7 +116,7 @@ export default async function page({ params }) {
           </div>
 
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8'>
-            <Cart products={JSON.parse(JSON.stringify(products))} />
+            <Cart products={JSON.parse(JSON.stringify(products))} currency={business.currency} />
           </div>
         </div>
       </div>
