@@ -1,6 +1,8 @@
 // src/libs/auth.js
 
 export const routeRoles = [
+    { href: '/store/admin/plans', roles: ['admin'] },
+  { href: '/store/admin/payments', roles: ['admin'] },
   { href: '/store/plato', roles: ['user'] },
   { href: '/store/ingredientes', roles: ['user'] },
   { href: '/store/contornos', roles: ['user'] },
@@ -42,7 +44,12 @@ export async function authorizeRequest(request, resourceId, resourceType) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_TOKEN);
-    return { authorized: true, auth: decoded.data };
+    const auth = decoded.data;
+    // Normalize roles to be an array of objects if it's a string
+    if (auth && typeof auth.role === 'string' && !auth.roles) {
+      auth.roles = [{ name: auth.role }];
+    }
+    return { authorized: true, auth };
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       return { authorized: false, error: 'Unauthorized', status: 401 };

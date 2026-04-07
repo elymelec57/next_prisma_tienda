@@ -68,6 +68,37 @@ export default function Business() {
         isActive: true
     });
 
+    const { data: subscriptionData } = useQuery({
+        queryKey: ['subscription', userId],
+        queryFn: async () => {
+            const res = await fetch('/api/user/business/subscription');
+            return res.json();
+        },
+        enabled: !!userId,
+    });
+
+    const subscribeMutation = useMutation({
+        mutationFn: async ({ planId, paymentMethod, transactionId }) => {
+            const res = await fetch('/api/user/business/subscription', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planId, paymentMethod, transactionId })
+            });
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                toast.success(data.message || "Suscripción actualizada");
+                queryClient.invalidateQueries({ queryKey: ['subscription', userId] });
+            } else {
+                toast.error(data.message);
+            }
+        },
+        onError: () => {
+            toast.error("Error al procesar suscripción");
+        }
+    });
+
     const { data: businessData, isLoading: isLoadingBusiness } = useQuery({
         queryKey: ['business', userId],
         queryFn: async () => {
@@ -335,6 +366,13 @@ export default function Business() {
                 >
                     <CreditCard size={18} />
                     Métodos de Pago
+                </button>
+                <button
+                    onClick={() => setActiveTab("plans")}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'plans' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                    <Save size={18} />
+                    Planes
                 </button>
             </div>
 
@@ -705,6 +743,71 @@ export default function Business() {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === "plans" && (
+                        <div className="space-y-8">
+                            <div className="grid gap-6 md:grid-cols-3">
+                                {subscriptionData?.availablePlans?.map((plan) => {
+                                    const isCurrentPlan = subscriptionData?.subscription?.planId === plan.id;
+                                    return (
+                                        <div key={plan.id} className={`p-6 rounded-2xl border flex flex-col justify-between ${isCurrentPlan ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600' : 'border-gray-200'}`}>
+                                            <div>
+                                                <h3 className="text-xl font-bold">{plan.name}</h3>
+                                                <p className="text-3xl font-bold mt-2">${plan.price}<span className="text-sm text-gray-500 font-normal">/mes</span></p>
+                                                <p className="text-sm text-gray-600 mt-4">{plan.description}</p>
+                                                <ul className="mt-6 space-y-3">
+                                                    <li className="text-sm flex items-center gap-2">
+                                                        <CheckCircle2 size={16} className="text-green-500" />
+                                                        Límite: {plan.productLimit} productos
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (plan.price === 0) {
+                                                        subscribeMutation.mutate({ planId: plan.id });
+                                                    } else {
+                                                        const transactionId = prompt("Ingresa el ID de transacción o referencia de pago:");
+                                                        if (transactionId) {
+                                                            subscribeMutation.mutate({
+                                                                planId: plan.id,
+                                                                paymentMethod: 'Transferencia/Otro',
+                                                                transactionId
+                                                            });
+                                                        }
+                                                    }
+                                                }}
+                                                disabled={isCurrentPlan || subscribeMutation.isPending}
+                                                className={`mt-8 w-full py-2 rounded-lg font-medium transition-colors ${isCurrentPlan ? 'bg-blue-100 text-blue-600 cursor-default' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                            >
+                                                {isCurrentPlan ? 'Plan Actual' : plan.price === 0 ? 'Elegir Plan' : 'Mejorar Plan'}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {subscriptionData?.subscription && (
+                                <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                    <h4 className="font-semibold text-gray-900">Estado de tu Suscripción</h4>
+                                    <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <p className="text-gray-500">Plan actual:</p>
+                                            <p className="font-medium">{subscriptionData.subscription.plan.name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500">Estado:</p>
+                                            <p className="font-medium text-green-600 uppercase">{subscriptionData.subscription.status}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500">Desde el:</p>
+                                            <p className="font-medium">{new Date(subscriptionData.subscription.startDate).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

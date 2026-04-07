@@ -5,14 +5,42 @@ export async function POST(request) {
 
     const { form, user } = await request.json()
 
+    // user is an object containing auth data, id is user.auth.id
+    const userId = typeof user === 'object' ? user.auth.id : Number(user);
+
     const rest = await prisma.restaurant.findUnique({
         where: {
-            userId: Number(user)
+            userId: userId
         },
         select: {
-            id: true
+            id: true,
+            subscription: {
+                include: {
+                    plan: true
+                }
+            },
+            _count: {
+                select: {
+                    platos: true
+                }
+            }
         }
     })
+
+    if (!rest) {
+        return NextResponse.json({ status: false, message: 'Restaurante no encontrado' })
+    }
+
+    // Default to 'Gratis' plan limit if no subscription is found
+    const currentPlatos = rest._count.platos;
+    const planLimit = rest.subscription?.plan?.productLimit || 10; // Default limit for free plan if no sub
+
+    if (currentPlatos >= planLimit) {
+        return NextResponse.json({
+            status: false,
+            message: `Has alcanzado el límite de productos (${planLimit}) para tu plan actual. Por favor, mejora tu plan.`
+        })
+    }
 
     const plato = await prisma.plato.create({
         data: {

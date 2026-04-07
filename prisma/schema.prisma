@@ -83,6 +83,42 @@ model Restaurant {
   employees              Empleado[]
   mesas                  Mesa[]
   ingredienteRestaurante IngredienteRestaurante[]
+  subscription           Subscription?
+  planPayments           PlanPayment[]
+}
+
+model Plan {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  price        Float
+  productLimit Int
+  description  String?
+  subscriptions Subscription[]
+  payments     PlanPayment[]
+}
+
+model Subscription {
+  id           Int        @id @default(autoincrement())
+  restaurantId Int        @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  planId       Int
+  plan         Plan       @relation(fields: [planId], references: [id])
+  startDate    DateTime   @default(now())
+  endDate      DateTime?
+  status       String     @default("active") // active, cancelled, expired
+}
+
+model PlanPayment {
+  id            Int        @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  planId        Int
+  plan          Plan       @relation(fields: [planId], references: [id])
+  amount        Float
+  status        String     @default("PENDING") // PENDING, CONFIRMED, REJECTED
+  paymentMethod String
+  transactionId String?
+  createdAt     DateTime   @default(now())
 }
 
 model RestaurantHours {
