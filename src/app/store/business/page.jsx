@@ -16,7 +16,9 @@ const PAYMENT_TYPES = [
     { value: 'PAGO_MOVIL', label: 'Pago Móvil' },
     { value: 'TRANSFERENCIA', label: 'Transferencia' },
     { value: 'ZELLE', label: 'Zelle' },
-    { value: 'EFECTIVO', label: 'Efectivo' }
+    { value: 'EFECTIVO', label: 'Efectivo' },
+    { value: 'ZINLI', label: 'Zinli' },
+    { value: 'PAYPAL', label: 'PayPal' }
 ];
 
 export default function Business() {
@@ -34,6 +36,11 @@ export default function Business() {
     })
     const [imagePreview, setImagePreview] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [planToUpgrade, setPlanToUpgrade] = useState(null);
+    const [upgradeForm, setUpgradeForm] = useState({
+        paymentMethod: '',
+        transactionId: ''
+    });
 
     const [form, setForm] = useState({
         id: '',
@@ -77,6 +84,23 @@ export default function Business() {
         enabled: !!userId,
     });
 
+    const { data: planPaymentsData } = useQuery({
+        queryKey: ['planPayments', userId],
+        queryFn: async () => {
+            const res = await fetch('/api/user/business/plan-payments');
+            return res.json();
+        },
+        enabled: !!userId,
+    });
+
+    const { data: systemPaymentMethods } = useQuery({
+        queryKey: ['systemPaymentMethods'],
+        queryFn: async () => {
+            const res = await fetch('/api/user/system-payment-methods');
+            return res.json();
+        },
+    });
+
     const subscribeMutation = useMutation({
         mutationFn: async ({ planId, paymentMethod, transactionId }) => {
             const res = await fetch('/api/user/business/subscription', {
@@ -90,6 +114,8 @@ export default function Business() {
             if (data.status) {
                 toast.success(data.message || "Suscripción actualizada");
                 queryClient.invalidateQueries({ queryKey: ['subscription', userId] });
+                queryClient.invalidateQueries({ queryKey: ['planPayments', userId] });
+                setPlanToUpgrade(null);
             } else {
                 toast.error(data.message);
             }
@@ -748,6 +774,90 @@ export default function Business() {
 
                     {activeTab === "plans" && (
                         <div className="space-y-8">
+                            {planToUpgrade && (
+                                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                                    <div className="bg-white dark:bg-gray-950 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-200 dark:border-gray-800 animate-in fade-in zoom-in duration-200">
+                                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                                            <h3 className="text-xl font-bold">Mejorar a {planToUpgrade.name}</h3>
+                                            <button
+                                                onClick={() => setPlanToUpgrade(null)}
+                                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                            >
+                                                <Plus className="rotate-45" size={24} />
+                                            </button>
+                                        </div>
+                                        <div className="p-6 space-y-6">
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
+                                                <p className="text-sm text-blue-800 dark:text-blue-300">
+                                                    Realiza el pago de <strong>${planToUpgrade.price}</strong> usando uno de nuestros métodos y registra la referencia abajo.
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Selecciona el Método de Pago</label>
+                                                    <div className="grid gap-2">
+                                                        {systemPaymentMethods?.data?.map((method) => (
+                                                            <button
+                                                                key={method.id}
+                                                                type="button"
+                                                                onClick={() => setUpgradeForm({ ...upgradeForm, paymentMethod: `${method.type} - ${method.bankName || method.label}` })}
+                                                                className={`flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
+                                                                    upgradeForm.paymentMethod.startsWith(method.type)
+                                                                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-600'
+                                                                    : 'border-gray-200 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-900'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
+                                                                        <CreditCard size={16} className="text-blue-600" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm font-semibold">{method.label}</p>
+                                                                        <p className="text-[10px] text-gray-500 uppercase">{method.type.replace('_', ' ')}</p>
+                                                                    </div>
+                                                                </div>
+                                                                {upgradeForm.paymentMethod.startsWith(method.type) && <CheckCircle2 size={16} className="text-blue-600" />}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Referencia o ID de Transacción</label>
+                                                    <input
+                                                        type="text"
+                                                        value={upgradeForm.transactionId}
+                                                        onChange={(e) => setUpgradeForm({ ...upgradeForm, transactionId: e.target.value })}
+                                                        placeholder="Ej: 12345678"
+                                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="p-6 bg-gray-50 dark:bg-gray-900/50 flex gap-3">
+                                            <button
+                                                onClick={() => setPlanToUpgrade(null)}
+                                                className="flex-1 px-4 py-2 text-sm font-medium border rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                disabled={!upgradeForm.paymentMethod || !upgradeForm.transactionId || subscribeMutation.isPending}
+                                                onClick={() => subscribeMutation.mutate({
+                                                    planId: planToUpgrade.id,
+                                                    paymentMethod: upgradeForm.paymentMethod,
+                                                    transactionId: upgradeForm.transactionId
+                                                })}
+                                                className="flex-1 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                            >
+                                                {subscribeMutation.isPending ? 'Procesando...' : 'Confirmar Pago'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid gap-6 md:grid-cols-3">
                                 {subscriptionData?.availablePlans?.map((plan) => {
                                     const isCurrentPlan = subscriptionData?.subscription?.planId === plan.id;
@@ -769,14 +879,7 @@ export default function Business() {
                                                     if (plan.price === 0) {
                                                         subscribeMutation.mutate({ planId: plan.id });
                                                     } else {
-                                                        const transactionId = prompt("Ingresa el ID de transacción o referencia de pago:");
-                                                        if (transactionId) {
-                                                            subscribeMutation.mutate({
-                                                                planId: plan.id,
-                                                                paymentMethod: 'Transferencia/Otro',
-                                                                transactionId
-                                                            });
-                                                        }
+                                                        setPlanToUpgrade(plan);
                                                     }
                                                 }}
                                                 disabled={isCurrentPlan || subscribeMutation.isPending}
@@ -805,6 +908,49 @@ export default function Business() {
                                             <p className="text-gray-500">Desde el:</p>
                                             <p className="font-medium">{new Date(subscriptionData.subscription.startDate).toLocaleDateString()}</p>
                                         </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {planPaymentsData?.data && planPaymentsData.data.length > 0 && (
+                                <div className="mt-12 space-y-4">
+                                    <h4 className="font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                        <RefreshCw size={18} className="text-blue-600" />
+                                        Historial de Pagos de Planes
+                                    </h4>
+                                    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 font-medium">
+                                                <tr>
+                                                    <th className="px-4 py-3">Fecha</th>
+                                                    <th className="px-4 py-3">Plan</th>
+                                                    <th className="px-4 py-3">Monto</th>
+                                                    <th className="px-4 py-3">Referencia</th>
+                                                    <th className="px-4 py-3">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                                                {planPaymentsData.data.map((payment) => (
+                                                    <tr key={payment.id} className="bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            {new Date(payment.createdAt).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="px-4 py-3 font-medium">{payment.plan.name}</td>
+                                                        <td className="px-4 py-3">${payment.amount}</td>
+                                                        <td className="px-4 py-3 text-gray-500">{payment.transactionId}</td>
+                                                        <td className="px-4 py-3">
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                                                payment.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
+                                                                payment.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                                'bg-yellow-100 text-yellow-700'
+                                                            }`}>
+                                                                {payment.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             )}
