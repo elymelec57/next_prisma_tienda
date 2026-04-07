@@ -285,6 +285,8 @@ enum PaymentType {
   TRANSFERENCIA
   ZELLE
   EFECTIVO
+  ZINLI
+  PAYPAL
 }
 
 model PaymentMethod {

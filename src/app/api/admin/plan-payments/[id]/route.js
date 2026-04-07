@@ -18,28 +18,27 @@ export async function PUT(request, { params }) {
             where: { id: Number(id) },
             data: { status },
             include: {
-                subscription: {
-                    include: {
-                        restaurant: true
-                    }
-                },
+                restaurant: true,
                 plan: true,
             },
         });
 
         // If confirmed, update the restaurant's subscription
         if (status === 'CONFIRMED') {
-            await prisma.subscription.update({
-                where: { id: payment.subscriptionId },
-                data: {
+            await prisma.subscription.upsert({
+                where: { restaurantId: payment.restaurantId },
+                update: {
+                    planId: payment.planId,
+                    status: 'active',
+                    startDate: new Date(),
+                },
+                create: {
+                    restaurantId: payment.restaurantId,
                     planId: payment.planId,
                     status: 'active',
                     startDate: new Date(),
                 },
             });
-        } else if (status === 'REJECTED') {
-            // Optionally handle rejection logic, like reverting subscription state if needed
-            // For now just keep the payment status as REJECTED
         }
 
         return NextResponse.json({

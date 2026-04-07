@@ -5,29 +5,24 @@ import { authorizeRequest } from '@/libs/auth';
 export async function GET(request) {
     const user = await authorizeRequest(request);
 
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    if (!user) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
     }
 
     try {
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { userId: user.auth.id },
+        });
+
+        if (!restaurant) {
+            return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+        }
+
         const payments = await prisma.planPayment.findMany({
+            where: {
+                restaurantId: restaurant.id,
+            },
             include: {
-                restaurant: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true,
-                            }
-                        },
-                        subscription: {
-                            include: {
-                                plan: true
-                            }
-                        }
-                    }
-                },
                 plan: true,
             },
             orderBy: {
