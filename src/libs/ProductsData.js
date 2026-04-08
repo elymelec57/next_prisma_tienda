@@ -2,16 +2,22 @@ import { cache } from 'react'
 import { prisma } from './prisma'
 
 // getPost will be used twice, but execute only once
-export const ProductsData = cache(async (id) => {
+export const ProductsData = cache(async ({ id, categoryId, skip = 0, take = 6 }) => {
 
     const platos = await prisma.plato.findMany({
         where: {
             restaurant: {
                 id: Number(id)
-            }
+            },
+            ...(categoryId && { categoriaId: Number(categoryId) })
         },
         include: {
             contornos: true
+        },
+        skip: skip,
+        take: take,
+        orderBy: {
+            id: 'desc'
         }
     })
 

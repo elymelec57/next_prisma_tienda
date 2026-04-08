@@ -32,7 +32,7 @@ export default async function page({ params }) {
     notFound()
   }
 
-  const products = await ProductsData(business.id)
+  const products = await ProductsData({ id: business.id, skip: 0, take: 6 })
 
   const categories = await prisma.categoria.findMany({
     where: {
@@ -158,7 +158,7 @@ export default async function page({ params }) {
             {/* Grid de Productos */}
             <div className="flex-grow">
               <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6'>
-                <Cart products={JSON.parse(JSON.stringify(products))} />
+                <Cart products={JSON.parse(JSON.stringify(products))} restaurantId={business.id} />
               </div>
             </div>
           </div>

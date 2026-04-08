@@ -13,6 +13,11 @@ export const BusinessData = cache(async (slug) => {
           isActive: true
         }
       },
+      subscription: {
+        where: {
+          status: "active"
+        }
+      },
       restaurantHours: true
     }
   });
