@@ -8,7 +8,9 @@ export async function POST(request) {
   const model = searchParams.get('model');
   const id = searchParams.get('id');
 
-  const blob = await put(filename, request.body, {
+  const path = model === 'planPayment' ? `subscriptions/${filename}` : filename;
+
+  const blob = await put(path, request.body, {
     access: 'public',
     addRandomSuffix: true,
   });

@@ -3,34 +3,40 @@ import { prisma } from '@/libs/prisma';
 import { authorizeRequest } from '@/libs/auth';
 
 export async function GET(request) {
-    const user = await authorizeRequest(request);
+    // const user = await authorizeRequest(request);
 
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    }
+    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    // }
 
     try {
         const paymentMethods = await prisma.paymentMethod.findMany({
-            where: {
-                restaurantId: null,
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
+            // where: {
+            //     restaurantId: null,
+            // },
+            // orderBy: {
+            //     createdAt: 'desc',
+            // },
         });
 
-        return NextResponse.json({ status: true, data: paymentMethods });
+        const paymentTypes = ['PAGO_MOVIL', 'TRANSFERENCIA', 'ZELLE', 'EFECTIVO', 'ZINLI', 'PAYPAL'];
+
+        return NextResponse.json({
+            status: true,
+            data: paymentMethods,
+            paymentTypes
+        });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message }, { status: 500 });
     }
 }
 
 export async function POST(request) {
-    const user = await authorizeRequest(request);
+    // const user = await authorizeRequest(request);
 
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    }
+    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    // }
 
     try {
         const data = await request.json();

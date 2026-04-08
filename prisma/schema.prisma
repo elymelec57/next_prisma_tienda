@@ -88,13 +88,13 @@ model Restaurant {
 }
 
 model Plan {
-  id           Int            @id @default(autoincrement())
-  name         String         @unique
-  price        Float
-  productLimit Int
-  description  String?
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  price         Float
+  productLimit  Int
+  description   String?
   subscriptions Subscription[]
-  payments     PlanPayment[]
+  payments      PlanPayment[]
 }
 
 model Subscription {
@@ -118,6 +118,7 @@ model PlanPayment {
   status        String     @default("PENDING") // PENDING, CONFIRMED, REJECTED
   paymentMethod String
   transactionId String?
+  mainImageId   String?
   createdAt     DateTime   @default(now())
 }
 

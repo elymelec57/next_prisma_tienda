@@ -11,13 +11,13 @@ export async function GET(request) {
 
     try {
         const paymentMethods = await prisma.paymentMethod.findMany({
-            where: {
-                restaurantId: null,
-                isActive: true
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
+            // where: {
+            //     restaurantId: null,
+            //     isActive: true
+            // },
+            // orderBy: {
+            //     createdAt: 'desc',
+            // },
         });
 
         return NextResponse.json({ status: true, data: paymentMethods });
