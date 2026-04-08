@@ -262,6 +262,7 @@ model Pedido {
   Payment       Payment? // Relación 1:1 con Pago
   mesa          Mesa?        @relation(fields: [mesaId], references: [id])
   nombreCliente String?
+  direccion     String?
 }
 
 model ItemPedido {

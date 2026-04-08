@@ -52,6 +52,7 @@ export async function POST(request) {
                 estado: "Pendiente",
                 cliente: { connect: { id: cliente.id } },
                 restaurant: { connect: { id: restaurant.id } },
+                direccion: form.direccion || null,
             }
         })
 

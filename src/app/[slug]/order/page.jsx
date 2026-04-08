@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon } from "lucide-react";
+import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon, MapPin, Navigation } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
 import { useParams, useRouter } from "next/navigation";
@@ -18,6 +18,8 @@ export default function Buy() {
     const [isLoading, setIsLoading] = useState(false);
     const [comprobanteFile, setComprobanteFile] = useState(null);
 
+    const [isDelivery, setIsDelivery] = useState(false);
+    const [isLocating, setIsLocating] = useState(false);
     const [form, setForm] = useState({
         name: '',
         email: '',
@@ -27,7 +29,8 @@ export default function Buy() {
         total: 0,
         order: {},
         paymentMethodId: '',
-        comprobanteUrl: ''
+        comprobanteUrl: '',
+        direccion: ''
     });
 
     useEffect(() => {
@@ -72,6 +75,49 @@ export default function Buy() {
         if (method.type !== 'PAGO_MOVIL' && method.type !== 'TRANSFERENCIA') {
             setComprobanteFile(null);
         }
+    }
+
+    const handleGetLocation = () => {
+        if (!navigator.geolocation) {
+            alert("Tu navegador no soporta geolocalización.");
+            return;
+        }
+
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=es`);
+                    const data = await res.json();
+                    if (data && data.display_name) {
+                        setForm(prev => ({
+                            ...prev,
+                            direccion: data.display_name
+                        }));
+                    } else {
+                        setForm(prev => ({
+                            ...prev,
+                            direccion: `${latitude}, ${longitude}`
+                        }));
+                    }
+                } catch (error) {
+                    console.error("Error reverse geocoding:", error);
+                    setForm(prev => ({
+                        ...prev,
+                        direccion: `${latitude}, ${longitude}`
+                    }));
+                } finally {
+                    setIsLocating(false);
+                }
+            },
+            (error) => {
+                console.error("Geolocation error:", error);
+                alert("No pudimos obtener tu ubicación. Por favor, ingresa tu dirección manualmente.");
+                setIsLocating(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     }
 
     const orderList = useAppSelector((state) => state.order.order)
@@ -163,6 +209,9 @@ export default function Buy() {
 
         try {
             const finalForm = { ...form };
+            if (!isDelivery) {
+                finalForm.direccion = null;
+            }
 
             const OrderSolicitud = await fetch('/api/buy/', {
                 method: 'POST',
@@ -493,6 +542,58 @@ export default function Buy() {
                                         />
                                     </div>
                                 </div>
+
+                                <div className="flex items-center gap-2 py-2">
+                                    <input
+                                        type="checkbox"
+                                        id="isDelivery"
+                                        checked={isDelivery}
+                                        onChange={(e) => setIsDelivery(e.target.checked)}
+                                        className="w-4 h-4 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
+                                    />
+                                    <label htmlFor="isDelivery" className="text-sm font-bold text-slate-700 cursor-pointer flex items-center gap-1">
+                                        ¿Deseas delivery?
+                                    </label>
+                                </div>
+
+                                {isDelivery && (
+                                    <div className="animate-in slide-in-from-top-2 duration-300">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Dirección de Entrega</label>
+                                        <div className="relative">
+                                            <MapPin className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                            <textarea
+                                                name="direccion"
+                                                value={form.direccion}
+                                                onChange={changeInput}
+                                                rows="3"
+                                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all resize-none"
+                                                placeholder="Ej: Av. Principal, Edif. Los Pinos, Apto 4B"
+                                                required={isDelivery}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleGetLocation}
+                                            disabled={isLocating}
+                                            className="mt-2 flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                                        >
+                                            {isLocating ? (
+                                                <>
+                                                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Obteniendo ubicación...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Navigation className="h-3 w-3" />
+                                                    Usar mi ubicación actual
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
 
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email</label>
