@@ -592,7 +592,7 @@ export default function Buy() {
                                             name="name"
                                             value={form.name}
                                             onChange={changeInput}
-                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all text-slate-900"
                                             placeholder="Ej: Juan Pérez"
                                             required
                                         />
@@ -622,7 +622,7 @@ export default function Buy() {
                                                 value={form.direccion}
                                                 onChange={changeInput}
                                                 rows="3"
-                                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all resize-none"
+                                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all resize-none text-slate-900"
                                                 placeholder="Ej: Av. Principal, Edif. Los Pinos, Apto 4B"
                                                 required={isDelivery}
                                             />
@@ -665,7 +665,7 @@ export default function Buy() {
                                             name="email"
                                             value={form.email}
                                             onChange={changeInput}
-                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all text-slate-900"
                                             placeholder="juan@ejemplo.com"
                                             required
                                         />
@@ -681,7 +681,7 @@ export default function Buy() {
                                             name="phone"
                                             value={form.phone}
                                             onChange={changeInput}
-                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all text-slate-900"
                                             placeholder="+58 412 123 4567"
                                             required
                                         />
