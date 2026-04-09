@@ -66,7 +66,19 @@ export async function PUT(request, segmentData) {
             slug: slug,
             categoriaRestaurant: {
                 set: form.categoriaRestaurant?.map(id => ({ id: Number(id) })) || []
-            }
+            },
+            lat: form.lat ? parseFloat(form.lat) : null,
+            lng: form.lng ? parseFloat(form.lng) : null,
+            deliveryFreeRange: form.deliveryFreeRange ? parseFloat(form.deliveryFreeRange) : null,
+            deliveryShortRange: form.deliveryShortRange ? parseFloat(form.deliveryShortRange) : null,
+            deliveryShortPrice: form.deliveryShortPrice ? parseFloat(form.deliveryShortPrice) : null,
+            deliveryMediumRange: form.deliveryMediumRange ? parseFloat(form.deliveryMediumRange) : null,
+            deliveryMediumPrice: form.deliveryMediumPrice ? parseFloat(form.deliveryMediumPrice) : null,
+            deliveryLongRange: form.deliveryLongRange ? parseFloat(form.deliveryLongRange) : null,
+            deliveryLongPrice: form.deliveryLongPrice ? parseFloat(form.deliveryLongPrice) : null,
+            countryId: form.countryId ? Number(form.countryId) : null,
+            stateId: form.stateId ? Number(form.stateId) : null,
+            cityId: form.cityId ? Number(form.cityId) : null,
         },
     });
 

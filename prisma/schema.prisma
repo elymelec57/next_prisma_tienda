@@ -85,6 +85,25 @@ model Restaurant {
   ingredienteRestaurante IngredienteRestaurante[]
   subscription           Subscription?
   planPayments           PlanPayment[]
+
+  // Delivery configuration
+  lat                   Float?
+  lng                   Float?
+  deliveryFreeRange     Float?
+  deliveryShortRange    Float?
+  deliveryShortPrice    Float?
+  deliveryMediumRange   Float?
+  deliveryMediumPrice   Float?
+  deliveryLongRange     Float?
+  deliveryLongPrice     Float?
+
+  // Location
+  countryId Int?
+  stateId   Int?
+  cityId    Int?
+  country   Country? @relation(fields: [countryId], references: [id])
+  state     State?   @relation(fields: [stateId], references: [id])
+  city      City?    @relation(fields: [cityId], references: [id])
 }
 
 model Plan {
@@ -396,4 +415,28 @@ model EmpleadoHorario {
   startTime  DateTime
   endTime    DateTime
   empleado   Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Country {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  states      State[]
+  restaurants Restaurant[]
+}
+
+model State {
+  id          Int          @id @default(autoincrement())
+  name        String
+  countryId   Int
+  country     Country      @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  cities      City[]
+  restaurants Restaurant[]
+}
+
+model City {
+  id          Int          @id @default(autoincrement())
+  name        String
+  stateId     Int
+  state       State        @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  restaurants Restaurant[]
 }

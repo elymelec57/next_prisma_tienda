@@ -5,6 +5,8 @@ const { PrismaClient } = require('../generated/prisma')
 const prisma = new PrismaClient()
 
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 
 async function main() {
   console.log('--- Iniciando el seeding ---');
@@ -25,6 +27,9 @@ async function main() {
   await prisma.categoria.deleteMany();
   await prisma.categoriaIngrediente.deleteMany();
   await prisma.categoriaRestaurant.deleteMany();
+  await prisma.city.deleteMany();
+  await prisma.state.deleteMany();
+  await prisma.country.deleteMany();
 
   // 2. Crear Roles de Usuario (Sistema)
   const rolAdmin = await prisma.rolUser.create({ data: { name: 'Admin' } });
@@ -142,6 +147,39 @@ async function main() {
 
   console.log('✅ Base de datos poblada con éxito.');
 
+  // --- Sembrar Países, Estados y Ciudades ---
+  console.log('🌍 Sembrando Países, Estados y Ciudades...');
+  const stateData = JSON.parse(fs.readFileSync(path.join(__dirname, '../scripts/data.state.json'), 'utf8'));
+
+  for (const countryItem of stateData) {
+    const country = await prisma.country.create({
+      data: { name: countryItem.name }
+    });
+
+    for (const stateItem of countryItem.states) {
+      const state = await prisma.state.create({
+        data: {
+          name: stateItem.name,
+          countryId: country.id
+        }
+      });
+
+      for (const cityName of stateItem.cities) {
+        await prisma.city.create({
+          data: {
+            name: cityName,
+            stateId: state.id
+          }
+        });
+      }
+    }
+  }
+
+  // Obtener algunos IDs para el restaurante de prueba
+  const venezuela = await prisma.country.findUnique({ where: { name: 'Venezuela' } });
+  const ddistrito = await prisma.state.findFirst({ where: { name: 'Distrito Capital' } });
+  const caracas = await prisma.city.findFirst({ where: { name: 'Caracas' } });
+
   // 5. Crear Restaurante
   const restaurant = await prisma.restaurant.create({
     data: {
@@ -151,6 +189,9 @@ async function main() {
       phone: '+584120000000',
       direcction: 'Calle Falsa 123, Caracas',
       userId: user.id,
+      countryId: venezuela?.id,
+      stateId: ddistrito?.id,
+      cityId: caracas?.id,
       categoriaRestaurant: {
         connect: [{ id: catItaliana.id }, { id: catCafe.id }]
       },

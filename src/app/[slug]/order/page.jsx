@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon, MapPin, Navigation } from "lucide-react";
+import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon, MapPin, Navigation, RefreshCw } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
 import { useParams, useRouter } from "next/navigation";
@@ -30,7 +30,9 @@ export default function Buy() {
         order: {},
         paymentMethodId: '',
         comprobanteUrl: '',
-        direccion: ''
+        direccion: '',
+        distancia: 0,
+        deliveryFee: 0
     });
 
     useEffect(() => {
@@ -77,6 +79,30 @@ export default function Buy() {
         }
     }
 
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // Earth's radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; // Distance in km
+    }
+
+    const calculateDeliveryFee = (distance) => {
+        if (!restaurant) return 0;
+
+        const dist = parseFloat(distance);
+        if (restaurant.deliveryFreeRange && dist <= restaurant.deliveryFreeRange) return 0;
+        if (restaurant.deliveryShortRange && dist <= restaurant.deliveryShortRange) return restaurant.deliveryShortPrice || 0;
+        if (restaurant.deliveryMediumRange && dist <= restaurant.deliveryMediumRange) return restaurant.deliveryMediumPrice || 0;
+        if (restaurant.deliveryLongRange && dist > restaurant.deliveryMediumRange) return restaurant.deliveryLongPrice || 0;
+
+        return 0;
+    }
+
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
             alert("Tu navegador no soporta geolocalización.");
@@ -87,25 +113,40 @@ export default function Buy() {
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
+
+                // Calculate distance if restaurant coordinate is available
+                let distance = 0;
+                let fee = 0;
+                if (restaurant && restaurant.lat && restaurant.lng) {
+                    distance = calculateDistance(latitude, longitude, restaurant.lat, restaurant.lng);
+                    fee = calculateDeliveryFee(distance);
+                }
+
                 try {
                     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=es`);
                     const data = await res.json();
                     if (data && data.display_name) {
                         setForm(prev => ({
                             ...prev,
-                            direccion: data.display_name
+                            direccion: data.display_name,
+                            distancia: distance,
+                            deliveryFee: fee
                         }));
                     } else {
                         setForm(prev => ({
                             ...prev,
-                            direccion: `${latitude}, ${longitude}`
+                            direccion: `${latitude}, ${longitude}`,
+                            distancia: distance,
+                            deliveryFee: fee
                         }));
                     }
                 } catch (error) {
                     console.error("Error reverse geocoding:", error);
                     setForm(prev => ({
                         ...prev,
-                        direccion: `${latitude}, ${longitude}`
+                        direccion: `${latitude}, ${longitude}`,
+                        distancia: distance,
+                        deliveryFee: fee
                     }));
                 } finally {
                     setIsLocating(false);
@@ -184,10 +225,14 @@ export default function Buy() {
     }
 
     const calculateTotal = () => {
-        let total = 0
+        let itemsTotal = 0
         orderList.forEach(element => {
-            total = Number(total) + Number(element.price) * element.count
+            itemsTotal = Number(itemsTotal) + Number(element.price) * element.count
         });
+
+        const deliveryCost = isDelivery ? (form.deliveryFee || 0) : 0;
+        const total = Number(itemsTotal) + Number(deliveryCost);
+
         form.total = total
         return total.toFixed(2)
     }
@@ -378,8 +423,18 @@ export default function Buy() {
                             </div>
 
                             {orderList.length > 0 && (
-                                <div className="p-6 bg-slate-50 border-t border-slate-200">
-                                    <div className="flex justify-between items-center text-lg">
+                                <div className="p-6 bg-slate-50 border-t border-slate-200 space-y-2">
+                                    <div className="flex justify-between items-center text-sm text-slate-500">
+                                        <span>Subtotal productos</span>
+                                        <span>{formatCurrency(parseFloat(orderList.reduce((acc, o) => acc + (o.price * o.count), 0)), restaurant?.currency)}</span>
+                                    </div>
+                                    {isDelivery && (
+                                        <div className="flex justify-between items-center text-sm text-slate-500">
+                                            <span>Delivery {form.distancia > 0 && `(${form.distancia.toFixed(1)} km)`}</span>
+                                            <span>{form.deliveryFee > 0 ? formatCurrency(parseFloat(form.deliveryFee), restaurant?.currency) : 'Gratis'}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center text-lg pt-2 border-t border-slate-200">
                                         <span className="font-semibold text-slate-600">Total a Pagar</span>
                                         <span className="font-bold text-2xl text-slate-900">{formatCurrency(parseFloat(calculateTotal()), restaurant?.currency)}</span>
                                     </div>
@@ -571,27 +626,32 @@ export default function Buy() {
                                                 required={isDelivery}
                                             />
                                         </div>
+
                                         <button
                                             type="button"
                                             onClick={handleGetLocation}
                                             disabled={isLocating}
-                                            className="mt-2 flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                                            className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                                         >
                                             {isLocating ? (
-                                                <>
-                                                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                    </svg>
-                                                    Obteniendo ubicación...
-                                                </>
+                                                <RefreshCw className="h-3 w-3 animate-spin" />
                                             ) : (
-                                                <>
-                                                    <Navigation className="h-3 w-3" />
-                                                    Usar mi ubicación actual
-                                                </>
+                                                <Navigation className="h-3 w-3" />
                                             )}
+                                            {isLocating ? "Obteniendo ubicación..." : "Usar mi ubicación actual"}
                                         </button>
+
+                                        {form.distancia > 0 && (
+                                            <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-100 flex items-center gap-3">
+                                                <div className="p-2 bg-blue-500 text-white rounded-full">
+                                                    <Navigation className="h-4 w-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-blue-900 uppercase">Distancia estimada</p>
+                                                    <p className="text-sm text-blue-700 font-medium">{form.distancia.toFixed(2)} km</p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

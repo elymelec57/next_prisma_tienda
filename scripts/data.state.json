@@ -1,0 +1,111 @@
+[
+  {
+    "name": "Venezuela",
+    "states": [
+      {
+        "name": "Amazonas",
+        "cities": ["Puerto Ayacucho"]
+      },
+      {
+        "name": "Anzoátegui",
+        "cities": ["Barcelona", "Puerto La Cruz", "El Tigre", "Anaco", "Lecherías"]
+      },
+      {
+        "name": "Apure",
+        "cities": ["San Fernando", "Guasdualito"]
+      },
+      {
+        "name": "Aragua",
+        "cities": ["Maracay", "Turmero", "La Victoria", "Palo Negro", "Villa de Cura", "Cagua", "El Limón", "Santa Cruz"]
+      },
+      {
+        "name": "Barinas",
+        "cities": ["Barinas", "Socopó"]
+      },
+      {
+        "name": "Bolívar",
+        "cities": ["Ciudad Guayana", "Ciudad Bolívar"]
+      },
+      {
+        "name": "Carabobo",
+        "cities": ["Valencia", "Puerto Cabello", "Guacara", "Tocuyito", "San Diego", "Los Guayos", "Naguanagua", "Mariara"]
+      },
+      {
+        "name": "Cojedes",
+        "cities": ["San Carlos", "Tinaquillo"]
+      },
+      {
+        "name": "Delta Amacuro",
+        "cities": ["Tucupita"]
+      },
+      {
+        "name": "Falcón",
+        "cities": ["Coro", "Punto Fijo"]
+      },
+      {
+        "name": "Guárico",
+        "cities": ["San Juan de los Morros", "Calabozo", "Valle de La Pascua"]
+      },
+      {
+        "name": "Lara",
+        "cities": ["Barquisimeto", "Carora", "Quíbor", "Cabudare"]
+      },
+      {
+        "name": "Mérida",
+        "cities": ["Mérida", "Ejido"]
+      },
+      {
+        "name": "Miranda",
+        "cities": ["Los Teques", "Santa Teresa del Tuy", "Petare", "Baruta", "Cúa", "Guarenas", "Guatire", "Ocumare del Tuy", "Charallave", "Santa Lucía", "San Antonio de Los Altos", "Chacao", "El Hatillo"]
+      },
+      {
+        "name": "Monagas",
+        "cities": ["Maturín"]
+      },
+      {
+        "name": "Nueva Esparta",
+        "cities": ["Porlamar", "La Asunción", "Pampatar", "Santa Ana", "Juangriego", "La Plaza de Paraguachí", "San Juan Bautista"]
+      },
+      {
+        "name": "Portuguesa",
+        "cities": ["Acarigua", "Guanare", "Araure"]
+      },
+      {
+        "name": "Sucre",
+        "cities": ["Cumaná", "Carúpano"]
+      },
+      {
+        "name": "Táchira",
+        "cities": ["San Cristóbal", "Táriba", "Palmira", "Capacho Nuevo", "Capacho Viejo"]
+      },
+      {
+        "name": "Trujillo",
+        "cities": ["Trujillo", "Valera", "Boconó", "Carvajal"]
+      },
+      {
+        "name": "La Guaira",
+        "cities": ["La Guaira", "Catia La Mar"]
+      },
+      {
+        "name": "Yaracuy",
+        "cities": ["San Felipe", "Yaritagua"]
+      },
+      {
+        "name": "Zulia",
+        "cities": ["Maracaibo", "Cabimas", "Santa Rita", "Machiques", "Ciudad Ojeda"]
+      },
+      {
+        "name": "Distrito Capital",
+        "cities": ["Caracas"]
+      },
+      {
+        "name": "Dependencias Federales",
+        "cities": []
+      }
+    ]
+  },
+  {
+    "name": "Colombia",
+    "states": []
+  }
+]

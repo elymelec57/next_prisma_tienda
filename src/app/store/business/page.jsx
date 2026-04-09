@@ -6,7 +6,13 @@ import Link from "next/link";
 import { useAppSelector } from "@/lib/hooks";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
-import { Store, Camera, Save, ArrowLeft, ExternalLink, RefreshCw, Clock, CreditCard, Plus, Trash2, Edit2, CheckCircle2 } from "lucide-react";
+import { Store, Camera, Save, ArrowLeft, ExternalLink, RefreshCw, Clock, CreditCard, Plus, Trash2, Edit2, CheckCircle2, MapPin, Truck } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const MapPicker = dynamic(() => import("@/components/MapPicker"), {
+    ssr: false,
+    loading: () => <div className="h-[400px] w-full bg-gray-100 dark:bg-gray-800 animate-pulse rounded-xl flex items-center justify-center">Cargando mapa...</div>
+});
 
 const DAYS_OF_WEEK = [
     "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
@@ -53,6 +59,18 @@ export default function Business() {
         slug: '',
         currency: 'USD',
         categoriaRestaurant: [],
+        lat: null,
+        lng: null,
+        deliveryFreeRange: '',
+        deliveryShortRange: '',
+        deliveryShortPrice: '',
+        deliveryMediumRange: '',
+        deliveryMediumPrice: '',
+        deliveryLongRange: '',
+        deliveryLongPrice: '',
+        countryId: '',
+        stateId: '',
+        cityId: '',
     });
 
     const [hours, setHours] = useState(
@@ -159,6 +177,15 @@ export default function Business() {
             return data.categorias || [];
         },
     });
+    
+    const { data: locationsData } = useQuery({
+        queryKey: ['locations'],
+        queryFn: async () => {
+            const res = await fetch('/api/locations');
+            const data = await res.json();
+            return data.data || [];
+        },
+    });
 
     useEffect(() => {
         if (businessData?.status) {
@@ -171,7 +198,19 @@ export default function Business() {
                 direcction: rest.direcction,
                 slug: rest.slug,
                 currency: rest.currency || 'USD',
-                categoriaRestaurant: rest.categoriaRestaurant?.map(c => c.id) || []
+                categoriaRestaurant: rest.categoriaRestaurant?.map(c => c.id) || [],
+                lat: rest.lat,
+                lng: rest.lng,
+                deliveryFreeRange: rest.deliveryFreeRange || '',
+                deliveryShortRange: rest.deliveryShortRange || '',
+                deliveryShortPrice: rest.deliveryShortPrice || '',
+                deliveryMediumRange: rest.deliveryMediumRange || '',
+                deliveryMediumPrice: rest.deliveryMediumPrice || '',
+                deliveryLongRange: rest.deliveryLongRange || '',
+                deliveryLongPrice: rest.deliveryLongPrice || '',
+                countryId: rest.countryId || '',
+                stateId: rest.stateId || '',
+                cityId: rest.cityId || '',
             })
 
             setImage({
@@ -416,6 +455,13 @@ export default function Business() {
                     <Save size={18} />
                     Planes
                 </button>
+                <button
+                    onClick={() => setActiveTab("delivery")}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                    <Truck size={18} />
+                    Delivery
+                </button>
             </div>
 
             {/* Content Sections */}
@@ -493,6 +539,70 @@ export default function Business() {
                                         <option value="USD">Dólares (USD)</option>
                                         <option value="COP">Pesos Colombianos (COP)</option>
                                     </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">País</label>
+                                    <select
+                                        name="countryId"
+                                        value={form.countryId}
+                                        onChange={(e) => setForm({ ...form, countryId: parseInt(e.target.value), stateId: '', cityId: '' })}
+                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                        required
+                                    >
+                                        <option value="">Selecciona un país</option>
+                                        {locationsData?.map(country => (
+                                            <option key={country.id} value={country.id}>{country.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Estado / Provincia</label>
+                                    <select
+                                        name="stateId"
+                                        value={form.stateId}
+                                        onChange={(e) => setForm({ ...form, stateId: parseInt(e.target.value), cityId: '' })}
+                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                        disabled={!form.countryId}
+                                        required
+                                    >
+                                        <option value="">Selecciona un estado</option>
+                                        {locationsData?.find(c => c.id === form.countryId)?.states?.map(state => (
+                                            <option key={state.id} value={state.id}>{state.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Ciudad</label>
+                                    <select
+                                        name="cityId"
+                                        value={form.cityId}
+                                        onChange={(e) => setForm({ ...form, cityId: parseInt(e.target.value) })}
+                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                        disabled={!form.stateId}
+                                        required
+                                    >
+                                        <option value="">Selecciona una ciudad</option>
+                                        {locationsData?.find(c => c.id === form.countryId)
+                                            ?.states?.find(s => s.id === form.stateId)
+                                            ?.cities?.map(city => (
+                                                <option key={city.id} value={city.id}>{city.name}</option>
+                                            ))}
+                                    </select>
+                                </div>
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-sm font-medium flex items-center gap-2">
+                                        <MapPin size={16} className="text-red-500" />
+                                        Ubicación en el Mapa
+                                    </label>
+                                    <MapPicker
+                                        lat={form.lat}
+                                        lng={form.lng}
+                                        onChange={(lat, lng) => setForm({ ...form, lat, lng })}
+                                    />
+                                    <p className="text-[11px] text-gray-500">Marca la ubicación exacta de tu negocio para cálculos de delivery.</p>
                                 </div>
                                 <div className="md:col-span-2 space-y-3">
                                     <label className="text-sm font-medium">Categorías del Restaurante</label>
@@ -1026,6 +1136,154 @@ export default function Business() {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {activeTab === "delivery" && (
+                        <div className="space-y-8">
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                    <MapPin size={20} className="text-red-500" />
+                                    Ubicación del Restaurante
+                                </h3>
+                                <p className="text-sm text-gray-500">Haz clic en el mapa para marcar la ubicación exacta de tu negocio. Esto permitirá calcular la distancia de entrega automáticamente.</p>
+
+                                <MapPicker
+                                    lat={form.lat}
+                                    lng={form.lng}
+                                    onChange={(lat, lng) => setForm({ ...form, lat, lng })}
+                                />
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-400 uppercase">Latitud</label>
+                                        <input type="text" readOnly value={form.lat || ''} className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-400 uppercase">Longitud</label>
+                                        <input type="text" readOnly value={form.lng || ''} className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr className="border-gray-100 dark:border-gray-800" />
+
+                            <div className="space-y-6">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                    <Truck size={20} className="text-blue-600" />
+                                    Costos de Delivery por Distancia
+                                </h3>
+                                <p className="text-sm text-gray-500">Define los rangos de distancia (en kilómetros) y sus respectivos precios.</p>
+
+                                <div className="grid gap-6">
+                                    {/* Gratis */}
+                                    <div className="p-4 rounded-xl border border-green-100 bg-green-50/30 dark:border-green-900/20 dark:bg-green-900/10 grid md:grid-cols-2 gap-4 items-end">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-green-800 dark:text-green-300">Distancia Gratis (Hasta km)</label>
+                                            <input
+                                                type="number"
+                                                name="deliveryFreeRange"
+                                                value={form.deliveryFreeRange}
+                                                onChange={changeImput}
+                                                placeholder="Ej: 2"
+                                                className="flex h-10 w-full rounded-md border border-green-200 bg-white px-3 py-2 text-sm dark:border-green-800 dark:bg-gray-950"
+                                            />
+                                        </div>
+                                        <div className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 h-10 flex items-center px-4 rounded-md text-sm font-bold">
+                                            Precio: $0 (Gratis)
+                                        </div>
+                                    </div>
+
+                                    {/* Corta */}
+                                    <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/30 dark:border-blue-900/20 dark:bg-blue-900/10 grid md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-blue-800 dark:text-blue-300">Distancia Corta (Hasta km)</label>
+                                            <input
+                                                type="number"
+                                                name="deliveryShortRange"
+                                                value={form.deliveryShortRange}
+                                                onChange={changeImput}
+                                                placeholder="Ej: 5"
+                                                className="flex h-10 w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm dark:border-blue-800 dark:bg-gray-950"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-blue-800 dark:text-blue-300">Precio Corta ({form.currency})</label>
+                                            <input
+                                                type="number"
+                                                name="deliveryShortPrice"
+                                                value={form.deliveryShortPrice}
+                                                onChange={changeImput}
+                                                placeholder="Ej: 2.50"
+                                                className="flex h-10 w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm dark:border-blue-800 dark:bg-gray-950"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Mediana */}
+                                    <div className="p-4 rounded-xl border border-yellow-100 bg-yellow-50/30 dark:border-yellow-900/20 dark:bg-yellow-900/10 grid md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Distancia Mediana (Hasta km)</label>
+                                            <input
+                                                type="number"
+                                                name="deliveryMediumRange"
+                                                value={form.deliveryMediumRange}
+                                                onChange={changeImput}
+                                                placeholder="Ej: 10"
+                                                className="flex h-10 w-full rounded-md border border-yellow-200 bg-white px-3 py-2 text-sm dark:border-yellow-800 dark:bg-gray-950"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Precio Mediana ({form.currency})</label>
+                                            <input
+                                                type="number"
+                                                name="deliveryMediumPrice"
+                                                value={form.deliveryMediumPrice}
+                                                onChange={changeImput}
+                                                placeholder="Ej: 5.00"
+                                                className="flex h-10 w-full rounded-md border border-yellow-200 bg-white px-3 py-2 text-sm dark:border-yellow-800 dark:bg-gray-950"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Larga */}
+                                    <div className="p-4 rounded-xl border border-orange-100 bg-orange-50/30 dark:border-orange-900/20 dark:bg-orange-900/10 grid md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-orange-800 dark:text-orange-300">Distancia Larga (Más de km)</label>
+                                            <input
+                                                type="number"
+                                                name="deliveryLongRange"
+                                                value={form.deliveryLongRange}
+                                                onChange={changeImput}
+                                                placeholder="Ej: 10"
+                                                className="flex h-10 w-full rounded-md border border-orange-200 bg-white px-3 py-2 text-sm dark:border-orange-800 dark:bg-gray-950"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-orange-800 dark:text-orange-300">Precio Larga ({form.currency})</label>
+                                            <input
+                                                type="number"
+                                                name="deliveryLongPrice"
+                                                value={form.deliveryLongPrice}
+                                                onChange={changeImput}
+                                                placeholder="Ej: 8.00"
+                                                className="flex h-10 w-full rounded-md border border-orange-200 bg-white px-3 py-2 text-sm dark:border-orange-800 dark:bg-gray-950"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <button
+                                    onClick={businessSave}
+                                    disabled={businessMutation.isPending}
+                                    className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 gap-2 shadow-sm"
+                                >
+                                    <Save size={18} />
+                                    {businessMutation.isPending ? 'Guardando...' : 'Guardar Configuración de Delivery'}
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
