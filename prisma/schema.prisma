@@ -269,6 +269,7 @@ model Pedido {
   fechaHora     DateTime     @default(now())
   estado        String       @default("Pendiente") // Ej: "Pendiente", "Preparando", "Servido", "Pagado", "Cancelado"
   total         Float        @default(0.0)
+  subTotal      Float        @default(0.0)
   clienteId     Int? // El pedido puede ser de un cliente registrado o no
   cliente       Cliente?     @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   restaurantId  Int? // El pedido tambien pertenece a un restaurante
@@ -282,6 +283,8 @@ model Pedido {
   mesa          Mesa?        @relation(fields: [mesaId], references: [id])
   nombreCliente String?
   direccion     String?
+  distancia     Float?
+  deliveryFee   Float?
 }
 
 model ItemPedido {

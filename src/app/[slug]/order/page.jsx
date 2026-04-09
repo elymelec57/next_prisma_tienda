@@ -233,7 +233,8 @@ export default function Buy() {
         const deliveryCost = isDelivery ? (form.deliveryFee || 0) : 0;
         const total = Number(itemsTotal) + Number(deliveryCost);
 
-        form.total = total
+        form.subtotal = itemsTotal;
+        form.total = total;
         return total.toFixed(2)
     }
 

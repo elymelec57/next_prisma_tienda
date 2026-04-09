@@ -49,10 +49,13 @@ export async function POST(request) {
         const pedido = await prisma.pedido.create({
             data: {
                 total: parseFloat(form.total),
+                subTotal: parseFloat(form.subtotal) || 0,
                 estado: "Pendiente",
                 cliente: { connect: { id: cliente.id } },
                 restaurant: { connect: { id: restaurant.id } },
                 direccion: form.direccion || null,
+                distancia: form.distancia ? parseFloat(form.distancia) : null,
+                deliveryFee: form.deliveryFee ? parseFloat(form.deliveryFee) : null,
             }
         })
 

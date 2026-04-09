@@ -261,6 +261,22 @@ export default function CajaPage() {
                                                                     {order.nombreCliente || order.cliente?.nombre || 'Consumidor Final'}
                                                                 </p>
                                                             </div>
+                                                            {activeTab === 'delivery' && order.direccion && (
+                                                                <div className="mt-2 space-y-1">
+                                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                                                                        <MapPin className="h-2.5 w-2.5" />
+                                                                        Dirección de Entrega
+                                                                    </p>
+                                                                    <p className="text-[11px] text-gray-600 dark:text-gray-300 font-medium leading-tight line-clamp-2 max-w-[300px]">
+                                                                        {order.direccion}
+                                                                        {order.distancia && (
+                                                                            <span className="ml-2 text-blue-600 dark:text-blue-400 font-black">
+                                                                                ({order.distancia.toFixed(1)} KM)
+                                                                            </span>
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
 
@@ -352,12 +368,24 @@ export default function CajaPage() {
                         <div className="bg-gray-900 text-white p-8 rounded-[2rem] text-center shadow-2xl shadow-gray-900/20 relative overflow-hidden">
                             <div className="absolute -top-10 -left-10 h-32 w-32 bg-white/5 rounded-full"></div>
                             <div className="relative z-10">
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Total a Recaudar</p>
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Monto Neto a Cobrar</p>
                                 <h3 className="text-5xl font-black tracking-tighter">
                                     {formatCurrency(selectedOrder.total, stats.currency)}
                                 </h3>
-                                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest">
-                                    <Hash className="h-3 w-3" /> Orden #{selectedOrder.id}
+                                
+                                <div className="mt-4 flex flex-col items-center gap-2">
+                                    <div className="flex items-center gap-4 text-[10px] text-white/40 font-black uppercase tracking-widest">
+                                        <span>Productos: {formatCurrency(selectedOrder.subTotal || 0, stats.currency)}</span>
+                                        {selectedOrder.deliveryFee > 0 && (
+                                            <>
+                                                <span className="h-1 w-1 bg-white/20 rounded-full"></span>
+                                                <span className="text-blue-400">Delivery: +{formatCurrency(selectedOrder.deliveryFee, stats.currency)}</span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest">
+                                        <Hash className="h-3 w-3" /> Orden #{selectedOrder.id}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -503,11 +531,35 @@ export default function CajaPage() {
                             </div>
                             <div className="text-right">
                                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Mesa / Destino</h4>
-                                <p className="text-sm font-black text-orange-600 uppercase tracking-tight">
+                                 <p className="text-sm font-black text-orange-600 uppercase tracking-tight">
                                     {selectedOrder.mesa ? `MESA ${selectedOrder.mesa.numero}` : 'DOMICILIO'}
                                 </p>
                             </div>
                         </div>
+
+                        {selectedOrder.direccion && (
+                            <div className="bg-blue-50 dark:bg-blue-900/10 p-5 rounded-3xl border border-blue-100 dark:border-blue-800/50">
+                                <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                    <MapPin className="h-3 w-3" />
+                                    Detalle de Entrega
+                                </h4>
+                                <p className="text-sm text-gray-700 dark:text-gray-200 font-medium leading-relaxed">
+                                    {selectedOrder.direccion}
+                                </p>
+                                {selectedOrder.distancia && (
+                                    <div className="mt-3 flex items-center gap-2">
+                                        <div className="bg-blue-600 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase shadow-lg shadow-blue-500/20">
+                                            {selectedOrder.distancia.toFixed(2)} KM de distancia
+                                        </div>
+                                        {selectedOrder.deliveryFee > 0 && (
+                                            <div className="bg-white dark:bg-gray-800 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase border border-blue-100">
+                                                Cargo Delivery: {formatCurrency(selectedOrder.deliveryFee, stats.currency)}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="space-y-3">
                             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Artículos Consumidos</h4>
@@ -537,20 +589,32 @@ export default function CajaPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-900 text-white p-6 rounded-[2rem] flex items-center justify-between shadow-xl shadow-gray-900/20">
-                            <div>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total Confirmado</p>
-                                <h3 className="text-3xl font-black tracking-tighter">{formatCurrency(selectedOrder.total, stats.currency)}</h3>
+                        <div className="bg-gray-900 text-white p-6 rounded-[2rem] space-y-3 shadow-xl shadow-gray-900/20">
+                            <div className="flex justify-between items-center px-2">
+                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">Subtotal Productos</p>
+                                <p className="text-lg font-bold">{formatCurrency(selectedOrder.subTotal || 0, stats.currency)}</p>
                             </div>
-                            <Button 
-                                onClick={() => {
-                                    setIsDetailsModalOpen(false)
-                                    handleOpenPayment(selectedOrder)
-                                }}
-                                className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase text-[10px] px-6 rounded-xl shadow-lg shadow-orange-500/40 border-none"
-                            >
-                                Proceder al Cobro
-                            </Button>
+                            {selectedOrder.deliveryFee > 0 && (
+                                <div className="flex justify-between items-center px-2 pb-3 border-b border-white/10">
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">Costo Delivery</p>
+                                    <p className="text-lg font-bold text-blue-400">+{formatCurrency(selectedOrder.deliveryFee, stats.currency)}</p>
+                                </div>
+                            )}
+                            <div className="flex items-center justify-between pt-2">
+                                <div>
+                                    <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total a Cobrar</p>
+                                    <h3 className="text-4xl font-black tracking-tighter">{formatCurrency(selectedOrder.total, stats.currency)}</h3>
+                                </div>
+                                <Button
+                                    onClick={() => {
+                                        setIsDetailsModalOpen(false)
+                                        handleOpenPayment(selectedOrder)
+                                    }}
+                                    className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase text-[10px] px-6 rounded-xl shadow-lg shadow-orange-500/40 border-none"
+                                >
+                                    Proceder al Cobro
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </Modal>
