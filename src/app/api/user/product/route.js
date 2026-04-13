@@ -1,76 +1,24 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/libs/prisma';
 import { authorizeRequest } from '@/libs/auth'
+import { PlatoRepository } from '@/repositories/PlatoRepository';
+import { RestaurantRepository } from '@/repositories/RestaurantRepository';
+import { PlatoService } from '@/services/PlatoService';
+
+const platoRepository = new PlatoRepository();
+const restaurantRepository = new RestaurantRepository();
+const platoService = new PlatoService(platoRepository, restaurantRepository);
 
 export async function GET(request) {
-
     const user = await authorizeRequest(request)
 
-    if (!user) {
+    if (!user || !user.authorized) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
 
-    const restaurant = await prisma.restaurant.findUnique({
-        where: { id: user.auth.restauranteId },
-        select: { currency: true }
-    });
-
-    const platos = await prisma.plato.findMany({
-        select: {
-            id: true,
-            nombre: true,
-            descripcion: true,
-            precio: true,
-            disponible: true,
-            mainImageId: true,
-            categoriaId: true,
-        },
-        where: {
-            restaurantId: user.auth.restauranteId
-        },
-    });
-
-    const imageIds = platos
-        .map((p) => p.mainImageId)
-        .filter((id) => id !== null);
-
-    const categorias = await prisma.categoria.findMany({
-        where: {
-            platos: {
-                some: {
-                    restaurantId: user.auth.restauranteId
-                }
-            }
-        }
-    });
-
-    if (imageIds.length === 0) {
-        // No hay imágenes para buscar, devolver solo los productos
-        const dataPlatos = platos.map((p) => ({ ...p, mainImage: null }));
-        return NextResponse.json({ categorias, dataPlatos })
+    try {
+        const result = await platoService.getPlatosByRestaurant(user.auth.restauranteId);
+        return NextResponse.json(result)
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    const images = await prisma.image.findMany({
-        where: {
-            id: {
-                in: imageIds, // Filtrar por los IDs que acabamos de extraer
-            },
-            modelType: 'plato',
-        },
-        select: {
-            id: true, // Incluir el ID para mapear
-            url: true,
-            //altText: true,
-        },
-    });
-
-    // 4. Mapear las imágenes a los productos
-    const imageMap = new Map(images.map((img) => [img.id, img]));
-
-    const dataPlatos = platos.map((plato) => ({
-        ...plato,
-        mainImage: plato.mainImageId ? imageMap.get(plato.mainImageId) : null,
-    }));
-
-    return NextResponse.json({ categorias, dataPlatos, currency: restaurant?.currency || 'USD' })
 }
