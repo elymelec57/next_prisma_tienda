@@ -16,10 +16,16 @@ export async function POST(request) {
 
         // 2. Upsert Cliente
         let cliente;
-        if (form.email) {
-            cliente = await prisma.cliente.findUnique({ where: { email: form.email } });
-        } else if (form.phone) {
-            cliente = await prisma.cliente.findUnique({ where: { telefono: form.phone } });
+        const conditions = [];
+        if (form.email) conditions.push({ email: form.email });
+        if (form.phone) conditions.push({ telefono: form.phone });
+
+        if (conditions.length > 0) {
+            cliente = await prisma.cliente.findFirst({
+                where: {
+                    OR: conditions
+                }
+            });
         }
 
         if (!cliente) {
@@ -34,14 +40,19 @@ export async function POST(request) {
                 }
             })
         } else {
+            const updateData = {
+                nombre: form.name,
+                restaurant: {
+                    connect: { id: restaurant.id }
+                }
+            };
+            // Update email/phone if they were missing but provided now
+            if (!cliente.email && form.email) updateData.email = form.email;
+            if (!cliente.telefono && form.phone) updateData.telefono = form.phone;
+
             await prisma.cliente.update({
                 where: { id: cliente.id },
-                data: {
-                    nombre: form.name,
-                    restaurant: {
-                        connect: { id: restaurant.id }
-                    }
-                }
+                data: updateData
             })
         }
 
