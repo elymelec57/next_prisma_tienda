@@ -105,40 +105,48 @@ export async function POST(request) {
                     if (i < relevantSelection.length && Array.isArray(relevantSelection[i])) {
                         ids = relevantSelection[i];
                     } else {
-                        // Default: All available contornos if not specified
-                        // But wait, if unit customization implies "remove", then default is ALL.
-                        // Ideally the frontend passed the full config. If missing (e.g. legacy or freshly added), assume All.
-                        ids = item.contornos ? item.contornos.map(c => c.id.toString()) : [];
+                        ids = [];
                     }
 
-                    // Resolve IDs to Names
+                    // Calculate total extra price for this configuration per unit
+                    let unitExtraPrice = 0;
+                    ids.forEach(id => {
+                        const c = item.contornos ? item.contornos.find(cx => cx.id.toString() === id.toString()) : null;
+                        if (c && c.price) unitExtraPrice += Number(c.price);
+                    });
+
                     const names = ids.map(id => {
                         const c = item.contornos ? item.contornos.find(cx => cx.id.toString() === id) : null;
                         return c ? c.nombre : null;
                     }).filter(Boolean).sort().join(', '); // Sort for consistent grouping
 
-                    const key = names || "Sin Contornos";
+                    const key = unitExtraPrice > 0 
+                        ? `${names || "Sin extras"} (+$${unitExtraPrice.toFixed(2)})`
+                        : (names || "Sin extras");
+                        
                     configCounts[key] = (configCounts[key] || 0) + 1;
                 }
 
-                // Build note string
-                const parts = [];
-                for (const [names, qty] of Object.entries(configCounts)) {
-                    parts.push(`${qty}x [${names}]`);
-                }
-                if (parts.length > 0) {
-                    nota = `Detalle: ${parts.join('; ')}`;
-                }
-
-                await prisma.itemPedido.create({
-                    data: {
-                        cantidad: count,
-                        precioUnitario: parseFloat(item.price),
-                        nota: nota,
-                        pedido: { connect: { id: pedido.id } },
-                        plato: { connect: { id: item.id } }
+                // Iterate through every distinct configuration and create an ItemPedido for each
+                for (const [configKey, qty] of Object.entries(configCounts)) {
+                    // Extract extra price from configKey if present
+                    // Key format: "Names (+$Price)" or "Names"
+                    let extraPrice = 0;
+                    const priceMatch = configKey.match(/\(\+\$([0-9.]+)\)/);
+                    if (priceMatch) {
+                        extraPrice = parseFloat(priceMatch[1]);
                     }
-                })
+
+                    await prisma.itemPedido.create({
+                        data: {
+                            cantidad: qty,
+                            precioUnitario: parseFloat(item.price) + extraPrice,
+                            nota: configKey.startsWith("Sin extras") && !configKey.includes("+$") ? null : `Detalle: ${configKey}`,
+                            pedido: { connect: { id: pedido.id } },
+                            plato: { connect: { id: item.id } }
+                        }
+                    })
+                }
             }
         }
 

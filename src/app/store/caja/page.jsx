@@ -574,6 +574,11 @@ export default function CajaPage() {
                                                 <h5 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-tighter leading-tight">
                                                     {item.plato?.nombre}
                                                 </h5>
+                                                {item.nota && (
+                                                    <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wide mt-0.5">
+                                                        {item.nota}
+                                                    </p>
+                                                )}
                                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                                                     {formatCurrency(item.precioUnitario, stats.currency)} c/u
                                                 </p>

@@ -217,9 +217,9 @@ export default function Buy() {
         if (currentSelection.length > count) {
             currentSelection = currentSelection.slice(0, count);
         } else {
-            const allContornoIds = product.contornos ? product.contornos.map(c => c.id.toString()) : [];
+            // By default, start with nothing selected (user must choose)
             while (currentSelection.length < count) {
-                currentSelection.push([...allContornoIds]);
+                currentSelection.push([]);
             }
         }
         setTempSelectedContornos(currentSelection);
@@ -256,7 +256,23 @@ export default function Buy() {
     const calculateTotal = () => {
         let itemsTotal = 0
         orderList.forEach(element => {
-            itemsTotal = Number(itemsTotal) + Number(element.price) * element.count
+            // Price of the base dish
+            let elementTotal = Number(element.price) * element.count
+            
+            // Add price of selected contornos
+            if (element.selectedContornos && Array.isArray(element.selectedContornos)) {
+                element.selectedContornos.slice(0, element.count).forEach(unitSelection => {
+                    if (Array.isArray(unitSelection)) {
+                        unitSelection.forEach(id => {
+                            const c = element.contornos?.find(cx => cx.id.toString() === id.toString());
+                            if (c && c.price) {
+                                elementTotal += Number(c.price);
+                            }
+                        });
+                    }
+                });
+            }
+            itemsTotal += elementTotal;
         });
 
         const deliveryCost = isDelivery ? (form.deliveryFee || 0) : 0;
@@ -339,7 +355,7 @@ export default function Buy() {
             if (i < relevantSelection.length) {
                 ids = relevantSelection[i];
             } else {
-                ids = item.contornos ? item.contornos.map(c => c.id.toString()) : [];
+                ids = [];
             }
 
             const names = ids.map(id => {
@@ -351,12 +367,33 @@ export default function Buy() {
             counts[key] = (counts[key] || 0) + 1;
         }
 
-        return Object.entries(counts).map(([names, qty]) => (
-            <div key={names} className="flex items-start gap-2 text-xs text-slate-500 mt-1">
-                <span className="font-medium bg-slate-100 px-1.5 rounded text-slate-600">{qty}x</span>
-                <span>{names}</span>
-            </div>
-        ));
+        return Object.entries(counts).map(([names, qty]) => {
+            // Calculate extra price for this grouping
+            let extraPrice = 0;
+            if (names !== "Sin extras") {
+                const individualNames = names.split(', ');
+                individualNames.forEach(name => {
+                    const c = item.contornos?.find(cx => cx.nombre === name);
+                    if (c && c.price) extraPrice += Number(c.price);
+                });
+            }
+
+            return (
+                <div key={names} className="flex flex-col gap-1 mt-1">
+                    <div className="flex items-start gap-2 text-xs text-slate-500">
+                        <span className="font-medium bg-slate-100 px-1.5 rounded text-slate-600">{qty}x</span>
+                        <div className="flex-1 flex justify-between items-center">
+                            <span>{names}</span>
+                            {extraPrice > 0 && (
+                                <span className="font-bold text-orange-600">
+                                    +{formatCurrency(extraPrice * qty, restaurant?.currency)}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        });
     }
 
     const getPaymentIcon = (type) => {
@@ -625,7 +662,7 @@ export default function Buy() {
                                             ¿Ya has comprado antes?
                                         </label>
                                     </div>
-                                    
+
                                     {isReturningCustomer && (
                                         <div className="animate-in slide-in-from-top-1 duration-200 mt-2">
                                             <p className="text-xs text-orange-600 mb-2 font-medium">Ingresa tu correo o teléfono para recuperar tus datos:</p>
@@ -833,7 +870,14 @@ export default function Buy() {
                                                         checked={isSelected}
                                                         onChange={() => toggleContornoForUnit(index, contorno.id)}
                                                     />
-                                                    <span className="text-sm">{contorno.nombre}</span>
+                                                    <div className="flex flex-1 justify-between items-center gap-2">
+                                                        <span className="text-sm">{contorno.nombre}</span>
+                                                        {contorno.price > 0 && (
+                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-orange-200 text-orange-800' : 'bg-slate-100 text-slate-600'}`}>
+                                                                +{formatCurrency(contorno.price, restaurant?.currency)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </label>
                                             )
                                         })}
