@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon, MapPin, Navigation, RefreshCw } from "lucide-react";
+import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon, MapPin, Navigation, RefreshCw, Search, Loader2 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
 import { useParams, useRouter } from "next/navigation";
@@ -20,6 +20,10 @@ export default function Buy() {
 
     const [isDelivery, setIsDelivery] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
+    const [isReturningCustomer, setIsReturningCustomer] = useState(false);
+    const [searchIdentifier, setSearchIdentifier] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+
     const [form, setForm] = useState({
         name: '',
         email: '',
@@ -159,6 +163,31 @@ export default function Buy() {
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
+    }
+
+    const handleSearchCustomer = async () => {
+        if (!searchIdentifier) return;
+        setIsSearching(true);
+        try {
+            const res = await fetch(`/api/clients/search?slug=${params.slug}&identifier=${searchIdentifier}`);
+            const data = await res.json();
+            if (data.status && data.client) {
+                setForm(prev => ({
+                    ...prev,
+                    name: data.client.nombre || prev.name,
+                    email: data.client.email || prev.email,
+                    phone: data.client.telefono || prev.phone
+                }));
+                alert(`¡Bienvenido de nuevo, ${data.client.nombre}! Hemos cargado tus datos.`);
+            } else {
+                alert("No encontramos tus datos. Por favor, completa el formulario.");
+            }
+        } catch (error) {
+            console.error("Error searching customer:", error);
+            alert("Error al buscar tus datos.");
+        } finally {
+            setIsSearching(false);
+        }
     }
 
     const orderList = useAppSelector((state) => state.order.order)
@@ -583,6 +612,47 @@ export default function Buy() {
                             </div>
 
                             <form onSubmit={buy} className="space-y-4">
+                                <div className="p-4 bg-orange-50 rounded-xl border border-orange-100 mb-4 scale-95 origin-top">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <input
+                                            type="checkbox"
+                                            id="returningCustomer"
+                                            checked={isReturningCustomer}
+                                            onChange={(e) => setIsReturningCustomer(e.target.checked)}
+                                            className="w-4 h-4 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
+                                        />
+                                        <label htmlFor="returningCustomer" className="text-sm font-bold text-orange-800 cursor-pointer">
+                                            ¿Ya has comprado antes?
+                                        </label>
+                                    </div>
+                                    
+                                    {isReturningCustomer && (
+                                        <div className="animate-in slide-in-from-top-1 duration-200 mt-2">
+                                            <p className="text-xs text-orange-600 mb-2 font-medium">Ingresa tu correo o teléfono para recuperar tus datos:</p>
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-400" />
+                                                    <input
+                                                        type="text"
+                                                        value={searchIdentifier}
+                                                        onChange={(e) => setSearchIdentifier(e.target.value)}
+                                                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-orange-200 bg-white focus:border-orange-500 outline-none transition-all text-slate-900"
+                                                        placeholder="Email o Teléfono"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSearchCustomer}
+                                                    disabled={isSearching || !searchIdentifier}
+                                                    className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0"
+                                                >
+                                                    {isSearching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Consultar"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nombre Completo</label>
                                     <div className="relative">
