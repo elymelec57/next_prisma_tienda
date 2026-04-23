@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { ProductsData } from '@/libs/ProductsData';
 import Link from 'next/link';
 import { UtensilsCrossed, ChevronRight, LayoutGrid } from 'lucide-react';
+import SucursalSelector from '@/components/SucursalSelector';
 
 export async function generateMetadata({ params }) {
     const { slug } = await params
@@ -16,8 +17,9 @@ export async function generateMetadata({ params }) {
     }
 }
 
-export default async function page({ params }) {
+export default async function page({ params, searchParams }) {
     const { slug, category } = await params
+    const { sucursal } = await searchParams
     const business = await BusinessData(slug)
 
     if (!business) {
@@ -47,6 +49,7 @@ export default async function page({ params }) {
     const products = await ProductsData({ 
         id: business.id, 
         categoryId: categoria.id, 
+        sucursalId: sucursal,
         skip: 0, 
         take: 6 
     })
@@ -67,7 +70,7 @@ export default async function page({ params }) {
             
             <div className='container mx-auto px-4 py-12 mt-20'>
                 {/* Encabezado de la Categoría */}
-                <div className="flex flex-col items-center justify-center text-center mb-12">
+                <div className="flex flex-col items-center justify-center text-center mb-8">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-sm font-bold mb-4">
                         <UtensilsCrossed className="h-4 w-4" />
                         <span>Categoría</span>
@@ -76,6 +79,10 @@ export default async function page({ params }) {
                         {categoria.nombre}
                     </h1>
                     <div className="h-1 w-20 bg-orange-500 rounded-full mt-4"></div>
+                </div>
+
+                <div className="flex justify-center mb-12">
+                    <SucursalSelector sucursales={business.sucursales} />
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8">
@@ -90,7 +97,7 @@ export default async function page({ params }) {
                                 {categoriesList.map((cat) => (
                                     <Link
                                         key={cat.id}
-                                        href={`/${slug}/${cat.nombre.toLowerCase().replace(/\s+/g, '-')}`}
+                                        href={`/${slug}/${cat.nombre.toLowerCase().replace(/\s+/g, '-')}${sucursal ? `?sucursal=${sucursal}` : ''}`}
                                         className={`flex items-center justify-between group px-3 py-2.5 rounded-xl transition-all duration-200 ${
                                             cat.id === categoria.id 
                                             ? 'bg-orange-600 text-white' 
@@ -126,7 +133,7 @@ export default async function page({ params }) {
                                 <img src="/images/empty-menu.svg" alt="Sin platos" className="w-32 h-32 mx-auto mb-4 opacity-20" />
                                 <p className="text-slate-500 text-lg">No se encontraron productos en esta categoría.</p>
                                 <Link 
-                                    href={`/${slug}`}
+                                    href={`/${slug}${sucursal ? `?sucursal=${sucursal}` : ''}`}
                                     className="mt-6 inline-flex items-center text-orange-600 font-bold hover:underline"
                                 >
                                     Volver al menú completo

@@ -5,6 +5,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const categoryId = searchParams.get('categoryId');
+    const sucursalId = searchParams.get('sucursalId');
     const skip = parseInt(searchParams.get('skip') || '0');
     const take = parseInt(searchParams.get('take') || '6');
 
@@ -13,7 +14,7 @@ export async function GET(request) {
     }
 
     try {
-        const products = await ProductsData({ id, categoryId, skip, take });
+        const products = await ProductsData({ id, categoryId, sucursalId, skip, take });
         return NextResponse.json(products);
     } catch (error) {
         console.error('Error fetching products:', error);

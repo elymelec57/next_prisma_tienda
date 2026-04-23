@@ -64,6 +64,7 @@ export async function POST(request) {
                 estado: "Pendiente",
                 cliente: { connect: { id: cliente.id } },
                 restaurant: { connect: { id: restaurant.id } },
+                sucursalId: form.sucursalId ? parseInt(form.sucursalId) : null,
                 direccion: form.direccion || null,
                 distancia: form.distancia ? parseFloat(form.distancia) : null,
                 deliveryFee: form.deliveryFee ? parseFloat(form.deliveryFee) : null,

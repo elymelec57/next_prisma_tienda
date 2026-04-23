@@ -82,6 +82,7 @@ model Restaurant {
   payments               Payment[]
   employees              Empleado[]
   mesas                  Mesa[]
+  sucursales             Sucursal[]
   ingredienteRestaurante IngredienteRestaurante[]
   subscription           Subscription?
   planPayments           PlanPayment[]
@@ -171,6 +172,7 @@ model Plato {
   categoria    Categoria    @relation(fields: [categoriaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   restaurantId Int
   restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  sucursales   Sucursal[]
   itemsPedido  ItemPedido[] // Relación: Un plato puede estar en muchos items de pedido
   contornos    Contornos[]
   // Campo para almacenar el ID de la Imagen Principal.
@@ -246,6 +248,8 @@ model Mesa {
   reservas     Reserva[] // Relación: Una mesa puede tener muchas reservas
   restaurantId Int // El pedido tambien pertenece a un restaurante
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  sucursalId   Int?
+  sucursal     Sucursal?  @relation(fields: [sucursalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Cliente {
@@ -274,6 +278,8 @@ model Pedido {
   cliente       Cliente?     @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   restaurantId  Int? // El pedido tambien pertenece a un restaurante
   restaurant    Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  sucursalId    Int?
+  sucursal      Sucursal?    @relation(fields: [sucursalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   mesaId        Int?
   //mesa         Mesa?        @relation(fields: [mesaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   empleadoId    Int? // Quién tomó el pedido (opcional)
@@ -410,6 +416,24 @@ model Empleado {
 
   restaurantId Int
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  sucursalId Int?
+  sucursal   Sucursal? @relation(fields: [sucursalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Sucursal {
+  id           Int        @id @default(autoincrement())
+  nombre       String
+  direccion    String
+  telefono     String?
+  lat          Float?
+  lng          Float?
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  platos       Plato[]
+  mesas        Mesa[]
+  pedidos      Pedido[]
+  empleados    Empleado[]
 }
 
 model EmpleadoHorario {

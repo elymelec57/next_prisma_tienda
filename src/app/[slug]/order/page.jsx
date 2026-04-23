@@ -3,7 +3,7 @@
 import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon, MapPin, Navigation, RefreshCw, Search, Loader2 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils/currency";
@@ -12,6 +12,8 @@ export default function Buy() {
     const dispatch = useAppDispatch()
     const params = useParams()
     const router = useRouter()
+    const searchParams = useSearchParams();
+    const sucursalId = searchParams.get('sucursal');
 
     const [restaurant, setRestaurant] = useState(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
@@ -36,7 +38,8 @@ export default function Buy() {
         comprobanteUrl: '',
         direccion: '',
         distancia: 0,
-        deliveryFee: 0
+        deliveryFee: 0,
+        sucursalId: sucursalId || null
     });
 
     useEffect(() => {
@@ -330,7 +333,7 @@ export default function Buy() {
                 dispatch(reset())
                 localStorage.removeItem('order');
                 localStorage.removeItem('count');
-                router.push(`/${params.slug}`)
+                router.push(`/${params.slug}${sucursalId ? `?sucursal=${sucursalId}` : ''}`)
             } else {
                 alert(res.message)
             }
@@ -410,7 +413,7 @@ export default function Buy() {
         <div className="min-h-screen bg-slate-50 py-10 px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
                 <div className="mb-8 flex items-center justify-between">
-                    <Link href={`/${params.slug}`} className="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-medium">
+                    <Link href={`/${params.slug}${sucursalId ? `?sucursal=${sucursalId}` : ''}`} className="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-medium">
                         <ArrowLeft className="h-5 w-5" />
                         Volver al menú
                     </Link>
