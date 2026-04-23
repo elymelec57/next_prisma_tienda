@@ -1,31 +1,40 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '../../../../libs/prisma.js'
+import { NextResponse } from 'next/server';
+import { ContornoRepository } from '@/repositories/ContornoRepository';
+import { ContornoService } from '@/services/ContornoService';
+import { authorizeRequest } from '@/libs/auth';
 
-export async function GET () {
+const contornoRepository = new ContornoRepository();
+const contornoService = new ContornoService(contornoRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
+
+export async function GET(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const contornos = await prisma.contornos.findMany()
-    return NextResponse.json(contornos)
+    const contornos = await contornoService.getAllContornos();
+    return NextResponse.json(contornos);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function POST (request) {
+export async function POST(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const { nombre, price, restaurantId } = await request.json()
-    const newContorno = await prisma.contornos.create({
-      data: {
-        nombre,
-        price,
-        restaurant: {
-          connect: {
-            id: restaurantId
-          }
-        }
-      }
-    })
-    return NextResponse.json(newContorno)
+    const data = await request.json();
+    const newContorno = await contornoService.createContorno(data);
+    return NextResponse.json(newContorno);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

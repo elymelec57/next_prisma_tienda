@@ -1,42 +1,53 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '../../../../libs/prisma.js'
+import { NextResponse } from 'next/server';
+import { CategoriaRepository } from '@/repositories/CategoriaRepository';
+import { CategoriaService } from '@/services/CategoriaService';
+import { authorizeRequest } from '@/libs/auth';
 
-export async function GET () {
-  try {
-    const categorias = await prisma.categoria.findMany()
-    return NextResponse.json({status: true, categorias})
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+const categoriaRepository = new CategoriaRepository();
+const categoriaService = new CategoriaService(categoriaRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
 }
 
-export async function POST (request) {
-  try {
-    const data = await request.json()
-    const newCategoria = await prisma.categoria.create({
-      data: {
-        nombre: data.name
-      }
-    })
-    return NextResponse.json({status: true})
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+export async function GET(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
+    try {
+        const categorias = await categoriaService.getAllCategorias();
+        return NextResponse.json({ status: true, categorias });
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 }
 
-export async function PUT (request) {
-  try {
-    const data = await request.json()
-    const updatedCategoria = await prisma.categoria.update({
-      where: {
-        id: data.id
-      },
-      data: {
-        nombre: data.name
-      }
-    })
-    return NextResponse.json({status: true})
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+export async function POST(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
+    try {
+        const data = await request.json();
+        await categoriaService.createCategoria(data);
+        return NextResponse.json({ status: true });
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function PUT(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
+    try {
+        const data = await request.json();
+        await categoriaService.updateCategoria(data.id, data);
+        return NextResponse.json({ status: true });
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 }

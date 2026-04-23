@@ -1,31 +1,44 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '../../../../../libs/prisma.js'
+import { NextResponse } from 'next/server';
+import { CategoriaRestaurantRepository } from '@/repositories/CategoriaRestaurantRepository';
+import { CategoriaRestaurantService } from '@/services/CategoriaRestaurantService';
+import { authorizeRequest } from '@/libs/auth';
 
-export async function GET (request, { params }) {
-  try {
-    const categoria = await prisma.categoriaRestaurant.findUnique({
-      where: {
-        id: Number(params.id)
-      }
-    })
-    if (!categoria) {
-      return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 })
+const categoriaRestaurantRepository = new CategoriaRestaurantRepository();
+const categoriaRestaurantService = new CategoriaRestaurantService(categoriaRestaurantRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
     }
-    return NextResponse.json(categoria)
+    return true;
+}
+
+export async function GET(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
+  try {
+    const { id } = await params;
+    const categoria = await categoriaRestaurantService.getCategoriaById(id);
+    if (!categoria) {
+      return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+    }
+    return NextResponse.json(categoria);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function DELETE (request, { params }) {
+export async function DELETE(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const deletedCategoria = await prisma.categoriaRestaurant.delete({
-      where: {
-        id: Number(params.id)
-      }
-    })
-    return NextResponse.json(deletedCategoria)
+    const { id } = await params;
+    const deletedCategoria = await categoriaRestaurantService.deleteCategoria(id);
+    return NextResponse.json(deletedCategoria);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

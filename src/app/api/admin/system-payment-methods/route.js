@@ -1,24 +1,25 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/libs/prisma';
+import { SystemPaymentMethodRepository } from '@/repositories/SystemPaymentMethodRepository';
+import { SystemPaymentMethodService } from '@/services/SystemPaymentMethodService';
 import { authorizeRequest } from '@/libs/auth';
 
+const systemPaymentMethodRepository = new SystemPaymentMethodRepository();
+const systemPaymentMethodService = new SystemPaymentMethodService(systemPaymentMethodRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
+
 export async function GET(request) {
-    // const user = await authorizeRequest(request);
-
-    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    // }
-
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        const paymentMethods = await prisma.paymentMethod.findMany({
-            // where: {
-            //     restaurantId: null,
-            // },
-            // orderBy: {
-            //     createdAt: 'desc',
-            // },
-        });
-
+        const paymentMethods = await systemPaymentMethodService.getAllPaymentMethods();
         const paymentTypes = ['PAGO_MOVIL', 'TRANSFERENCIA', 'ZELLE', 'EFECTIVO', 'ZINLI', 'PAYPAL'];
 
         return NextResponse.json({
@@ -32,20 +33,14 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-    // const user = await authorizeRequest(request);
-
-    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    // }
-
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
         const data = await request.json();
-
-        const newPaymentMethod = await prisma.paymentMethod.create({
-            data: {
-                ...data,
-                restaurantId: null, // Ensure it's a system-wide method
-            },
+        const newPaymentMethod = await systemPaymentMethodService.createPaymentMethod({
+            ...data,
+            restaurantId: null
         });
 
         return NextResponse.json({ status: true, message: "System payment method created", data: newPaymentMethod });

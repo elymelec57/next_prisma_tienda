@@ -1,80 +1,53 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '../../../../libs/prisma.js'
-import slugify from 'slugify';
+import { NextResponse } from 'next/server';
+import { RestaurantRepository } from '@/repositories/RestaurantRepository';
+import { RestaurantService } from '@/services/RestaurantService';
+import { authorizeRequest } from '@/libs/auth';
 
-export async function GET () {
+const restaurantRepository = new RestaurantRepository();
+const restaurantService = new RestaurantService(restaurantRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
+
+export async function GET(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const restaurantes = await prisma.restaurant.findMany()
-    return NextResponse.json({status: true, restaurantes})
+    const restaurantes = await restaurantService.getAllRestaurants();
+    return NextResponse.json({ status: true, restaurantes });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function POST (request) {
+export async function POST(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const { slug, name, slogan, phone, direcction, userId, categoriaRestaurant, paymentMethods } = await request.json()
-    const newRestaurante = await prisma.restaurant.create({
-      data: {
-        slug,
-        name,
-        slogan,
-        phone,
-        direcction,
-        user: {
-          connect: {
-            id: userId
-          }
-        },
-        categoriaRestaurant: {
-          connect: categoriaRestaurant.map(id => ({ id }))
-        },
-        paymentMethods: {
-          connect: paymentMethods.map(id => ({ id }))
-        }
-      }
-    })
-    return NextResponse.json({status: true})
+    const data = await request.json();
+    await restaurantService.createRestaurant(data);
+    return NextResponse.json({ status: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function PUT (request, { params }) {
+export async function PUT(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const { name, slogan, phone, direcction, id } = await request.json()
-
-    const slug = slugify(name, {
-            lower: true,      // Convierte a minúsculas
-            strict: true,     // Elimina caracteres no válidos
-            remove: /[*+~.()'"!:@]/g // Elimina caracteres especiales
-        });
-
-    const updatedRestaurante = await prisma.restaurant.update({
-      where: {
-        id: id
-      },
-      data: {
-        slug,
-        name,
-        slogan,
-        phone,
-        direcction,
-        // user: {
-        //   connect: {
-        //     id: userId
-        //   }
-        // },
-        // categoriaRestaurant: {
-        //   set: categoriaRestaurant.map(id => ({ id }))
-        // },
-        // paymentMethods: {
-        //   set: paymentMethods.map(id => ({ id }))
-        // }
-      }
-    })
-    return NextResponse.json({status: true})
+    const data = await request.json();
+    await restaurantService.updateRestaurant(data.id, data);
+    return NextResponse.json({ status: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

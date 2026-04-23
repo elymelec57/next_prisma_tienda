@@ -1,48 +1,40 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/libs/prisma';
+import { PlanRepository } from '@/repositories/PlanRepository';
+import { PlanService } from '@/services/PlanService';
 import { authorizeRequest } from '@/libs/auth';
 
-export async function PUT(request, segmentData) {
-    const params = await segmentData.params
-    // const user = await authorizeRequest(request);
-    // const { id } = params;
+const planRepository = new PlanRepository();
+const planService = new PlanService(planRepository);
 
-    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    // }
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
+
+export async function PUT(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        const { name, price, productLimit, description } = await request.json();
-
-        const plan = await prisma.plan.update({
-            where: { id: Number(params.id) },
-            data: {
-                name,
-                price: Number(price),
-                productLimit: Number(productLimit),
-                description,
-            },
-        });
-
+        const { id } = await params;
+        const data = await request.json();
+        const plan = await planService.updatePlan(id, data);
         return NextResponse.json({ status: true, plan });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message }, { status: 500 });
     }
 }
 
-export async function DELETE(request, segmentData) {
-    const params = await segmentData.params
-    // const user = await authorizeRequest(request);
-    // const { id } = params;
-
-    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    // }
-
+export async function DELETE(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        await prisma.plan.delete({
-            where: { id: Number(params.id) },
-        });
-
+        const { id } = await params;
+        await planService.deletePlan(id);
         return NextResponse.json({ status: true, message: 'Plan eliminado' });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message }, { status: 500 });

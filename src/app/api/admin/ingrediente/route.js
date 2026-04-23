@@ -1,57 +1,53 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '../../../../libs/prisma.js'
+import { NextResponse } from 'next/server';
+import { IngredienteRepository } from '@/repositories/IngredienteRepository';
+import { IngredienteService } from '@/services/IngredienteService';
+import { authorizeRequest } from '@/libs/auth';
 
-export async function GET () {
+const ingredienteRepository = new IngredienteRepository();
+const ingredienteService = new IngredienteService(ingredienteRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
+
+export async function GET(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const ingredientes = await prisma.ingrediente.findMany({
-      include:{
-        categoriaIngrediente: true
-      }
-    })
-    return NextResponse.json({status: true, ingredientes})
+    const ingredientes = await ingredienteService.getAllIngredientes();
+    return NextResponse.json({ status: true, ingredientes });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function POST (request) {
+export async function POST(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const { nombre, categoriaIngredienteId } = await request.json()
-    const newIngrediente = await prisma.ingrediente.create({
-      data: {
-        nombre,
-        categoriaIngrediente: {
-          connect: {
-            id: categoriaIngredienteId
-          }
-        }
-      }
-    })
-    return NextResponse.json({status: true})
+    const data = await request.json();
+    await ingredienteService.createIngrediente(data);
+    return NextResponse.json({ status: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function PUT (request) {
+export async function PUT(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const { nombre, categoriaIngredienteId, id } = await request.json()
-    
-    const updatedIngrediente = await prisma.ingrediente.update({
-      where: {
-        id: id
-      },
-      data: {
-        nombre,
-        categoriaIngrediente: {
-          connect: {
-            id: categoriaIngredienteId
-          }
-        }
-      }
-    })
-    return NextResponse.json({status: true})
+    const data = await request.json();
+    await ingredienteService.updateIngrediente(data.id, data);
+    return NextResponse.json({ status: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -1,22 +1,26 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/libs/prisma';
+import { SystemPaymentMethodRepository } from '@/repositories/SystemPaymentMethodRepository';
+import { SystemPaymentMethodService } from '@/services/SystemPaymentMethodService';
 import { authorizeRequest } from '@/libs/auth';
 
+const systemPaymentMethodRepository = new SystemPaymentMethodRepository();
+const systemPaymentMethodService = new SystemPaymentMethodService(systemPaymentMethodRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
+
 export async function GET(request, { params }) {
-    // const user = await authorizeRequest(request);
-    // const { id } = params;
-
-    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    // }
-
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        const paymentMethod = await prisma.paymentMethod.findFirst({
-            where: {
-                id,
-                restaurantId: null,
-            },
-        });
+        const { id } = await params;
+        const paymentMethod = await systemPaymentMethodService.getPaymentMethodById(id);
 
         if (!paymentMethod) {
             return NextResponse.json({ status: false, message: "System payment method not found" }, { status: 404 });
@@ -28,32 +32,22 @@ export async function GET(request, { params }) {
     }
 }
 
-export async function PUT(request, segmentData) {
-    const { id } = await segmentData.params
-    // const user = await authorizeRequest(request);
-    // const { id } = params;
-
-    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    // }
-
+export async function PUT(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
+        const { id } = await params;
         const data = await request.json();
-        // Ensure we only update a system method
-        const existing = await prisma.paymentMethod.findFirst({
-            where: { id }
-        });
+        const existing = await systemPaymentMethodService.getPaymentMethodById(id);
 
         if (!existing) {
             return NextResponse.json({ status: false, message: "System payment method not found" }, { status: 404 });
         }
 
-        const updated = await prisma.paymentMethod.update({
-            where: { id },
-            data: {
-                ...data,
-                restaurantId: null, // Force keep as system method
-            },
+        const updated = await systemPaymentMethodService.updatePaymentMethod(id, {
+            ...data,
+            restaurantId: null
         });
 
         return NextResponse.json({ status: true, message: "Updated successfully", data: updated });
@@ -62,28 +56,19 @@ export async function PUT(request, segmentData) {
     }
 }
 
-export async function DELETE(request, segmentData) {
-    const { id } = await segmentData.params
-    // const user = await authorizeRequest(request);
-    // const { id } = params;
-
-    // if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-    //     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    // }
-
+export async function DELETE(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        // Ensure we only delete a system method
-        const existing = await prisma.paymentMethod.findFirst({
-            where: { id }
-        });
+        const { id } = await params;
+        const existing = await systemPaymentMethodService.getPaymentMethodById(id);
 
         if (!existing) {
             return NextResponse.json({ status: false, message: "System payment method not found" }, { status: 404 });
         }
 
-        await prisma.paymentMethod.delete({
-            where: { id },
-        });
+        await systemPaymentMethodService.deletePaymentMethod(id);
 
         return NextResponse.json({ status: true, message: "Deleted successfully" });
     } catch (error) {

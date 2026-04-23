@@ -1,73 +1,31 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/libs/prisma";
+import { NextResponse } from 'next/server';
+import { PlanPaymentRepository } from '@/repositories/PlanPaymentRepository';
+import { PlanPaymentService } from '@/services/PlanPaymentService';
+import { authorizeRequest } from '@/libs/auth';
 
-export async function POST(request, segmentData) {
+const planPaymentRepository = new PlanPaymentRepository();
+const planPaymentService = new PlanPaymentService(planPaymentRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
+
+export async function POST(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        const { id } = await segmentData.params;
+        const { id } = await params;
         const { body } = await request.json();
         const { action } = body;
 
-        if (!action || !["CONFIRMED", "REJECTED"].includes(action)) {
-            return NextResponse.json({ status: false, message: "Invalid action" }, { status: 400 });
-        }
-
-        const paymentId = parseInt(id);
-
-        if (isNaN(paymentId)) {
-            return NextResponse.json({ status: false, message: "Invalid payment ID" }, { status: 400 });
-        }
-
-        const payment = await prisma.planPayment.findUnique({
-            where: { id: paymentId },
-            include: { plan: true }
-        });
-
-        if (!payment) {
-            return NextResponse.json({ status: false, message: "Payment not found" }, { status: 404 });
-        }
-
-        if (action === "CONFIRMED") {
-            // Update payment status
-            await prisma.planPayment.update({
-                where: { id: paymentId },
-                data: { status: "CONFIRMED" }
-            });
-
-            // Calculate end date (e.g., 30 days from now)
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + 30);
-
-            // Update or create subscription
-            await prisma.subscription.upsert({
-                where: { restaurantId: payment.restaurantId },
-                update: {
-                    planId: payment.planId,
-                    startDate: new Date(),
-                    endDate: endDate,
-                    status: "active"
-                },
-                create: {
-                    restaurantId: payment.restaurantId,
-                    planId: payment.planId,
-                    startDate: new Date(),
-                    endDate: endDate,
-                    status: "active"
-                }
-            });
-
-            return NextResponse.json({ status: true, message: "Payment accepted and subscription updated" });
-        } else if (action === "REJECTED") {
-            // Update payment status
-            await prisma.planPayment.update({
-                where: { id: paymentId },
-                data: { status: "REJECTED" }
-            });
-
-            return NextResponse.json({ status: true, message: "Payment denied" });
-        }
-
+        const result = await planPaymentService.processPaymentAction(id, action);
+        return NextResponse.json({ status: true, ...result });
     } catch (error) {
-        console.error("Error updating payment status:", error);
-        return NextResponse.json({ status: false, message: "Error updating payment status" }, { status: 500 });
+        return NextResponse.json({ status: false, message: error.message }, { status: 500 });
     }
 }

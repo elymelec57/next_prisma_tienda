@@ -1,54 +1,58 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '../../../../../libs/prisma.js'
+import { NextResponse } from 'next/server';
+import { ContornoRepository } from '@/repositories/ContornoRepository';
+import { ContornoService } from '@/services/ContornoService';
+import { authorizeRequest } from '@/libs/auth';
 
-export async function GET (request, { params }) {
-  try {
-    const contorno = await prisma.contornos.findUnique({
-      where: {
-        id: Number(params.id)
-      }
-    })
-    if (!contorno) {
-      return NextResponse.json({ error: 'Contorno no encontrado' }, { status: 404 })
+const contornoRepository = new ContornoRepository();
+const contornoService = new ContornoService(contornoRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
     }
-    return NextResponse.json(contorno)
+    return true;
+}
+
+export async function GET(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
+  try {
+    const { id } = await params;
+    const contorno = await contornoService.getContornoById(id);
+    if (!contorno) {
+      return NextResponse.json({ error: 'Contorno no encontrado' }, { status: 404 });
+    }
+    return NextResponse.json(contorno);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function PUT (request, { params }) {
+export async function PUT(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const { nombre, price, restaurantId } = await request.json()
-    const updatedContorno = await prisma.contornos.update({
-      where: {
-        id: Number(params.id)
-      },
-      data: {
-        nombre,
-        price,
-        restaurant: {
-          connect: {
-            id: restaurantId
-          }
-        }
-      }
-    })
-    return NextResponse.json(updatedContorno)
+    const { id } = await params;
+    const data = await request.json();
+    const updatedContorno = await contornoService.updateContorno(id, data);
+    return NextResponse.json(updatedContorno);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function DELETE (request, { params }) {
+export async function DELETE(request, { params }) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
   try {
-    const deletedContorno = await prisma.contornos.delete({
-      where: {
-        id: Number(params.id)
-      }
-    })
-    return NextResponse.json(deletedContorno)
+    const { id } = await params;
+    const deletedContorno = await contornoService.deleteContorno(id);
+    return NextResponse.json(deletedContorno);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

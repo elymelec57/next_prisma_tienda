@@ -1,21 +1,27 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/libs/prisma";
+import { NextResponse } from 'next/server';
+import { SubscriptionRepository } from '@/repositories/SubscriptionRepository';
+import { SubscriptionService } from '@/services/SubscriptionService';
+import { authorizeRequest } from '@/libs/auth';
+
+const subscriptionRepository = new SubscriptionRepository();
+const subscriptionService = new SubscriptionService(subscriptionRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
 
 export async function GET(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        const subscriptions = await prisma.planPayment.findMany({
-            include: {
-                restaurant: {
-                    include: {
-                        user: true
-                    }
-                },
-                plan: true
-            }
-        });
+        const subscriptions = await subscriptionService.getAllSubscriptions();
         return NextResponse.json({ status: true, subscriptions });
     } catch (error) {
-        console.error("Error fetching subscriptions:", error);
-        return NextResponse.json({ status: false, message: "Error fetching subscriptions" }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

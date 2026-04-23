@@ -1,40 +1,25 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/libs/prisma';
+import { PlanPaymentRepository } from '@/repositories/PlanPaymentRepository';
+import { PlanPaymentService } from '@/services/PlanPaymentService';
 import { authorizeRequest } from '@/libs/auth';
 
-export async function GET(request) {
-    const user = await authorizeRequest(request);
+const planPaymentRepository = new PlanPaymentRepository();
+const planPaymentService = new PlanPaymentService(planPaymentRepository);
 
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
     if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
+
+export async function GET(request) {
+    if (!await checkAdmin(request)) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
     }
-
     try {
-        const payments = await prisma.planPayment.findMany({
-            include: {
-                restaurant: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true,
-                            }
-                        },
-                        subscription: {
-                            include: {
-                                plan: true
-                            }
-                        }
-                    }
-                },
-                plan: true,
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
-
+        const payments = await planPaymentService.getAllPayments();
         return NextResponse.json({ status: true, data: payments });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message }, { status: 500 });

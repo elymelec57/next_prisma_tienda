@@ -28,9 +28,38 @@ export class UserRepository {
                 name: data.name,
                 password: data.password,
                 roles: {
-                    connect: { id: 2 } // As per current register logic
+                    connect: { id: data.roleId || 2 }
                 },
             },
+        });
+    }
+
+    async findAll() {
+        return await prisma.user.findMany({
+            where: {
+                roles: {
+                    some: { name: 'User' }
+                }
+            },
+        });
+    }
+
+    async findById(id) {
+        return await prisma.user.findUnique({
+            where: { id: Number(id) }
+        });
+    }
+
+    async update(id, data) {
+        return await prisma.user.update({
+            where: { id: Number(id) },
+            data: data
+        });
+    }
+
+    async delete(id) {
+        return await prisma.user.delete({
+            where: { id: Number(id) }
         });
     }
 }

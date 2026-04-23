@@ -1,77 +1,53 @@
-import { NextResponse } from "next/server"
-import { prisma } from '@/libs/prisma';
-import bcrypt from 'bcryptjs';
+import { NextResponse } from "next/server";
+import { UserRepository } from '@/repositories/UserRepository';
+import { UserService } from '@/services/UserService';
+import { authorizeRequest } from '@/libs/auth';
+
+const userRepository = new UserRepository();
+const userService = new UserService(userRepository);
+
+async function checkAdmin(request) {
+    const user = await authorizeRequest(request);
+    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+        return false;
+    }
+    return true;
+}
 
 export async function GET(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        const users = await prisma.user.findMany({
-            where:{
-                roles:{
-                    some: { name: 'User' }
-                }
-            },
-        });
-        return NextResponse.json({status: true, users })        
+        const users = await userService.getAllUsers();
+        return NextResponse.json({ status: true, users });
     } catch (error) {
-        return NextResponse.json({ status: false , message: error})
+        return NextResponse.json({ status: false, message: error.message });
     }
 }
 
-export async function POST(request){
-    const data = await request.json()
+export async function POST(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(data.password, salt);
-
-        const users = await prisma.user.create({
-            data: {
-                email: data.email,
-                name: data.name,
-                password: hash,
-                roles: {
-                    connect: {id: 2} //roles.map((role) => ({ userId: role.id })),
-                },
-            },
-        });
-        return NextResponse.json({status: true, users }) 
+        const data = await request.json();
+        const users = await userService.createUser(data);
+        return NextResponse.json({ status: true, users });
     } catch (error) {
-        return NextResponse.json({ status: false , message: error})
+        return NextResponse.json({ status: false, message: error.message });
     }
 }
 
-export async function PUT(request){
-    const data = await request.json()
-    
+export async function PUT(request) {
+    if (!await checkAdmin(request)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
     try {
-
-        if(data.password !== undefined){
-            const salt = bcrypt.genSaltSync(10);
-            const hash = bcrypt.hashSync(data.password, salt);
-
-            const user = await prisma.user.update({
-                where:{
-                    id: data.id
-                },
-                data:{
-                    email: data.email,
-                    name: data.name,
-                    password: hash,
-                }
-            })  
-        }else{
-            const user = await prisma.user.update({
-                where:{
-                    id: data.id
-                },
-                data:{
-                    email: data.email,
-                    name: data.name,
-                }
-            })
-        }   
-
-        return NextResponse.json({status: true }) 
+        const data = await request.json();
+        await userService.updateUser(data.id, data);
+        return NextResponse.json({ status: true });
     } catch (error) {
-        return NextResponse.json({ status: false , message: error})
+        return NextResponse.json({ status: false, message: error.message });
     }
 }
