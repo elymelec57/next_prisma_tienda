@@ -7,17 +7,17 @@ const categoriaRestaurantRepository = new CategoriaRestaurantRepository();
 const categoriaRestaurantService = new CategoriaRestaurantService(categoriaRestaurantRepository);
 
 async function checkAdmin(request) {
-    const user = await authorizeRequest(request);
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
-        return false;
-    }
-    return true;
+  const user = await authorizeRequest(request);
+  if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    return false;
+  }
+  return true;
 }
 
 export async function GET(request) {
-    if (!await checkAdmin(request)) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    }
+  // if (!await checkAdmin(request)) {
+  //   return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+  // }
   try {
     const categorias = await categoriaRestaurantService.getAllCategorias();
     return NextResponse.json({ status: true, categorias });
@@ -27,9 +27,9 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-    if (!await checkAdmin(request)) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    }
+  if (!await checkAdmin(request)) {
+    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+  }
   try {
     const data = await request.json();
     await categoriaRestaurantService.createCategoria(data);
@@ -40,9 +40,9 @@ export async function POST(request) {
 }
 
 export async function PUT(request) {
-    if (!await checkAdmin(request)) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-    }
+  if (!await checkAdmin(request)) {
+    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+  }
   try {
     const data = await request.json();
     await categoriaRestaurantService.updateCategoria(data.id, data);

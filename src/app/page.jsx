@@ -1,28 +1,25 @@
 "use client"
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
 import { Utensils, Search, ArrowRight, Star, ChefHat, Clock } from 'lucide-react';
 import RestaurantList from '@/components/RestaurantList';
 
 export default function LandingPage() {
-  const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
 
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const res = await fetch('/api/admin/categoria-restaurant');
-        const data = await res.json();
-        if (data.status) {
-          setCategories(data.categorias);
-        }
-      } catch (error) {
-        console.error("Error fetching categories:", error);
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/categoria-restaurant');
+      const data = await res.json();
+      if (data.status) {
+        return data.categorias;
       }
+      throw new Error("Error fetching categories");
     }
-    fetchCategories();
-  }, []);
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-orange-100 selection:text-orange-900">
