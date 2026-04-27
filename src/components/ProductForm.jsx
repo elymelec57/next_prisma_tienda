@@ -18,6 +18,7 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
 
     // States
     const [selectedContornos, setSelectedContornos] = useState([]);
+    const [selectedSucursales, setSelectedSucursales] = useState([]);
     const userId = useAppSelector((state) => state.auth.auth.id);
 
     const [image, setImage] = useState({
@@ -90,6 +91,9 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
             if (productData.contornos) {
                 setSelectedContornos(productData.contornos.map(c => c.id.toString()));
             }
+            if (productData.sucursales) {
+                setSelectedSucursales(productData.sucursales.map(s => s.id.toString()));
+            }
         }
     }, [productData, setValue]);
 
@@ -101,6 +105,16 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
             return res.json();
         },
         enabled: !!userId,
+    });
+
+    const { data: sucursales = [] } = useQuery({
+        queryKey: ['sucursales', businessInfo?.id],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/business/sucursales?restaurantId=${businessInfo.id}`);
+            const data = await res.json();
+            return data.data || [];
+        },
+        enabled: !!businessInfo?.id,
     });
 
     // Handlers
@@ -122,7 +136,7 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
                 const update = await fetch(`/api/user/product/${productId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos } })
+                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: selectedSucursales } })
                 });
 
                 const platoUpdate = await update.json()
@@ -140,7 +154,7 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
                 const res = await fetch(`/api/user/product/new`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos }, user: userId })
+                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: selectedSucursales }, user: userId })
                 });
 
                 const plato = await res.json();
@@ -278,6 +292,33 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
                         {contornos.length === 0 && <p className="text-sm text-gray-500 col-span-2">No hay contornos disponibles.</p>}
                     </div>
                 </div>
+
+                {sucursales.length > 0 && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Disponibilidad en Sucursales</label>
+                        <div className="grid grid-cols-2 gap-3 p-3 border border-gray-100 rounded-md max-h-40 overflow-y-auto dark:border-gray-800">
+                            {sucursales.map((sucursal) => (
+                                <div key={sucursal.id} className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        id={`s-${sucursal.id}`}
+                                        checked={selectedSucursales.includes(sucursal.id.toString())}
+                                        onChange={(e) => {
+                                            const sid = sucursal.id.toString();
+                                            if (e.target.checked) setSelectedSucursales([...selectedSucursales, sid]);
+                                            else setSelectedSucursales(selectedSucursales.filter(s => s !== sid));
+                                        }}
+                                        className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                                    />
+                                    <label htmlFor={`s-${sucursal.id}`} className="text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
+                                        {sucursal.nombre}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Si no seleccionas ninguna, el producto sólo estará disponible en el restaurante principal.</p>
+                    </div>
+                )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">

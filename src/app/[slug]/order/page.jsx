@@ -16,6 +16,7 @@ export default function Buy() {
     const sucursalId = searchParams.get('sucursal');
 
     const [restaurant, setRestaurant] = useState(null);
+    const [sucursal, setSucursal] = useState(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [comprobanteFile, setComprobanteFile] = useState(null);
@@ -52,6 +53,10 @@ export default function Buy() {
             const data = await res.json();
             if (data.status) {
                 setRestaurant(data.restaurant);
+                if (sucursalId && data.restaurant.sucursales) {
+                    const foundSucursal = data.restaurant.sucursales.find(s => s.id === Number(sucursalId));
+                    if (foundSucursal) setSucursal(foundSucursal);
+                }
             }
         } catch (error) {
             console.error("Error fetching restaurant:", error);
@@ -99,13 +104,14 @@ export default function Buy() {
     }
 
     const calculateDeliveryFee = (distance) => {
-        if (!restaurant) return 0;
+        const config = sucursal || restaurant;
+        if (!config) return 0;
 
         const dist = parseFloat(distance);
-        if (restaurant.deliveryFreeRange && dist <= restaurant.deliveryFreeRange) return 0;
-        if (restaurant.deliveryShortRange && dist <= restaurant.deliveryShortRange) return restaurant.deliveryShortPrice || 0;
-        if (restaurant.deliveryMediumRange && dist <= restaurant.deliveryMediumRange) return restaurant.deliveryMediumPrice || 0;
-        if (restaurant.deliveryLongRange && dist > restaurant.deliveryMediumRange) return restaurant.deliveryLongPrice || 0;
+        if (config.deliveryFreeRange && dist <= config.deliveryFreeRange) return 0;
+        if (config.deliveryShortRange && dist <= config.deliveryShortRange) return config.deliveryShortPrice || 0;
+        if (config.deliveryMediumRange && dist <= config.deliveryMediumRange) return config.deliveryMediumPrice || 0;
+        if (config.deliveryLongRange && dist > config.deliveryMediumRange) return config.deliveryLongPrice || 0;
 
         return 0;
     }
@@ -124,8 +130,9 @@ export default function Buy() {
                 // Calculate distance if restaurant coordinate is available
                 let distance = 0;
                 let fee = 0;
-                if (restaurant && restaurant.lat && restaurant.lng) {
-                    distance = calculateDistance(latitude, longitude, restaurant.lat, restaurant.lng);
+                const config = sucursal || restaurant;
+                if (config && config.lat && config.lng) {
+                    distance = calculateDistance(latitude, longitude, config.lat, config.lng);
                     fee = calculateDeliveryFee(distance);
                 }
 

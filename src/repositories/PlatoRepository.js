@@ -11,6 +11,7 @@ export class PlatoRepository {
                 disponible: true,
                 mainImageId: true,
                 categoriaId: true,
+                sucursales: true,
             },
             where: {
                 restaurantId: restaurantId
@@ -24,7 +25,8 @@ export class PlatoRepository {
                 id: Number(id)
             },
             include: {
-                contornos: true
+                contornos: true,
+                sucursales: true
             }
         });
     }
@@ -48,6 +50,9 @@ export class PlatoRepository {
                 },
                 contornos: {
                     connect: data.contornos ? data.contornos.map(id => ({ id: Number(id) })) : []
+                },
+                sucursales: {
+                    connect: data.sucursales ? data.sucursales.map(id => ({ id: Number(id) })) : []
                 }
             },
             include: {
@@ -69,6 +74,9 @@ export class PlatoRepository {
                 categoriaId: data.categoriaId,
                 contornos: {
                     set: data.contornos ? data.contornos.map(id => ({ id: Number(id) })) : []
+                },
+                sucursales: {
+                    set: data.sucursales ? data.sucursales.map(id => ({ id: Number(id) })) : []
                 }
             }
         });

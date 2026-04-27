@@ -11,7 +11,8 @@ export async function GET(request, { params }) {
                 paymentMethods: {
                     where: { isActive: true }
                 },
-                restaurantHours: true
+                restaurantHours: true,
+                sucursales: true
             }
         });
 
