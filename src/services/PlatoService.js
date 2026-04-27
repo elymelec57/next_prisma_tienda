@@ -60,7 +60,8 @@ export class PlatoService {
             precio: Number(form.price),
             restaurantId: rest.id,
             categoriaId: Number(form.categoryId),
-            contornos: form.contornos
+            contornos: form.contornos,
+            sucursales: form.sucursales
         });
 
         if (!plato) {
@@ -76,7 +77,8 @@ export class PlatoService {
             descripcion: form.description,
             precio: Number(form.price),
             categoriaId: Number(form.categoryId),
-            contornos: form.contornos
+            contornos: form.contornos,
+            sucursales: form.sucursales
         });
 
         if (!plato) {

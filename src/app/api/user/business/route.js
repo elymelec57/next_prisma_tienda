@@ -5,6 +5,7 @@ import slugify from 'slugify';
 export async function POST(request) {
 
     const { form, userId } = await request.json()
+    console.log(form, userId)
     const slug = slugify(form.name, {
         lower: true,      // Convierte a minúsculas
         strict: true,     // Elimina caracteres no válidos
@@ -36,9 +37,9 @@ export async function POST(request) {
             deliveryMediumPrice: form.deliveryMediumPrice ? parseFloat(form.deliveryMediumPrice) : null,
             deliveryLongRange: form.deliveryLongRange ? parseFloat(form.deliveryLongRange) : null,
             deliveryLongPrice: form.deliveryLongPrice ? parseFloat(form.deliveryLongPrice) : null,
-            countryId: form.countryId ? Number(form.countryId) : null,
-            stateId: form.stateId ? Number(form.stateId) : null,
-            cityId: form.cityId ? Number(form.cityId) : null,
+            country: form.countryId ? { connect: { id: Number(form.countryId) } } : null,
+            state: form.stateId ? { connect: { id: Number(form.stateId) } } : null,
+            city: form.cityId ? { connect: { id: Number(form.cityId) } } : null,
         },
         include: {
             user: true,

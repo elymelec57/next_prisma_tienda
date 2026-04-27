@@ -59,6 +59,17 @@ async function main() {
     }
   });
 
+  const Newuser = await prisma.user.create({
+    data: {
+      email: 'newuser@gmail.com',
+      name: 'New User',
+      password: hash, // En un caso real, usa bcrypt
+      roles: {
+        connect: [{ id: rolUser.id }]
+      }
+    }
+  });
+
   const admin = await prisma.user.create({
     data: {
       email: 'elymelecc084@gmail.com',

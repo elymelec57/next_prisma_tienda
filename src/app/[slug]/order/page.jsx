@@ -3,7 +3,7 @@
 import { Plus, Minus, Trash2, Edit, ArrowLeft, Check, ShoppingBag, CreditCard, User, Mail, Phone as PhoneIcon, Landmark, Smartphone, Wallet, DollarSign, Camera, Image as ImageIcon, MapPin, Navigation, RefreshCw, Search, Loader2 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { sumarProduct, restarProduct, subCart, reset, updateContornos } from "@/lib/features/cart/orderSlice";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils/currency";
@@ -12,8 +12,11 @@ export default function Buy() {
     const dispatch = useAppDispatch()
     const params = useParams()
     const router = useRouter()
+    const searchParams = useSearchParams();
+    const sucursalId = searchParams.get('sucursal');
 
     const [restaurant, setRestaurant] = useState(null);
+    const [sucursal, setSucursal] = useState(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [comprobanteFile, setComprobanteFile] = useState(null);
@@ -36,7 +39,8 @@ export default function Buy() {
         comprobanteUrl: '',
         direccion: '',
         distancia: 0,
-        deliveryFee: 0
+        deliveryFee: 0,
+        sucursalId: sucursalId || null
     });
 
     useEffect(() => {
@@ -49,6 +53,10 @@ export default function Buy() {
             const data = await res.json();
             if (data.status) {
                 setRestaurant(data.restaurant);
+                if (sucursalId && data.restaurant.sucursales) {
+                    const foundSucursal = data.restaurant.sucursales.find(s => s.id === Number(sucursalId));
+                    if (foundSucursal) setSucursal(foundSucursal);
+                }
             }
         } catch (error) {
             console.error("Error fetching restaurant:", error);
@@ -96,13 +104,14 @@ export default function Buy() {
     }
 
     const calculateDeliveryFee = (distance) => {
-        if (!restaurant) return 0;
+        const config = sucursal || restaurant;
+        if (!config) return 0;
 
         const dist = parseFloat(distance);
-        if (restaurant.deliveryFreeRange && dist <= restaurant.deliveryFreeRange) return 0;
-        if (restaurant.deliveryShortRange && dist <= restaurant.deliveryShortRange) return restaurant.deliveryShortPrice || 0;
-        if (restaurant.deliveryMediumRange && dist <= restaurant.deliveryMediumRange) return restaurant.deliveryMediumPrice || 0;
-        if (restaurant.deliveryLongRange && dist > restaurant.deliveryMediumRange) return restaurant.deliveryLongPrice || 0;
+        if (config.deliveryFreeRange && dist <= config.deliveryFreeRange) return 0;
+        if (config.deliveryShortRange && dist <= config.deliveryShortRange) return config.deliveryShortPrice || 0;
+        if (config.deliveryMediumRange && dist <= config.deliveryMediumRange) return config.deliveryMediumPrice || 0;
+        if (config.deliveryLongRange && dist > config.deliveryMediumRange) return config.deliveryLongPrice || 0;
 
         return 0;
     }
@@ -121,8 +130,9 @@ export default function Buy() {
                 // Calculate distance if restaurant coordinate is available
                 let distance = 0;
                 let fee = 0;
-                if (restaurant && restaurant.lat && restaurant.lng) {
-                    distance = calculateDistance(latitude, longitude, restaurant.lat, restaurant.lng);
+                const config = sucursal || restaurant;
+                if (config && config.lat && config.lng) {
+                    distance = calculateDistance(latitude, longitude, config.lat, config.lng);
                     fee = calculateDeliveryFee(distance);
                 }
 
@@ -330,7 +340,7 @@ export default function Buy() {
                 dispatch(reset())
                 localStorage.removeItem('order');
                 localStorage.removeItem('count');
-                router.push(`/${params.slug}`)
+                router.push(`/${params.slug}${sucursalId ? `?sucursal=${sucursalId}` : ''}`)
             } else {
                 alert(res.message)
             }
@@ -410,7 +420,7 @@ export default function Buy() {
         <div className="min-h-screen bg-slate-50 py-10 px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
                 <div className="mb-8 flex items-center justify-between">
-                    <Link href={`/${params.slug}`} className="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-medium">
+                    <Link href={`/${params.slug}${sucursalId ? `?sucursal=${sucursalId}` : ''}`} className="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-medium">
                         <ArrowLeft className="h-5 w-5" />
                         Volver al menú
                     </Link>

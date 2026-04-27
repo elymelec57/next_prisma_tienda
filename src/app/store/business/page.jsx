@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAppSelector } from "@/lib/hooks";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
-import { Store, Camera, Save, ArrowLeft, ExternalLink, RefreshCw, Clock, CreditCard, Plus, Trash2, Edit2, CheckCircle2, MapPin, Truck } from "lucide-react";
+import { Store, Camera, Save, ArrowLeft, ExternalLink, RefreshCw, Clock, CreditCard, Plus, Trash2, Edit2, CheckCircle2, MapPin, Truck, Building2, Banknote } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const MapPicker = dynamic(() => import("@/components/MapPicker"), {
@@ -82,6 +82,8 @@ export default function Business() {
         }))
     );
 
+    const [selectedSucursalIdForHours, setSelectedSucursalIdForHours] = useState('main');
+
     const [isEditingPayment, setIsEditingPayment] = useState(null);
     const [paymentForm, setPaymentForm] = useState({
         type: 'PAGO_MOVIL',
@@ -94,6 +96,98 @@ export default function Business() {
         email: '',
         isActive: true
     });
+
+    const [isEditingSucursal, setIsEditingSucursal] = useState(null);
+    const [sucursalForm, setSucursalForm] = useState({
+        nombre: '',
+        direccion: '',
+        telefono: '',
+        lat: null,
+        lng: null,
+        deliveryFreeRange: '',
+        deliveryShortRange: '',
+        deliveryShortPrice: '',
+        deliveryMediumRange: '',
+        deliveryMediumPrice: '',
+        deliveryLongRange: '',
+        deliveryLongPrice: ''
+    });
+
+    const [isEditingCaja, setIsEditingCaja] = useState(null);
+    const [cajaForm, setCajaForm] = useState({
+        nombre: '',
+        sucursalId: ''
+    });
+
+    const { data: cajasData } = useQuery({
+        queryKey: ['cajas', form.id],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/business/cajas?restaurantId=${form.id}`);
+            return res.json();
+        },
+        enabled: !!form.id,
+    });
+
+    const cajaMutation = useMutation({
+        mutationFn: async () => {
+            const url = isEditingCaja
+                ? `/api/user/business/cajas/${isEditingCaja}`
+                : '/api/user/business/cajas';
+            const method = isEditingCaja ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    restaurantId: form.id,
+                    ...cajaForm
+                })
+            });
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                toast.success(isEditingCaja ? "Caja actualizada" : "Caja agregada");
+                setCajaForm({ nombre: '', sucursalId: '' });
+                setIsEditingCaja(null);
+                queryClient.invalidateQueries({ queryKey: ['cajas', form.id] });
+            } else {
+                toast.error(data.message);
+            }
+        },
+        onError: () => {
+            toast.error("Error al procesar caja");
+        }
+    });
+
+    const handleCajaSubmit = (e) => {
+        e.preventDefault();
+        if (!form.id) return toast.error("Crea tu negocio primero");
+        cajaMutation.mutate();
+    }
+
+    const deleteCajaMutation = useMutation({
+        mutationFn: async (id) => {
+            const res = await fetch(`/api/user/business/cajas/${id}`, { method: 'DELETE' });
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                toast.success("Caja eliminada");
+                queryClient.invalidateQueries({ queryKey: ['cajas', form.id] });
+            } else {
+                toast.error(data.message);
+            }
+        },
+        onError: () => {
+            toast.error("Error al eliminar caja");
+        }
+    });
+
+    const deleteCaja = (id) => {
+        if (!confirm("¿Eliminar esta caja?")) return;
+        deleteCajaMutation.mutate(id);
+    }
 
     const { data: subscriptionData } = useQuery({
         queryKey: ['subscription', userId],
@@ -177,7 +271,7 @@ export default function Business() {
             return data.categorias || [];
         },
     });
-    
+
     const { data: locationsData } = useQuery({
         queryKey: ['locations'],
         queryFn: async () => {
@@ -219,12 +313,27 @@ export default function Business() {
                 image: ''
             })
 
-            if (rest.restaurantHours && rest.restaurantHours.length > 0) {
-                const sortedHours = [...rest.restaurantHours].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-                setHours(sortedHours);
-            }
         }
     }, [businessData]);
+
+    useEffect(() => {
+        if (businessData?.status && businessData.rest.restaurantHours) {
+            const targetId = selectedSucursalIdForHours === 'main' ? null : Number(selectedSucursalIdForHours);
+            const branchHours = businessData.rest.restaurantHours.filter(h => h.sucursalId === targetId);
+            
+            if (branchHours.length > 0) {
+                const sortedHours = [...branchHours].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+                setHours(sortedHours);
+            } else {
+                setHours(Array.from({ length: 7 }, (_, i) => ({
+                    dayOfWeek: i,
+                    openTime: "08:00",
+                    closeTime: "20:00",
+                    isOpen: true
+                })));
+            }
+        }
+    }, [businessData, selectedSucursalIdForHours]);
 
     const onFileChange = (e) => {
         let file = e.target.files[0];
@@ -321,7 +430,7 @@ export default function Business() {
             const res = await fetch('/api/user/business/hours', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ restaurantId: form.id, hours })
+                body: JSON.stringify({ restaurantId: form.id, sucursalId: selectedSucursalIdForHours === 'main' ? null : Number(selectedSucursalIdForHours), hours })
             });
             return res.json();
         },
@@ -407,6 +516,76 @@ export default function Business() {
         deletePaymentMutation.mutate(id);
     }
 
+    const { data: sucursalesData } = useQuery({
+        queryKey: ['sucursales', form.id],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/business/sucursales?restaurantId=${form.id}`);
+            return res.json();
+        },
+        enabled: !!form.id,
+    });
+
+    const sucursalMutation = useMutation({
+        mutationFn: async () => {
+            const url = isEditingSucursal
+                ? `/api/user/business/sucursales/${isEditingSucursal}`
+                : '/api/user/business/sucursales';
+            const method = isEditingSucursal ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    restaurantId: form.id,
+                    ...sucursalForm
+                })
+            });
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                toast.success(isEditingSucursal ? "Sucursal actualizada" : "Sucursal agregada");
+                setSucursalForm({ nombre: '', direccion: '', telefono: '', lat: null, lng: null, deliveryFreeRange: '', deliveryShortRange: '', deliveryShortPrice: '', deliveryMediumRange: '', deliveryMediumPrice: '', deliveryLongRange: '', deliveryLongPrice: '' });
+                setIsEditingSucursal(null);
+                queryClient.invalidateQueries({ queryKey: ['sucursales', form.id] });
+            } else {
+                toast.error(data.message);
+            }
+        },
+        onError: () => {
+            toast.error("Error al procesar sucursal");
+        }
+    });
+
+    const handleSucursalSubmit = (e) => {
+        e.preventDefault();
+        if (!form.id) return toast.error("Crea tu negocio primero");
+        sucursalMutation.mutate();
+    }
+
+    const deleteSucursalMutation = useMutation({
+        mutationFn: async (id) => {
+            const res = await fetch(`/api/user/business/sucursales/${id}`, { method: 'DELETE' });
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.status) {
+                toast.success("Sucursal eliminada");
+                queryClient.invalidateQueries({ queryKey: ['sucursales', form.id] });
+            } else {
+                toast.error(data.message);
+            }
+        },
+        onError: () => {
+            toast.error("Error al eliminar sucursal");
+        }
+    });
+
+    const deleteSucursal = (id) => {
+        if (!confirm("¿Eliminar esta sucursal?")) return;
+        deleteSucursalMutation.mutate(id);
+    }
+
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-20">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -455,12 +634,20 @@ export default function Business() {
                     <Save size={18} />
                     Planes
                 </button>
+
                 <button
-                    onClick={() => setActiveTab("delivery")}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                    onClick={() => setActiveTab("sucursales")}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'sucursales' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                 >
-                    <Truck size={18} />
-                    Delivery
+                    <Building2 size={18} />
+                    Sucursales
+                </button>
+                <button
+                    onClick={() => setActiveTab("cajas")}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'cajas' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                    <Banknote size={18} />
+                    Cajas
                 </button>
             </div>
 
@@ -642,6 +829,19 @@ export default function Business() {
 
                     {activeTab === "hours" && (
                         <div className="space-y-6">
+                            <div className="mb-4">
+                                <label className="text-sm font-medium mb-2 block">Configurar horarios para:</label>
+                                <select
+                                    value={selectedSucursalIdForHours}
+                                    onChange={(e) => setSelectedSucursalIdForHours(e.target.value)}
+                                    className="flex h-10 w-full md:w-1/3 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                >
+                                    <option value="main">Restaurante Principal</option>
+                                    {sucursalesData?.data?.map(sucursal => (
+                                        <option key={sucursal.id} value={sucursal.id}>{sucursal.nombre}</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div className="grid gap-4">
                                 {hours.map((day, idx) => (
                                     <div key={idx} className={`flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border transition-all ${day.isOpen ? 'border-blue-200 bg-blue-50/30 dark:border-blue-900/30 dark:bg-blue-900/10' : 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50'}`}>
@@ -1139,150 +1339,284 @@ export default function Business() {
                         </div>
                     )}
 
-                    {activeTab === "delivery" && (
+
+
+                    {activeTab === "sucursales" && (
                         <div className="space-y-8">
+                            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+                                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                    {isEditingSucursal ? <Edit2 size={18} /> : <Plus size={18} />}
+                                    {isEditingSucursal ? 'Editar Sucursal' : 'Agregar Nueva Sucursal'}
+                                </h3>
+                                <form onSubmit={handleSucursalSubmit} className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Nombre de la Sucursal</label>
+                                        <input
+                                            type="text"
+                                            value={sucursalForm.nombre}
+                                            onChange={(e) => setSucursalForm({ ...sucursalForm, nombre: e.target.value })}
+                                            placeholder="Ej. Sucursal Centro"
+                                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Teléfono</label>
+                                        <input
+                                            type="text"
+                                            value={sucursalForm.telefono || ''}
+                                            onChange={(e) => setSucursalForm({ ...sucursalForm, telefono: e.target.value })}
+                                            placeholder="Ej. +58 414 1234567"
+                                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2 space-y-2">
+                                        <label className="text-sm font-medium">Dirección</label>
+                                        <textarea
+                                            value={sucursalForm.direccion}
+                                            onChange={(e) => setSucursalForm({ ...sucursalForm, direccion: e.target.value })}
+                                            placeholder="Dirección completa"
+                                            rows={2}
+                                            className="flex w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <div className="md:col-span-2 space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <MapPin size={16} className="text-red-500" />
+                                            Ubicación en el Mapa (Opcional)
+                                        </label>
+                                        <MapPicker
+                                            lat={sucursalForm.lat}
+                                            lng={sucursalForm.lng}
+                                            onChange={(lat, lng) => setSucursalForm({ ...sucursalForm, lat, lng })}
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2 mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+                                        <h4 className="text-md font-semibold flex items-center gap-2 mb-4">
+                                            <Truck size={18} className="text-blue-600" />
+                                            Costos de Delivery de la Sucursal
+                                        </h4>
+                                        <div className="grid gap-4">
+                                            <div className="p-3 rounded-xl border border-green-100 bg-green-50/30 grid md:grid-cols-2 gap-4 items-end">
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-green-800">Distancia Gratis (Hasta km)</label>
+                                                    <input type="number" value={sucursalForm.deliveryFreeRange} onChange={(e) => setSucursalForm({...sucursalForm, deliveryFreeRange: e.target.value})} placeholder="Ej: 2" className="flex h-9 w-full rounded-md border border-green-200 bg-white px-3 py-1 text-sm" />
+                                                </div>
+                                            </div>
+                                            <div className="p-3 rounded-xl border border-blue-100 bg-blue-50/30 grid md:grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-blue-800">Distancia Corta (km)</label>
+                                                    <input type="number" value={sucursalForm.deliveryShortRange} onChange={(e) => setSucursalForm({...sucursalForm, deliveryShortRange: e.target.value})} className="flex h-9 w-full rounded-md border border-blue-200 bg-white px-3 py-1 text-sm" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-blue-800">Precio Corta</label>
+                                                    <input type="number" value={sucursalForm.deliveryShortPrice} onChange={(e) => setSucursalForm({...sucursalForm, deliveryShortPrice: e.target.value})} className="flex h-9 w-full rounded-md border border-blue-200 bg-white px-3 py-1 text-sm" />
+                                                </div>
+                                            </div>
+                                            <div className="p-3 rounded-xl border border-yellow-100 bg-yellow-50/30 grid md:grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-yellow-800">Distancia Mediana (km)</label>
+                                                    <input type="number" value={sucursalForm.deliveryMediumRange} onChange={(e) => setSucursalForm({...sucursalForm, deliveryMediumRange: e.target.value})} className="flex h-9 w-full rounded-md border border-yellow-200 bg-white px-3 py-1 text-sm" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-yellow-800">Precio Mediana</label>
+                                                    <input type="number" value={sucursalForm.deliveryMediumPrice} onChange={(e) => setSucursalForm({...sucursalForm, deliveryMediumPrice: e.target.value})} className="flex h-9 w-full rounded-md border border-yellow-200 bg-white px-3 py-1 text-sm" />
+                                                </div>
+                                            </div>
+                                            <div className="p-3 rounded-xl border border-orange-100 bg-orange-50/30 grid md:grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-orange-800">Distancia Larga (Más de km)</label>
+                                                    <input type="number" value={sucursalForm.deliveryLongRange} onChange={(e) => setSucursalForm({...sucursalForm, deliveryLongRange: e.target.value})} className="flex h-9 w-full rounded-md border border-orange-200 bg-white px-3 py-1 text-sm" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-orange-800">Precio Larga</label>
+                                                    <input type="number" value={sucursalForm.deliveryLongPrice} onChange={(e) => setSucursalForm({...sucursalForm, deliveryLongPrice: e.target.value})} className="flex h-9 w-full rounded-md border border-orange-200 bg-white px-3 py-1 text-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="md:col-span-2 flex justify-end gap-2 mt-2">
+                                        {isEditingSucursal && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsEditingSucursal(null);
+                                                    setSucursalForm({ nombre: '', direccion: '', telefono: '', lat: null, lng: null });
+                                                }}
+                                                className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                        <button type="submit" disabled={sucursalMutation.isPending} className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-2">
+                                            {isEditingSucursal ? <Save size={16} /> : <Plus size={16} />}
+                                            {sucursalMutation.isPending ? 'Cargando...' : isEditingSucursal ? 'Actualizar' : 'Agregar Sucursal'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <MapPin size={20} className="text-red-500" />
-                                    Ubicación del Restaurante
+                                <h3 className="font-semibold text-gray-700 dark:text-gray-300">Mis Sucursales</h3>
+                                {!sucursalesData?.data || sucursalesData.data.length === 0 ? (
+                                    <p className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border border-dashed">No tienes sucursales registradas.</p>
+                                ) : (
+                                    <div className="grid gap-3">
+                                        {sucursalesData.data.map((sucursal) => (
+                                            <div key={sucursal.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl hover:shadow-sm transition-shadow">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-blue-600">
+                                                        <Building2 size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium">{sucursal.nombre}</h4>
+                                                        <p className="text-xs text-gray-500">{sucursal.direccion}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsEditingSucursal(sucursal.id);
+                                                            setSucursalForm({
+                                                                nombre: sucursal.nombre,
+                                                                direccion: sucursal.direccion,
+                                                                telefono: sucursal.telefono || '',
+                                                                lat: sucursal.lat,
+                                                                lng: sucursal.lng,
+                                                                deliveryFreeRange: sucursal.deliveryFreeRange || '',
+                                                                deliveryShortRange: sucursal.deliveryShortRange || '',
+                                                                deliveryShortPrice: sucursal.deliveryShortPrice || '',
+                                                                deliveryMediumRange: sucursal.deliveryMediumRange || '',
+                                                                deliveryMediumPrice: sucursal.deliveryMediumPrice || '',
+                                                                deliveryLongRange: sucursal.deliveryLongRange || '',
+                                                                deliveryLongPrice: sucursal.deliveryLongPrice || ''
+                                                            });
+                                                        }}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteSucursal(sucursal.id)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "cajas" && (
+                        <div className="space-y-8">
+                            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+                                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                    {isEditingCaja ? <Edit2 size={18} /> : <Plus size={18} />}
+                                    {isEditingCaja ? 'Editar Caja' : 'Agregar Nueva Caja'}
                                 </h3>
-                                <p className="text-sm text-gray-500">Haz clic en el mapa para marcar la ubicación exacta de tu negocio. Esto permitirá calcular la distancia de entrega automáticamente.</p>
-
-                                <MapPicker
-                                    lat={form.lat}
-                                    lng={form.lng}
-                                    onChange={(lat, lng) => setForm({ ...form, lat, lng })}
-                                />
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-400 uppercase">Latitud</label>
-                                        <input type="text" readOnly value={form.lat || ''} className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900" />
+                                <form onSubmit={handleCajaSubmit} className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Nombre de la Caja</label>
+                                        <input
+                                            type="text"
+                                            value={cajaForm.nombre}
+                                            onChange={(e) => setCajaForm({ ...cajaForm, nombre: e.target.value })}
+                                            placeholder="Ej. Caja Principal, Caja Delivery"
+                                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                            required
+                                        />
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-400 uppercase">Longitud</label>
-                                        <input type="text" readOnly value={form.lng || ''} className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900" />
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Asignar a Sucursal</label>
+                                        <select
+                                            value={cajaForm.sucursalId}
+                                            onChange={(e) => setCajaForm({ ...cajaForm, sucursalId: e.target.value })}
+                                            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+                                        >
+                                            <option value="">Restaurante Principal</option>
+                                            {sucursalesData?.data?.map(suc => (
+                                                <option key={suc.id} value={suc.id}>{suc.nombre}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                </div>
+                                    
+                                    <div className="md:col-span-2 flex justify-end gap-2 mt-2">
+                                        {isEditingCaja && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsEditingCaja(null);
+                                                    setCajaForm({ nombre: '', sucursalId: '' });
+                                                }}
+                                                className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                        <button type="submit" disabled={cajaMutation.isPending} className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-2">
+                                            {isEditingCaja ? <Save size={16} /> : <Plus size={16} />}
+                                            {cajaMutation.isPending ? 'Cargando...' : isEditingCaja ? 'Actualizar' : 'Agregar Caja'}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
 
-                            <hr className="border-gray-100 dark:border-gray-800" />
-
-                            <div className="space-y-6">
-                                <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <Truck size={20} className="text-blue-600" />
-                                    Costos de Delivery por Distancia
-                                </h3>
-                                <p className="text-sm text-gray-500">Define los rangos de distancia (en kilómetros) y sus respectivos precios.</p>
-
-                                <div className="grid gap-6">
-                                    {/* Gratis */}
-                                    <div className="p-4 rounded-xl border border-green-100 bg-green-50/30 dark:border-green-900/20 dark:bg-green-900/10 grid md:grid-cols-2 gap-4 items-end">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-green-800 dark:text-green-300">Distancia Gratis (Hasta km)</label>
-                                            <input
-                                                type="number"
-                                                name="deliveryFreeRange"
-                                                value={form.deliveryFreeRange}
-                                                onChange={changeImput}
-                                                placeholder="Ej: 2"
-                                                className="flex h-10 w-full rounded-md border border-green-200 bg-white px-3 py-2 text-sm dark:border-green-800 dark:bg-gray-950"
-                                            />
-                                        </div>
-                                        <div className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 h-10 flex items-center px-4 rounded-md text-sm font-bold">
-                                            Precio: $0 (Gratis)
-                                        </div>
+                            <div className="space-y-4">
+                                <h3 className="font-semibold text-gray-700 dark:text-gray-300">Mis Cajas</h3>
+                                {!cajasData?.data || cajasData.data.length === 0 ? (
+                                    <p className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border border-dashed">No tienes cajas registradas.</p>
+                                ) : (
+                                    <div className="grid gap-3">
+                                        {cajasData.data.map((caja) => (
+                                            <div key={caja.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl hover:shadow-sm transition-shadow">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-green-600">
+                                                        <Banknote size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium">{caja.nombre}</h4>
+                                                        <p className="text-xs text-gray-500">
+                                                            {caja.sucursal ? `Sucursal: ${caja.sucursal.nombre}` : 'Restaurante Principal'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${caja.estado === 'Abierta' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                                                        {caja.estado}
+                                                    </span>
+                                                    <div className="flex items-center gap-2 border-l border-gray-200 dark:border-gray-800 pl-4">
+                                                        <button
+                                                            onClick={() => {
+                                                                setIsEditingCaja(caja.id);
+                                                                setCajaForm({
+                                                                    nombre: caja.nombre,
+                                                                    sucursalId: caja.sucursalId || ''
+                                                                });
+                                                            }}
+                                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteCaja(caja.id)}
+                                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-
-                                    {/* Corta */}
-                                    <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/30 dark:border-blue-900/20 dark:bg-blue-900/10 grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-blue-800 dark:text-blue-300">Distancia Corta (Hasta km)</label>
-                                            <input
-                                                type="number"
-                                                name="deliveryShortRange"
-                                                value={form.deliveryShortRange}
-                                                onChange={changeImput}
-                                                placeholder="Ej: 5"
-                                                className="flex h-10 w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm dark:border-blue-800 dark:bg-gray-950"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-blue-800 dark:text-blue-300">Precio Corta ({form.currency})</label>
-                                            <input
-                                                type="number"
-                                                name="deliveryShortPrice"
-                                                value={form.deliveryShortPrice}
-                                                onChange={changeImput}
-                                                placeholder="Ej: 2.50"
-                                                className="flex h-10 w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm dark:border-blue-800 dark:bg-gray-950"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Mediana */}
-                                    <div className="p-4 rounded-xl border border-yellow-100 bg-yellow-50/30 dark:border-yellow-900/20 dark:bg-yellow-900/10 grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Distancia Mediana (Hasta km)</label>
-                                            <input
-                                                type="number"
-                                                name="deliveryMediumRange"
-                                                value={form.deliveryMediumRange}
-                                                onChange={changeImput}
-                                                placeholder="Ej: 10"
-                                                className="flex h-10 w-full rounded-md border border-yellow-200 bg-white px-3 py-2 text-sm dark:border-yellow-800 dark:bg-gray-950"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Precio Mediana ({form.currency})</label>
-                                            <input
-                                                type="number"
-                                                name="deliveryMediumPrice"
-                                                value={form.deliveryMediumPrice}
-                                                onChange={changeImput}
-                                                placeholder="Ej: 5.00"
-                                                className="flex h-10 w-full rounded-md border border-yellow-200 bg-white px-3 py-2 text-sm dark:border-yellow-800 dark:bg-gray-950"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Larga */}
-                                    <div className="p-4 rounded-xl border border-orange-100 bg-orange-50/30 dark:border-orange-900/20 dark:bg-orange-900/10 grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-orange-800 dark:text-orange-300">Distancia Larga (Más de km)</label>
-                                            <input
-                                                type="number"
-                                                name="deliveryLongRange"
-                                                value={form.deliveryLongRange}
-                                                onChange={changeImput}
-                                                placeholder="Ej: 10"
-                                                className="flex h-10 w-full rounded-md border border-orange-200 bg-white px-3 py-2 text-sm dark:border-orange-800 dark:bg-gray-950"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-orange-800 dark:text-orange-300">Precio Larga ({form.currency})</label>
-                                            <input
-                                                type="number"
-                                                name="deliveryLongPrice"
-                                                value={form.deliveryLongPrice}
-                                                onChange={changeImput}
-                                                placeholder="Ej: 8.00"
-                                                className="flex h-10 w-full rounded-md border border-orange-200 bg-white px-3 py-2 text-sm dark:border-orange-800 dark:bg-gray-950"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-4 border-t">
-                                <button
-                                    onClick={businessSave}
-                                    disabled={businessMutation.isPending}
-                                    className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 gap-2 shadow-sm"
-                                >
-                                    <Save size={18} />
-                                    {businessMutation.isPending ? 'Guardando...' : 'Guardar Configuración de Delivery'}
-                                </button>
+                                )}
                             </div>
                         </div>
                     )}

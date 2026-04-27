@@ -24,6 +24,20 @@ export default function ListProduct() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
+    const [selectedSucursal, setSelectedSucursal] = useState('all');
+
+    const restauranteId = useAppSelector((state) => state.auth.auth.restauranteId);
+
+    const { data: sucursalesData } = useQuery({
+        queryKey: ['sucursales', restauranteId],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/business/sucursales?restaurantId=${restauranteId}`);
+            if (!res.ok) throw new Error('Error al cargar sucursales');
+            return res.json();
+        },
+        enabled: !!restauranteId,
+    });
+    const sucursales = sucursalesData?.data || [];
 
 
     // Modals state
@@ -56,7 +70,14 @@ export default function ListProduct() {
         const matchesStatus = selectedStatus === 'all' ||
             (selectedStatus === 'disponible' ? p.disponible : !p.disponible);
 
-        return matchesSearch && matchesCategory && matchesStatus;
+        let matchesSucursal = true;
+        if (selectedSucursal === 'main') {
+            matchesSucursal = !p.sucursales || p.sucursales.length === 0;
+        } else if (selectedSucursal !== 'all') {
+            matchesSucursal = p.sucursales && p.sucursales.some(s => s.id === Number(selectedSucursal));
+        }
+
+        return matchesSearch && matchesCategory && matchesStatus && matchesSucursal;
     });
 
 
@@ -141,6 +162,21 @@ export default function ListProduct() {
                     />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
+                    {sucursales.length > 0 && (
+                        <div className="w-full sm:w-40">
+                            <select
+                                value={selectedSucursal}
+                                onChange={(e) => setSelectedSucursal(e.target.value)}
+                                className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+                            >
+                                <option value="all">Todas las sedes</option>
+                                <option value="main">Rest. Principal</option>
+                                {sucursales.map((sucursal) => (
+                                    <option key={sucursal.id} value={sucursal.id}>{sucursal.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <div className="w-full sm:w-48">
                         <select
                             value={selectedCategory}

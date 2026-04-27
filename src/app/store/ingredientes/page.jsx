@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { Plus, Pencil, Trash, Loader2, Package, Search } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useAppSelector } from '@/lib/hooks'
 import { formatCurrency } from '@/lib/utils/currency'
 
 import Modal from '@/components/Modal'
@@ -21,11 +22,26 @@ export default function IngredientsPage() {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedSucursal, setSelectedSucursal] = useState('main')
+
+  const user = useAppSelector((state) => state.auth.auth)
+
+  const { data: sucursalesData } = useQuery({
+    queryKey: ['sucursales', user?.restauranteId],
+    queryFn: async () => {
+      const res = await fetch(`/api/user/business/sucursales?restaurantId=${user?.restauranteId}`);
+      if (!res.ok) throw new Error('Error al cargar sucursales');
+      return res.json();
+    },
+    enabled: !!user?.restauranteId,
+  });
+
+  const sucursales = sucursalesData?.data || [];
 
   const { data: ingredientsData = { ingredients: [], currency: 'USD' }, isLoading: loading } = useQuery({
-    queryKey: ['ingredients'],
+    queryKey: ['ingredients', selectedSucursal],
     queryFn: async () => {
-      const res = await fetch('/api/user/ingredients');
+      const res = await fetch(`/api/user/ingredients?sucursalId=${selectedSucursal}`);
       if (!res.ok) throw new Error('Error al cargar ingredientes');
       return res.json();
     }
@@ -120,6 +136,18 @@ export default function IngredientsPage() {
 
       {/* Filters section */}
       <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="w-full sm:w-48">
+          <select
+            value={selectedSucursal}
+            onChange={(e) => setSelectedSucursal(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
+          >
+            <option value="main">Rest. Principal</option>
+            {sucursales.map(s => (
+              <option key={s.id} value={s.id}>{s.nombre}</option>
+            ))}
+          </select>
+        </div>
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -237,6 +265,7 @@ export default function IngredientsPage() {
         <div className="mt-2 text-left">
           <IngredientForm
             ingredientId={ingredientToEdit?.id}
+            sucursalId={selectedSucursal === 'main' ? null : Number(selectedSucursal)}
             onSuccess={handleFormSuccess}
             onCancel={handleCloseFormModal}
           />

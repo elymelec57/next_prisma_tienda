@@ -18,7 +18,8 @@ export const BusinessData = cache(async (slug) => {
           status: "active"
         }
       },
-      restaurantHours: true
+      restaurantHours: true,
+      sucursales: true
     }
   });
 

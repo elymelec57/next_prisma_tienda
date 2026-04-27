@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/libs/prisma';
 import Link from 'next/link';
+import SucursalSelector from '@/components/SucursalSelector';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
@@ -24,15 +25,21 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function page({ params }) {
+export default async function page({ params, searchParams }) {
   const { slug } = await params
+  const { sucursal } = await searchParams
   const business = await BusinessData(slug)
 
   if (!business) {
     notFound()
   }
 
-  const products = await ProductsData({ id: business.id, skip: 0, take: 6 })
+  const products = await ProductsData({
+    id: business.id,
+    sucursalId: sucursal,
+    skip: 0,
+    take: 6
+  })
 
   const categories = await prisma.categoria.findMany({
     where: {
@@ -116,7 +123,7 @@ export default async function page({ params }) {
 
         {/* Sección de Productos con Sidebar */}
         <div id="menu" className="mb-20 scroll-mt-24">
-          <div className="flex flex-col items-center justify-center text-center mb-12">
+          <div className="flex flex-col items-center justify-center text-center mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-sm font-bold mb-4">
               <UtensilsCrossed className="h-4 w-4" />
               <span>Nuestra Carta</span>
@@ -125,6 +132,10 @@ export default async function page({ params }) {
               Explora Nuestro Menú
             </h2>
             <div className="h-1 w-20 bg-orange-500 rounded-full mt-4"></div>
+          </div>
+
+          <div className="flex justify-center mb-12">
+            <SucursalSelector sucursales={business.sucursales} />
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
@@ -139,7 +150,7 @@ export default async function page({ params }) {
                   {categories.map((category) => (
                     <Link
                       key={category.id}
-                      href={`/${slug}/${category.nombre.toLowerCase().replace(/\s+/g, '-')}`}
+                      href={`/${slug}/${category.nombre.toLowerCase().replace(/\s+/g, '-')}${sucursal ? `?sucursal=${sucursal}` : ''}`}
                       className="flex items-center justify-between group px-3 py-2.5 rounded-xl hover:bg-orange-50 transition-all duration-200"
                     >
                       <span className="text-slate-600 group-hover:text-orange-700 font-medium transition-colors">

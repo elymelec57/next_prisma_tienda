@@ -22,7 +22,7 @@ const ingredientSchema = z.object({
     fechaVencimiento: z.string().optional().nullable(),
 });
 
-export default function IngredientForm({ ingredientId = null, onSuccess, onCancel }) {
+export default function IngredientForm({ ingredientId = null, sucursalId = null, onSuccess, onCancel }) {
 
     const router = useRouter()
     // Assuming backend might need userId, though usually it's in the token/session. 
@@ -179,11 +179,13 @@ export default function IngredientForm({ ingredientId = null, onSuccess, onCance
     const onSubmit = async (data) => {
         // Transform strings to numbers/dates if needed, though zod handles type validation, the form inputs are strings mostly.
         // react-hook-form valueAsNumber helps.
+        
+        const payload = { ...data, sucursalId };
 
         if (ingredientId) {
-            return updateIngredient(data)
+            return updateIngredient(payload)
         }
-        return createIngredient(data);
+        return createIngredient(payload);
     }
 
     const createIngredient = async (data) => {

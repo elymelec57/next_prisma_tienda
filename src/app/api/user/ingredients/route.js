@@ -36,13 +36,22 @@ export async function GET(request) {
       return NextResponse.json(ingredient)
     }
 
+    const sucursalId = searchParams.get('sucursalId');
+    const whereClause = { restaurantId };
+    
+    if (sucursalId && sucursalId !== 'null') {
+      whereClause.sucursalId = Number(sucursalId);
+    } else {
+      whereClause.sucursalId = null;
+    }
+
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: restaurantId },
       select: { currency: true }
     });
 
     const ingredients = await prisma.ingredienteRestaurante.findMany({
-      where: { restaurantId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' }
     })
 
@@ -82,6 +91,7 @@ export async function POST(request) {
         stockMinimo: parseFloat(data.stockMinimo) || 0,
         stockMaximo: data.stockMaximo ? parseFloat(data.stockMaximo) : null,
         fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null,
+        sucursalId: data.sucursalId ? Number(data.sucursalId) : null,
       },
     })
     return NextResponse.json(ingredient, { status: 201 })

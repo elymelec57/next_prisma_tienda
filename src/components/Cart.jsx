@@ -7,10 +7,13 @@ import DeleteCart from "./deleteCart";
 import { inialityCount, order } from "@/lib/features/cart/orderSlice";
 import { formatCurrency } from "@/lib/utils/currency";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 
 export default function Cart({ products, currency, restaurantId, categoryId }) {
 
     const dispatch = useAppDispatch()
+    const searchParams = useSearchParams();
+    const sucursalId = searchParams.get('sucursal');
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const store = JSON.parse(localStorage.getItem('order'));
@@ -33,9 +36,9 @@ export default function Cart({ products, currency, restaurantId, categoryId }) {
         hasNextPage,
         isFetchingNextPage,
     } = useInfiniteQuery({
-        queryKey: ['products-store', restaurantId, categoryId],
+        queryKey: ['products-store', restaurantId, categoryId, sucursalId],
         queryFn: async ({ pageParam = 0 }) => {
-            const url = `/api/products-store?id=${restaurantId}&skip=${pageParam}&take=6${categoryId ? `&categoryId=${categoryId}` : ''}`;
+            const url = `/api/products-store?id=${restaurantId}&skip=${pageParam}&take=6${categoryId ? `&categoryId=${categoryId}` : ''}${sucursalId ? `&sucursalId=${sucursalId}` : ''}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
