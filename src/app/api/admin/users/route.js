@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { UserRepository } from '@/repositories/UserRepository';
 import { UserService } from '@/services/UserService';
-import { authorizeRequest } from '@/libs/auth';
+import { authorizeAdmin } from '@/libs/authAdmin';
 
 const userRepository = new UserRepository();
 const userService = new UserService(userRepository);
 
 async function checkAdmin(request) {
-    const user = await authorizeRequest(request);
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    const admin = await authorizeAdmin(request);
+    if (!admin || !admin.auth.role.toLowerCase() === 'Admin') {
         return false;
     }
     return true;

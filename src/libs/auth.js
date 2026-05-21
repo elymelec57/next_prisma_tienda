@@ -1,7 +1,7 @@
 // src/libs/auth.js
 
 export const routeRoles = [
-    { href: '/store/admin/plans', roles: ['admin'] },
+  { href: '/store/admin/plans', roles: ['admin'] },
   { href: '/store/admin/payments', roles: ['admin'] },
   { href: '/store/plato', roles: ['user'] },
   { href: '/store/ingredientes', roles: ['user'] },
