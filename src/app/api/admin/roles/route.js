@@ -8,7 +8,7 @@ const rolUserService = new RolUserService(rolUserRepository);
 
 async function checkAdmin(request) {
     const admin = await authorizeAdmin(request);
-    if (!admin || !admin.auth.role.toLowerCase() === 'Admin') {
+    if (!admin || !admin.authorized || !admin.auth?.role || admin.auth.role.toLowerCase() !== 'admin') {
         return false;
     }
     return true;
