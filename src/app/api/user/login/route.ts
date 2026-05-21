@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 import { cookies } from 'next/headers'
-import { UserRepository } from "@/repositories/UserRepository";
-import { RestaurantRepository } from "@/repositories/RestaurantRepository";
-import { AuthService } from "@/services/AuthService";
+import { LoginService } from "@/services/Auth/LoginService";
+import { LoginRepository } from "@/repositories/Auth/LoginRepository";
 
-const userRepository = new UserRepository();
-const restaurantRepository = new RestaurantRepository();
-const authService = new AuthService(userRepository, restaurantRepository);
+const loginRepository = new LoginRepository();
+const loginService = new LoginService(loginRepository);
 
-export async function POST(request) {
+export async function POST(request: Request) {
     const { form } = await request.json()
     const cookieStore = await cookies()
 
     try {
-        const { token, userData } = await authService.login(form.email, form.password);
+        const { token, userData } = await loginService.execute(form.email, form.password); //await authService.login(form.email, form.password);
 
         cookieStore.set({
             name: 'token',

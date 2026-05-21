@@ -1,26 +1,26 @@
 import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
+import { loginSchema } from "@/app/schemas/authSchema";
+import { LoginInterface } from "@/contracts/login/LoginInterface";
 
-export class AuthService {
-    constructor(userRepository, restaurantRepository) {
-        this.userRepository = userRepository;
-        this.restaurantRepository = restaurantRepository;
-    }
+export class LoginService {
+    constructor(private loginRepository: LoginInterface) { }
 
-    async login(email, password) {
-        if (!email || !password) {
-            throw new Error('Enter data');
+    async execute(email: string, password: string) {
+        const parsed = loginSchema.safeParse({ email, password });
+        if (!parsed.success) {
+            throw new Error(parsed.error.errors[0].message);
         }
 
         let userData = null;
 
         // 1. Try to find in User table
-        const user = await this.userRepository.findByEmail(email);
+        const user = await this.loginRepository.findByEmail(email);
 
         if (user) {
             const match = bcrypt.compareSync(password, user.password);
             if (match) {
-                const restauranteId = await this.restaurantRepository.findIdByUserId(user.id);
+                const restauranteId = await this.loginRepository.findIdRestaurantByUserId(user.id);
 
                 userData = {
                     id: user.id,
@@ -34,7 +34,7 @@ export class AuthService {
 
         // 2. Try to find in Employee table
         if (!userData) {
-            const employee = await this.userRepository.findEmployeeByEmail(email);
+            const employee = await this.loginRepository.findEmployeeByEmail(email);
 
             if (employee) {
                 const match = bcrypt.compareSync(password, employee.password);
@@ -60,26 +60,5 @@ export class AuthService {
         }, process.env.JWT_TOKEN);
 
         return { token, userData };
-    }
-
-    async register(data) {
-        if (data.password !== data.confirm_password) {
-            throw new Error('the password does not match');
-        }
-
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(data.confirm_password, salt);
-
-        const user = await this.userRepository.create({
-            email: data.email,
-            name: data.name,
-            password: hash
-        });
-
-        if (!user || !user.id) {
-            throw new Error('Error creating User');
-        }
-
-        return user;
     }
 }
