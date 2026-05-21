@@ -8,7 +8,7 @@ const userService = new UserService(userRepository);
 
 async function checkAdmin(request) {
     const admin = await authorizeAdmin(request);
-    if (!admin || !admin.authorized || !admin.auth?.role || admin.auth.role.toLowerCase() !== 'admin') {
+    if (!admin || !admin.authorized || !admin.auth?.role || admin.auth.role !== 'Admin') {
         return false;
     }
     return true;
