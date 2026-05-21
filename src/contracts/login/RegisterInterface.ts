@@ -1,7 +1,6 @@
-import { User } from "@prisma/client";
 
 export interface RegisterInterface {
-    create(data: CreateUserParams): Promise<User>;
+    create(data: CreateUserParams): Promise<any>;
 }
 
 type CreateUserParams = {
