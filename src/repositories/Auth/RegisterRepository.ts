@@ -10,7 +10,7 @@ export class RegisterRepository implements RegisterInterface {
                 name: data.name,
                 password: data.password,
                 roles: {
-                    connect: { id: data.roleId || 2 }
+                    connect: { id: 2 }
                 },
             },
         });

@@ -9,7 +9,7 @@ export class LoginService {
     async execute(email: string, password: string) {
         const parsed = loginSchema.safeParse({ email, password });
         if (!parsed.success) {
-            throw new Error(parsed.error.errors[0].message);
+            throw new Error(parsed.error.message);
         }
 
         let userData = null;

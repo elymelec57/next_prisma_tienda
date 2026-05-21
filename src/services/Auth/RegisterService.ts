@@ -9,7 +9,7 @@ export class RegisterService {
     async execute(data: CreateUserParams) {
         const parsed = registerSchema.safeParse(data);
         if (!parsed.success) {
-            throw new Error(parsed.error.errors[0].message);
+            throw new Error(parsed.error?.message);
         }
 
         const salt = bcrypt.genSaltSync(10);
@@ -18,7 +18,8 @@ export class RegisterService {
         const user = await this.registerRepository.create({
             email: data.email,
             name: data.name,
-            password: hash
+            password: hash,
+            confirm_password: hash
         });
 
         if (!user || !user.id) {
