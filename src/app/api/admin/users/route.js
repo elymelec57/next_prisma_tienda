@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { UserRepository } from '@/repositories/admin/UserRepository';
+import { AllUserRepository } from "@/repositories/admin/User/AllUserRepository";
 import { UserService } from '@/services/admin/UserService';
+import { AllUserService } from '@/services/admin/User/AllUserService';
 import { authorizeAdmin } from '@/libs/authAdmin';
 
 const userRepository = new UserRepository();
@@ -19,8 +21,10 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
     }
     try {
-        const users = await userService.getAllUsers();
-        return NextResponse.json({ status: true, users });
+        const allUserRepository = new AllUserRepository();
+        const allUsersService = new AllUserService(allUserRepository);
+        const response = await allUsersService.execute();
+        return NextResponse.json({ status: true, users: response.users, roles: response.roles });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message });
     }

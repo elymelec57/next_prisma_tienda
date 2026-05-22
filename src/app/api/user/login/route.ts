@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const cookieStore = await cookies()
 
     try {
-        const { token, userData } = await loginService.execute(form.email, form.password); //await authService.login(form.email, form.password);
+        const { token, userData } = await loginService.execute(form.email, form.password);
 
         cookieStore.set({
             name: 'token',
