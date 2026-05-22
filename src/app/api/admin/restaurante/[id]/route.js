@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { RestaurantRepository } from '@/repositories/RestaurantRepository';
-import { RestaurantService } from '@/services/RestaurantService';
-import { authorizeRequest } from '@/libs/auth';
+import { RestaurantRepository } from '@/repositories/admin/RestaurantRepository';
+import { RestaurantService } from '@/services/admin/RestaurantService';
+import { authorizeAdmin } from '@/libs/authAdmin';
 
 const restaurantRepository = new RestaurantRepository();
 const restaurantService = new RestaurantService(restaurantRepository);
 
 async function checkAdmin(request) {
-    const user = await authorizeRequest(request);
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    const admin = await authorizeAdmin(request);
+    if (!admin || !admin.authorized || !admin.auth?.role || admin.auth.role !== 'Admin') {
         return false;
     }
     return true;

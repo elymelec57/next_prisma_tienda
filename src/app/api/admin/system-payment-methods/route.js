@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { SystemPaymentMethodRepository } from '@/repositories/SystemPaymentMethodRepository';
-import { SystemPaymentMethodService } from '@/services/SystemPaymentMethodService';
-import { authorizeRequest } from '@/libs/auth';
+import { SystemPaymentMethodRepository } from '@/repositories/admin/SystemPaymentMethodRepository';
+import { SystemPaymentMethodService } from '@/services/admin/SystemPaymentMethodService';
+import { authorizeAdmin } from '@/libs/authAdmin';
 
 const systemPaymentMethodRepository = new SystemPaymentMethodRepository();
 const systemPaymentMethodService = new SystemPaymentMethodService(systemPaymentMethodRepository);
 
 async function checkAdmin(request) {
-    const user = await authorizeRequest(request);
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    const admin = await authorizeAdmin(request);
+    if (!admin || !admin.authorized || !admin.auth?.role || admin.auth.role !== 'Admin') {
         return false;
     }
     return true;

@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { SubscriptionRepository } from '@/repositories/SubscriptionRepository';
-import { SubscriptionService } from '@/services/SubscriptionService';
-import { authorizeRequest } from '@/libs/auth';
+import { SubscriptionRepository } from '@/repositories/admin/SubscriptionRepository';
+import { SubscriptionService } from '@/services/admin/SubscriptionService';
+import { authorizeAdmin } from '@/libs/authAdmin';
 
 const subscriptionRepository = new SubscriptionRepository();
 const subscriptionService = new SubscriptionService(subscriptionRepository);
 
 async function checkAdmin(request) {
-    const user = await authorizeRequest(request);
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    const admin = await authorizeAdmin(request);
+    if (!admin || !admin.authorized || !admin.auth?.role || admin.auth.role !== 'Admin') {
         return false;
     }
     return true;

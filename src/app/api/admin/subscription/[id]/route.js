@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { PlanPaymentRepository } from '@/repositories/PlanPaymentRepository';
-import { PlanPaymentService } from '@/services/PlanPaymentService';
-import { authorizeRequest } from '@/libs/auth';
+import { PlanPaymentRepository } from '@/repositories/admin/PlanPaymentRepository';
+import { PlanPaymentService } from '@/services/admin/PlanPaymentService';
+import { authorizeAdmin } from '@/libs/authAdmin';
 
 const planPaymentRepository = new PlanPaymentRepository();
 const planPaymentService = new PlanPaymentService(planPaymentRepository);
 
 async function checkAdmin(request) {
-    const user = await authorizeRequest(request);
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    const admin = await authorizeAdmin(request);
+    if (!admin || !admin.authorized || !admin.auth?.role || admin.auth.role !== 'Admin') {
         return false;
     }
     return true;
@@ -20,7 +20,8 @@ export async function POST(request, { params }) {
     }
     try {
         const { id } = await params;
-        const { body } = await request.json();
+        const bodyData = await request.json();
+        const { body } = bodyData;
         const { action } = body;
 
         const result = await planPaymentService.processPaymentAction(id, action);

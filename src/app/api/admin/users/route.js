@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { UserRepository } from '@/repositories/UserRepository';
-import { UserService } from '@/services/UserService';
+import { UserRepository } from '@/repositories/admin/UserRepository';
+import { UserService } from '@/services/admin/UserService';
 import { authorizeAdmin } from '@/libs/authAdmin';
 
 const userRepository = new UserRepository();

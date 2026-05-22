@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { PlanRepository } from '@/repositories/PlanRepository';
-import { PlanService } from '@/services/PlanService';
-import { authorizeRequest } from '@/libs/auth';
+import { PlanRepository } from '@/repositories/admin/PlanRepository';
+import { PlanService } from '@/services/admin/PlanService';
+import { authorizeAdmin } from '@/libs/authAdmin';
 
 const planRepository = new PlanRepository();
 const planService = new PlanService(planRepository);
 
 async function checkAdmin(request) {
-    const user = await authorizeRequest(request);
-    if (!user || !user.auth.roles.some(role => role.name.toLowerCase() === 'admin')) {
+    const admin = await authorizeAdmin(request);
+    if (!admin || !admin.authorized || !admin.auth?.role || admin.auth.role !== 'Admin') {
         return false;
     }
     return true;
