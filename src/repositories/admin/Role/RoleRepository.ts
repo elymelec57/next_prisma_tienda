@@ -1,17 +1,9 @@
-import { prisma } from '@/libs/prisma';
+import { prisma } from "@/libs/prisma";
+import { IRole, Role } from "@/interfaces/admin/Role/RoleInterface";
 
-export class RolUserRepository {
-    async findAll() {
-        return await prisma.rolUser.findMany();
-    }
+export class RoleRepository implements IRole {
 
-    async findById(id) {
-        return await prisma.rolUser.findUnique({
-            where: { id: Number(id) }
-        });
-    }
-
-    async create(data) {
+    async create(data: Role) {
         return await prisma.rolUser.create({
             data: {
                 name: data.name
@@ -19,7 +11,7 @@ export class RolUserRepository {
         });
     }
 
-    async update(id, data) {
+    async update(id: number, data: Role) {
         return await prisma.rolUser.update({
             where: { id: Number(id) },
             data: {
@@ -28,7 +20,7 @@ export class RolUserRepository {
         });
     }
 
-    async delete(id) {
+    async delete(id: number) {
         return await prisma.rolUser.delete({
             where: { id: Number(id) }
         });
