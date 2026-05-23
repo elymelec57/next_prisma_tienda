@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { UserRepository } from '@/repositories/admin/UserRepository';
 import { AllUserRepository } from "@/repositories/admin/User/AllUserRepository";
-import { UserService } from '@/services/admin/UserService';
+import { UserRepository } from "@/repositories/admin/User/UserRepository";
 import { AllUserService } from '@/services/admin/User/AllUserService';
+import { StoreUserService } from "@/services/admin/User/StoreUserService";
+import { UpdateUserService } from "@/services/admin/User/UpdateUserService";
 import { authorizeAdmin } from '@/libs/authAdmin';
 
-const userRepository = new UserRepository();
-const userService = new UserService(userRepository);
+const Repository = new UserRepository();
 
 async function checkAdmin(request) {
     const admin = await authorizeAdmin(request);
@@ -36,7 +36,8 @@ export async function POST(request) {
     }
     try {
         const data = await request.json();
-        const users = await userService.createUser(data);
+        const UserService = new StoreUserService(Repository)
+        const users = await UserService.execute(data);
         return NextResponse.json({ status: true, users });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message });
@@ -49,7 +50,8 @@ export async function PUT(request) {
     }
     try {
         const data = await request.json();
-        await userService.updateUser(data.id, data);
+        const updateUser = new UpdateUserService(Repository)
+        await updateUser.execute(data.id, data)
         return NextResponse.json({ status: true });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message });

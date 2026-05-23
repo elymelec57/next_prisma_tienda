@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { UserRepository } from '@/repositories/admin/UserRepository';
-import { UserService } from '@/services/admin/UserService';
+import { UserRepository } from "@/repositories/admin/User/UserRepository";
+import { DeleteUserService } from "@/services/admin/User/DeleteUserService";
 import { authorizeAdmin } from '@/libs/authAdmin';
 
-const userRepository = new UserRepository();
-const userService = new UserService(userRepository);
+const Repository = new UserRepository();
 
 async function checkAdmin(request) {
     const admin = await authorizeAdmin(request);
@@ -20,7 +19,8 @@ export async function DELETE(request, segmentData) {
     }
     const params = await segmentData.params;
     try {
-        await userService.deleteUser(params.id);
+        const service = new DeleteUserService(Repository);
+        await service.execute(params.id);
         return NextResponse.json({ status: true });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message });
