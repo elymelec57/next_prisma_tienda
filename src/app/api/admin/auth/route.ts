@@ -10,7 +10,7 @@ export async function POST(request: any) {
         const { form } = await request.json();
         const { auth, token } = await service.login(form.email, form.password);
 
-        const response = NextResponse.json({ status: true, message: 'login exitoso', auth });
+        const response = NextResponse.json({ status: true, message: 'login exitoso', auth, token });
         response.cookies.set('auth_token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
