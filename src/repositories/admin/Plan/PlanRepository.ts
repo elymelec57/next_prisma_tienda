@@ -2,13 +2,13 @@ import { prisma } from "@/libs/prisma";
 import { IPlan, Plan } from "@/interfaces/admin/Plan/PlanInterface";
 
 export class PlanRepository implements IPlan {
-    async create(data: Plan) {
+    async create(dataPlan: Plan) {
         return await prisma.plan.create({
             data: {
-                name: data.name,
-                description: data.description,
-                price: Number(data.price),
-                duration: Number(data.duration)
+                name: dataPlan.name,
+                description: dataPlan.description,
+                price: Number(dataPlan.price),
+                productLimit: Number(10),
             }
         });
     }
@@ -20,7 +20,7 @@ export class PlanRepository implements IPlan {
                 name: data.name,
                 description: data.description,
                 price: Number(data.price),
-                duration: Number(data.duration)
+                productLimit: Number(10),
             }
         });
     }

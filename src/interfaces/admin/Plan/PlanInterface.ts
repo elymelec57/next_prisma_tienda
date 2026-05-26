@@ -13,5 +13,5 @@ export type Plan = {
     name: string
     description?: string
     price: number
-    duration: number
+    productLimit: number
 }

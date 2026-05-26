@@ -1,5 +1,5 @@
 export interface ISystemPaymentMethod {
-    create(data: SystemPaymentMethod): Promise<any>
+    // create(data: SystemPaymentMethod): Promise<any>
     update(id: string, data: SystemPaymentMethod): Promise<any>
     delete(id: string): Promise<any>
     findById(id: string): Promise<any>

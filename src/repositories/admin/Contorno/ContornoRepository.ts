@@ -3,15 +3,18 @@ import { IContorno, Contorno } from "@/interfaces/admin/Contorno/ContornoInterfa
 
 export class ContornoRepository implements IContorno {
     async create(data: Contorno) {
-        return await prisma.contorno.create({
+        return await prisma.contornos.create({
             data: {
-                nombre: data.nombre
+                nombre: data.nombre,
+                restaurant: {
+                    connect: { id: Number(1) }// por definir el restaurante
+                }
             }
         });
     }
 
     async update(id: number, data: Contorno) {
-        return await prisma.contorno.update({
+        return await prisma.contornos.update({
             where: { id: Number(id) },
             data: {
                 nombre: data.nombre
@@ -20,13 +23,13 @@ export class ContornoRepository implements IContorno {
     }
 
     async delete(id: number) {
-        return await prisma.contorno.delete({
+        return await prisma.contornos.delete({
             where: { id: Number(id) }
         });
     }
 
     async findById(id: number) {
-        return await prisma.contorno.findUnique({
+        return await prisma.contornos.findUnique({
             where: { id: Number(id) }
         });
     }
