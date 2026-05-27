@@ -1,14 +1,15 @@
 // src/libs/auth.js
+import jwt from 'jsonwebtoken';
+
 export async function authorizeAdmin(request) {
-    const jwt = require('jsonwebtoken');
-    
+
     // First, check the Authorization header
     let token = null;
     const authHeader = request.headers.get('authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
     }
-    
+
     // Fall back to cookie if no Bearer token is provided
     if (!token) {
         token = request.cookies.get('auth_token')?.value;

@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
 import { loginSchema } from "@/app/schemas/authSchema";
-import { LoginInterface } from "@/contracts/login/LoginInterface";
+import { LoginInterface } from "@/interfaces/User/Auth/LoginInterface";
 
 export class LoginService {
     constructor(private loginRepository: LoginInterface) { }

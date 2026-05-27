@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { registerSchema } from "@/app/schemas/registerSchema";
-import { RegisterInterface, CreateUserParams } from '@/contracts/login/RegisterInterface';
+import { RegisterInterface, CreateUserParams } from '@/interfaces/User/Auth/RegisterInterface';
 
 export class RegisterService {
     constructor(private registerRepository: RegisterInterface) {

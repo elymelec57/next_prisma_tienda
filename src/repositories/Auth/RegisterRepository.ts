@@ -1,4 +1,4 @@
-import { RegisterInterface, CreateUserParams } from '@/contracts/login/RegisterInterface';
+import { RegisterInterface, CreateUserParams } from '@/interfaces/User/Auth/RegisterInterface';
 import { prisma } from '@/libs/prisma';
 
 export class RegisterRepository implements RegisterInterface {

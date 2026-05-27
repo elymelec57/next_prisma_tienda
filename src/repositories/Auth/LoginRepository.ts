@@ -1,5 +1,5 @@
 import { prisma } from '@/libs/prisma'
-import { LoginInterface } from '@/contracts/login/LoginInterface'
+import { LoginInterface } from '@/interfaces/User/Auth/LoginInterface'
 
 export class LoginRepository implements LoginInterface {
 
