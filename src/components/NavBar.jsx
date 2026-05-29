@@ -44,8 +44,8 @@ export default function NavBar({ data }) {
     }
 
     const navItems = [
-        { href: '/store', label: 'Dashboard', icon: LayoutDashboard, roles: ['user'] },
-        { href: '/store/plato', label: 'Platos', icon: Utensils, roles: ['user'] },
+        { href: '/panel', label: 'Dashboard', icon: LayoutDashboard, roles: ['user'] },
+        { href: '/panel/plato', label: 'Platos', icon: Utensils, roles: ['user'] },
         { href: '/store/ingredientes', label: 'Ingredientes', icon: Carrot, roles: ['user'] },
         { href: '/store/contornos', label: 'Contornos', icon: Salad, roles: ['user'] },
         { href: '/store/orders', label: 'Pedidos', icon: ShoppingBag, roles: ['user', 'cocina'] },

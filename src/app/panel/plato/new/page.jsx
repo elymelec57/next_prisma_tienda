@@ -23,8 +23,8 @@ export default function NewProductPage() {
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <ProductForm
                     productId={params.id}
-                    onSuccess={() => router.push('/store/plato')}
-                    onCancel={() => router.push('/store/plato')}
+                    onSuccess={() => router.push('/panel/plato')}
+                    onCancel={() => router.push('/panel/plato')}
                 />
             </div>
         </div>

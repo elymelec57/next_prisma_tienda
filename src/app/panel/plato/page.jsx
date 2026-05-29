@@ -268,7 +268,7 @@ export default function ListProduct() {
                                         <td className="p-4 align-middle text-right">
                                             <div className="flex items-center justify-end gap-2">
                                                 <Link
-                                                    href={`/store/plato/${p.id}`}
+                                                    href={`/panel/plato/${p.id}`}
                                                     className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-medium transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800"
                                                 >
                                                     <Pencil className="h-4 w-4 text-gray-500" />

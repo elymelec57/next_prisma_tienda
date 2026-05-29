@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import deleteImage from "@/libs/deleteImage";
-import { PlatoRepository } from '@/repositories/PlatoRepository';
+import { PlatoRepository } from '@/repositories/User/Plato/PlatoRepository';
 import { RestaurantRepository } from '@/repositories/RestaurantRepository';
-import { PlatoService } from '@/services/PlatoService';
+import { PlatoService } from '@/services/User/Plato/PlatoService';
 
 const platoRepository = new PlatoRepository();
 const restaurantRepository = new RestaurantRepository();
