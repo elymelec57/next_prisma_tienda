@@ -24,7 +24,7 @@ export default function Store() {
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: ['dashboardData'],
     queryFn: async () => {
-      const response = await fetch('/api/user/store/dashboard');
+      const response = await fetch('/api/user/dashboard');
       if (response.status === 404) {
         throw { status: 404 };
       }
