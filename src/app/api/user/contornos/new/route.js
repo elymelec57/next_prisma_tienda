@@ -1,29 +1,18 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/libs/prisma";
+import { NextResponse } from 'next/server';
+import { StoreContornoService } from '@/services/User/Contorno/StoreContornoService';
+import { StoreContornoRepository } from '@/repositories/User/Contorno/StoreContornoRepository';
+
+const storeContornoRepository = new StoreContornoRepository();
+const storeContornoService = new StoreContornoService(storeContornoRepository);
 
 export async function POST(request) {
-    const { form, user } = await request.json()
+    const { form, user } = await request.json();
+    const userId = typeof user === 'object' ? user.auth.id : Number(user);
 
-    const restaurant = await prisma.restaurant.findUnique({
-        select: {
-            id: true,
-        },
-        where: {
-            userId: Number(user)
-        }
-    })
-
-    if (!restaurant) {
-        return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+    try {
+        await storeContornoService.execute(form, userId);
+        return NextResponse.json({ status: true, message: 'Contorno creado correctamente' });
+    } catch (error) {
+        return NextResponse.json({ status: false, message: error.message });
     }
-
-    const contorno = await prisma.contornos.create({
-        data: {
-            nombre: form.name,
-            price: Number(form.price),
-            restaurantId: restaurant.id
-        }
-    })
-
-    return NextResponse.json({ status: true, message: 'Contorno creado correctamente' })
 }

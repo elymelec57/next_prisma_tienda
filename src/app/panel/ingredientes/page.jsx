@@ -77,7 +77,7 @@ export default function IngredientsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`/api/user/ingredients?id=${id}`, {
+      const res = await fetch(`/api/user/ingredients/${id}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Error al eliminar ingrediente');

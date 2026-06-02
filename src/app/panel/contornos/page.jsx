@@ -24,15 +24,14 @@ export default function ListContorno() {
     const [currency, setCurrency] = useState('');
 
     const { data: contornos = [], isLoading: loading } = useQuery({
-        queryKey: ['contornos', id],
+        queryKey: ['contornos'],
         queryFn: async () => {
-            const res = await fetch(`/api/user/contornos/${id}`);
+            const res = await fetch(`/api/user/contornos`);
             if (!res.ok) throw new Error('Error al cargar contornos');
             const data = await res.json();
             setCurrency(data.currency);
             return data.contornos || [];
-        },
-        enabled: !!id,
+        }
     });
 
     const handleEditClick = (c) => {
@@ -55,7 +54,7 @@ export default function ListContorno() {
         onSuccess: (data) => {
             if (data.status) {
                 toast.success(data.message);
-                queryClient.invalidateQueries({ queryKey: ['contornos', id] });
+                queryClient.invalidateQueries({ queryKey: ['contornos'] });
             } else {
                 toast.error(data.message || "Error eliminando contorno");
             }
@@ -80,7 +79,7 @@ export default function ListContorno() {
     const handleSuccess = () => {
         setIsCreateModalOpen(false);
         setContornoToEdit(null);
-        queryClient.invalidateQueries({ queryKey: ['contornos', id] });
+        queryClient.invalidateQueries({ queryKey: ['contornos'] });
     }
 
     const handleCloseModal = () => {

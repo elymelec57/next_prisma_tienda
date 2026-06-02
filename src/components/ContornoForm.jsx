@@ -53,7 +53,7 @@ export default function ContornoForm({ contornoId = null, onSuccess, onCancel })
 
     const mutation = useMutation({
         mutationFn: async (data) => {
-            const url = contornoId ? `/api/user/contorno/${contornoId}` : `/api/user/contornos/new`;
+            const url = contornoId ? `/api/user/contornos/${contornoId}` : `/api/user/contornos/new`;
             const method = contornoId ? 'PUT' : 'POST';
             const body = contornoId ? { form: data } : { form: data, user: userId };
 
@@ -68,7 +68,7 @@ export default function ContornoForm({ contornoId = null, onSuccess, onCancel })
         onSuccess: (response) => {
             if (response.status) {
                 toast.success(response.message);
-                queryClient.invalidateQueries({ queryKey: ['contornos', userId] });
+                queryClient.invalidateQueries({ queryKey: ['contornos'] });
                 if (contornoId) {
                     queryClient.invalidateQueries({ queryKey: ['contorno', contornoId] });
                 }

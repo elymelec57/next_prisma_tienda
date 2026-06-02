@@ -140,13 +140,10 @@ export default function IngredientForm({ ingredientId = null, sucursalId = null,
             // Let's try fetching from standard list filtering if single endpoint doesn't exist? No that's bad.
             // I will assume GET /api/user/ingredients?id=ID works.
 
-            const res = await fetch(`/api/user/ingredients?id=${id}`);
+            const res = await fetch(`/api/user/ingredients/${id}`);
             if (res.ok) {
                 const data = await res.json();
-                // key might be 'ingredient' or just the object.
-                // If it returns list, I might need to find it.
-                // Let's assume it returns the object.
-                const ingredient = data.length ? data[0] : data; // Fallback if it returns array of 1
+                const ingredient = data;
 
                 if (ingredient) {
                     setValue("nombre", ingredient.nombre);
@@ -190,7 +187,7 @@ export default function IngredientForm({ ingredientId = null, sucursalId = null,
 
     const createIngredient = async (data) => {
         try {
-            const res = await fetch(`/api/user/ingredients`, {
+            const res = await fetch(`/api/user/ingredients/new`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -212,7 +209,7 @@ export default function IngredientForm({ ingredientId = null, sucursalId = null,
 
     const updateIngredient = async (data) => {
         try {
-            const res = await fetch(`/api/user/ingredients?id=${ingredientId}`, {
+            const res = await fetch(`/api/user/ingredients/${ingredientId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

@@ -1,37 +1,24 @@
+import { NextResponse } from 'next/server';
+import { authorizeRequest } from '@/libs/auth';
+import { ContornoRepository } from '@/repositories/User/Contorno/ContornoRepository';
+import { RestaurantRepository } from '@/repositories/RestaurantRepository';
+import { ContornoService } from '@/services/User/Contorno/ContornoService';
 
-import { prisma } from "@/libs/prisma";
-import { NextResponse } from "next/server";
+const contornoRepository = new ContornoRepository();
+const restaurantRepository = new RestaurantRepository();
+const contornoService = new ContornoService(contornoRepository, restaurantRepository);
 
 export async function GET(request) {
+    const user = await authorizeRequest(request);
+
+    if (!user || !user.authorized) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    }
+
     try {
-        const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
-
-        if (!userId) {
-            return NextResponse.json({ message: "UserId is required" }, { status: 400 });
-        }
-
-        const restaurant = await prisma.restaurant.findUnique({
-            where: {
-                userId: Number(userId)
-            },
-            select: {
-                id: true
-            }
-        });
-
-        if (!restaurant) {
-            return NextResponse.json({ message: "Restaurant not found" }, { status: 404 });
-        }
-
-        const contornos = await prisma.contornos.findMany({
-            where: {
-                restaurantId: restaurant.id
-            }
-        });
-
-        return NextResponse.json(contornos);
+        const result = await contornoService.getContornosByRestaurant(user.auth.restauranteId);
+        return NextResponse.json(result);
     } catch (error) {
-        return NextResponse.json({ message: "Error fetching contornos", error }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
