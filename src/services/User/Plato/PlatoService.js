@@ -9,10 +9,12 @@ export class PlatoService {
         const platos = await this.platoRepository.findAllByRestaurantId(restaurantId);
         const imageIds = platos.map((p) => p.mainImageId).filter((id) => id !== null);
         const categorias = await this.platoRepository.findCategoriesByRestaurantId(restaurantId);
+        const contornos = await this.platoRepository.AllContornos(restaurantId);
+        const sucursales = await this.platoRepository.Allsucursales(restaurantId);
 
         if (imageIds.length === 0) {
             const dataPlatos = platos.map((p) => ({ ...p, mainImage: null }));
-            return { categorias, dataPlatos, currency };
+            return { categorias, dataPlatos, currency, contornos, sucursales };
         }
 
         const images = await this.platoRepository.findImagesByIds(imageIds);
@@ -23,7 +25,7 @@ export class PlatoService {
             mainImage: plato.mainImageId ? imageMap.get(plato.mainImageId) : null,
         }));
 
-        return { categorias, dataPlatos, currency };
+        return { categorias, dataPlatos, currency, contornos, sucursales };
     }
 
     async getPlatoById(id) {

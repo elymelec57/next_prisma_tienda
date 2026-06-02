@@ -11,7 +11,7 @@ import { plato } from '@/app/schemas/platoSchema';
 import { Camera, Save, X, Loader2 } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/utils/currency';
 
-export default function ProductForm({ productId = null, onSuccess, onCancel }) {
+export default function ProductForm({ productId = null, initialData = null, onSuccess, onCancel, categories, contornos, sucursales, currency }) {
 
     const router = useRouter()
     const queryClient = useQueryClient();
@@ -46,76 +46,26 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
         },
     });
 
-    const { data: categories = [] } = useQuery({
-        queryKey: ['categories'],
-        queryFn: async () => {
-            const res = await fetch('/api/category');
-            if (!res.ok) throw new Error('Error al cargar categorías');
-            return res.json();
-        }
-    });
-
-    const { data: businessInfo } = useQuery({
-        queryKey: ['businessInfo', userId],
-        queryFn: async () => {
-            const res = await fetch(`/api/user/business/user/${userId}`);
-            const data = await res.json();
-            return data.rest;
-        },
-        enabled: !!userId,
-    });
-
-    const { data: productData } = useQuery({
-        queryKey: ['product', productId],
-        queryFn: async () => {
-            const res = await fetch(`/api/user/product/${productId}`);
-            if (!res.ok) throw new Error('Error al cargar el producto');
-            const data = await res.json();
-            return data.plato;
-        },
-        enabled: !!productId,
-    });
-
     useEffect(() => {
-        if (productData) {
-            setValue("name", productData.nombre)
-            setValue("description", productData.descripcion)
-            setValue("price", productData.precio)
-            setValue("categoryId", productData.categoriaId)
+        if (initialData) {
+            setValue("name", initialData.nombre)
+            setValue("description", initialData.descripcion)
+            setValue("price", initialData.precio)
+            setValue("categoryId", initialData.categoriaId)
 
             setImage(prev => ({
                 ...prev,
-                mainImageId: productData.mainImageId,
-                url: productData.url
+                mainImageId: initialData.mainImage?.id ?? null,
+                url: initialData.mainImage?.url ?? ''
             }))
-            if (productData.contornos) {
-                setSelectedContornos(productData.contornos.map(c => c.id.toString()));
+            if (initialData.contornos) {
+                setSelectedContornos(initialData.contornos.map(c => c.id.toString()));
             }
-            if (productData.sucursales) {
-                setSelectedSucursales(productData.sucursales.map(s => s.id.toString()));
+            if (initialData.sucursales) {
+                setSelectedSucursales(initialData.sucursales.map(s => s.id.toString()));
             }
         }
-    }, [productData, setValue]);
-
-    const { data: contornos = [] } = useQuery({
-        queryKey: ['contornos', userId],
-        queryFn: async () => {
-            const res = await fetch(`/api/user/contornos?userId=${userId}`);
-            if (!res.ok) throw new Error('Error al cargar contornos');
-            return res.json();
-        },
-        enabled: !!userId,
-    });
-
-    const { data: sucursales = [] } = useQuery({
-        queryKey: ['sucursales', businessInfo?.id],
-        queryFn: async () => {
-            const res = await fetch(`/api/user/business/sucursales?restaurantId=${businessInfo.id}`);
-            const data = await res.json();
-            return data.data || [];
-        },
-        enabled: !!businessInfo?.id,
-    });
+    }, [initialData, setValue]);
 
     // Handlers
     const onFileChange = (e) => {
@@ -132,8 +82,9 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
 
     const mutation = useMutation({
         mutationFn: async (data) => {
-            if (productId) {
-                const update = await fetch(`/api/user/product/${productId}`, {
+            const effectiveId = productId ?? initialData?.id ?? null;
+            if (effectiveId) {
+                const update = await fetch(`/api/user/product/${effectiveId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: selectedSucursales } })
@@ -232,7 +183,7 @@ export default function ProductForm({ productId = null, onSuccess, onCancel }) {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Precio ({getCurrencySymbol(businessInfo?.currency).trim()})</label>
+                        <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Precio ({getCurrencySymbol(currency).trim()})</label>
                         <input
                             type="number"
                             step="0.01"

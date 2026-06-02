@@ -19,6 +19,29 @@ export class PlatoRepository {
         });
     }
 
+    async AllContornos(restaurantId) {
+        return await prisma.contornos.findMany({
+            select: {
+                id: true,
+                nombre: true,
+                price: true,
+            },
+            where: {
+                restaurantId: restaurantId
+            }
+        });
+    }
+
+    async Allsucursales(restaurantId) {
+        return await prisma.sucursal.findMany({
+            where: { restaurantId: Number(restaurantId) },
+            select: {
+                id: true,
+                nombre: true,
+            }
+        });
+    }
+
     async findById(id) {
         return await prisma.plato.findUnique({
             where: {

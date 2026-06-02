@@ -28,32 +28,12 @@ export default function ListProduct() {
 
     const restauranteId = useAppSelector((state) => state.auth.auth.restauranteId);
 
-    const { data: sucursalesData } = useQuery({
-        queryKey: ['sucursales', restauranteId],
-        queryFn: async () => {
-            const res = await fetch(`/api/user/business/sucursales?restaurantId=${restauranteId}`);
-            if (!res.ok) throw new Error('Error al cargar sucursales');
-            return res.json();
-        },
-        enabled: !!restauranteId,
-    });
-    const sucursales = sucursalesData?.data || [];
-
-
     // Modals state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState(null);
+    const [productToEdit, setProductToEdit] = useState(null);
 
-    const { data: categories = [] } = useQuery({
-        queryKey: ['categories'],
-        queryFn: async () => {
-            const res = await fetch('/api/category');
-            if (!res.ok) throw new Error('Error al cargar categorías');
-            return res.json();
-        }
-    });
-
-    const { data: productData = { dataPlatos: [], currency: 'USD' }, isLoading: loading } = useQuery({
+    const { data: productData = { dataPlatos: [], currency: 'USD', categorias: [], contornos: [] }, isLoading: loading } = useQuery({
         queryKey: ['products'],
         queryFn: async () => {
             const res = await fetch(`/api/user/product`);
@@ -63,6 +43,10 @@ export default function ListProduct() {
     });
 
     const product = productData.dataPlatos || [];
+    const currency = productData.currency || 'USD';
+    const categories = productData.categorias || [];
+    const contornos = productData.contornos || [];
+    const sucursales = productData.sucursales || [];
 
     const filteredProducts = product.filter(p => {
         const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -120,6 +104,11 @@ export default function ListProduct() {
 
     const handleCreateSuccess = () => {
         setIsCreateModalOpen(false);
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+    }
+
+    const handleEditSuccess = () => {
+        setProductToEdit(null);
         queryClient.invalidateQueries({ queryKey: ['products'] });
     }
 
@@ -267,13 +256,13 @@ export default function ListProduct() {
                                         </td>
                                         <td className="p-4 align-middle text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Link
-                                                    href={`/panel/plato/${p.id}`}
+                                                <button
+                                                    onClick={() => setProductToEdit(p)}
                                                     className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-medium transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800"
                                                 >
                                                     <Pencil className="h-4 w-4 text-gray-500" />
                                                     <span className="sr-only">Editar</span>
-                                                </Link>
+                                                </button>
                                                 <button
                                                     onClick={() => handleDeleteClick(p)}
                                                     className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-red-900/20 dark:hover:text-red-400"
@@ -307,6 +296,30 @@ export default function ListProduct() {
                     <ProductForm
                         onSuccess={handleCreateSuccess}
                         onCancel={() => setIsCreateModalOpen(false)}
+                        currency={currency}
+                        categories={categories}
+                        contornos={contornos}
+                        sucursales={sucursales}
+                    />
+                </div>
+            </Modal>
+
+            {/* Modal for Editing Product */}
+            <Modal
+                isOpen={!!productToEdit}
+                onClose={() => setProductToEdit(null)}
+                title="Editar Producto"
+            >
+                <div className="mt-2">
+                    <ProductForm
+                        key={productToEdit?.id}
+                        initialData={productToEdit}
+                        onSuccess={handleEditSuccess}
+                        onCancel={() => setProductToEdit(null)}
+                        currency={currency}
+                        categories={categories}
+                        contornos={contornos}
+                        sucursales={sucursales}
                     />
                 </div>
             </Modal>
