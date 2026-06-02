@@ -36,16 +36,16 @@ export default function Login() {
         onSuccess: (login) => {
             if (login.status) {
                 if (login.auth.role === 'User') {
-                    router.push('/Panel');
+                    router.push('/panel');
                 } else {
                     if (login.auth.role === 'Mesero') {
-                        router.push('/Panel/pedidos-mesero');
+                        router.push('/panel/pedidos-mesero');
                     }
                     if (login.auth.role === 'Caja') {
-                        router.push('/Panel/caja');
+                        router.push('/panel/caja');
                     }
                     if (login.auth.role === 'Cocina') {
-                        router.push('/Panel/orders');
+                        router.push('/panel/orders');
                     }
                 }
             } else {
