@@ -1,49 +1,28 @@
-
 import { NextResponse } from 'next/server'
-import { prisma } from '@/libs/prisma';
 import { authorizeRequest } from '@/libs/auth'
+import { MesaRepository } from '@/repositories/User/Mesa/MesaRepository'
+import { StoreMesaRepository } from '@/repositories/User/Mesa/StoreMesaRepository'
+import { MesaService } from '@/services/User/Mesa/MesaService'
+import { StoreMesaService } from '@/services/User/Mesa/StoreMesaService'
+
+const mesaRepository = new MesaRepository();
+const storeMesaRepository = new StoreMesaRepository();
+const mesaService = new MesaService(mesaRepository);
+const storeMesaService = new StoreMesaService(mesaRepository, storeMesaRepository);
 
 export async function GET(request) {
-
   const user = await authorizeRequest(request)
 
-  if (!user) {
+  if (!user || !user.authorized) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
   }
 
   try {
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { userId: user.auth.restauranteId }
-    })
+    const mesas = await mesaService.getMesasByUserId(user.auth.restauranteId);
 
-    if (!restaurant) {
+    if (mesas === null) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
     }
-
-    const mesas = await prisma.mesa.findMany({
-      where: { restaurantId: restaurant.id },
-      include: {
-        pedidos: {
-          where: {
-            estado: {
-              notIn: ['Pagado', 'Cancelado']
-            }
-          },
-          include: {
-            items: {
-              include: {
-                plato: true
-              }
-            }
-          }
-        },
-        restaurant: {
-          select: {
-            currency: true
-          }
-        }
-      }
-    })
 
     return NextResponse.json(mesas)
   } catch (error) {
@@ -52,30 +31,19 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-
   const user = await authorizeRequest(request)
 
-  if (!user) {
+  if (!user || !user.authorized) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
   }
 
   try {
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { userId: user.auth.id }
-    })
+    const data = await request.json()
+    const newMesa = await storeMesaService.createMesa(user.auth.id, data);
 
-    if (!restaurant) {
+    if (newMesa === null) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
     }
-
-    const data = await request.json()
-
-    const newMesa = await prisma.mesa.create({
-      data: {
-        ...data,
-        restaurantId: restaurant.id
-      }
-    })
 
     return NextResponse.json(newMesa)
   } catch (error) {

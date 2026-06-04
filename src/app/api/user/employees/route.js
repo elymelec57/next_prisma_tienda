@@ -1,24 +1,23 @@
-
 import { NextResponse } from 'next/server'
-import { prisma } from '@/libs/prisma'
-import bcrypt from 'bcryptjs';
 import { authorizeRequest } from '@/libs/auth'
+import { EmployeeRepository } from '@/repositories/User/Employee/EmployeeRepository'
+import { StoreEmployeeRepository } from '@/repositories/User/Employee/StoreEmployeeRepository'
+import { EmployeeService } from '@/services/User/Employee/EmployeeService'
+import { StoreEmployeeService } from '@/services/User/Employee/StoreEmployeeService'
+
+const employeeRepository = new EmployeeRepository();
+const storeEmployeeRepository = new StoreEmployeeRepository();
+const employeeService = new EmployeeService(employeeRepository);
+const storeEmployeeService = new StoreEmployeeService(storeEmployeeRepository);
 
 export async function GET(request) {
   try {
     const user = await authorizeRequest(request)
-    if (!user) {
+    if (!user || !user.authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const employees = await prisma.empleado.findMany({
-      where: { restaurantId: user.auth.restauranteId },
-      include: {
-        rol: true,
-      },
-      orderBy: { nombre: 'asc' }
-    });
-
+    const employees = await employeeService.getEmployeesByRestaurant(user.auth.restauranteId);
     return NextResponse.json(employees);
   } catch (error) {
     console.error(error);
@@ -29,27 +28,12 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const user = await authorizeRequest(request)
-    if (!user) {
+    if (!user || !user.authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { nombre, apellido, telefono, email, password, rolId } = await request.json();
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    const newEmployee = await prisma.empleado.create({
-      data: {
-        nombre,
-        apellido,
-        telefono,
-        email,
-        password: hashedPassword,
-        rolId,
-        userId: user.auth.id,
-        restaurantId: user.auth.restauranteId,
-      },
-      include: {
-        rol: true
-      }
-    });
+    const data = await request.json();
+    const newEmployee = await storeEmployeeService.execute(data, user.auth.id, user.auth.restauranteId);
 
     return NextResponse.json(newEmployee, { status: 201 });
   } catch (error) {
