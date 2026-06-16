@@ -2,6 +2,20 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/libs/prisma'
 import { authorizeRequest } from '@/libs/auth'
+import { AllOrderOnlineRepository } from '@/repositories/User/Order/AllOrderOnlineRepository'
+import { AllOrderOnlineService } from '@/services/User/Order/AllOrderOnlineService'
+
+const allOrderOnlineRepository = new AllOrderOnlineRepository()
+const allOrderOnlineService = new AllOrderOnlineService(allOrderOnlineRepository)
+
+export async function GET(request) {
+    const user = await authorizeRequest(request)
+    if (!user || !user.authorized) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
+    }
+    const orders = await allOrderOnlineService.execute(user.auth.restauranteId);
+    return NextResponse.json({ status: true, orders })
+}
 
 export async function POST(request) {
     const user = await authorizeRequest(request)

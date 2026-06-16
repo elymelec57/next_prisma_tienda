@@ -35,7 +35,7 @@ export default function Orders() {
     const { data: orders = [], isLoading: loading } = useQuery({
         queryKey: ['orders', user.restauranteId],
         queryFn: async () => {
-            const res = await fetch(`/api/user/orders/user/${user.restauranteId}`);
+            const res = await fetch(`/api/user/orders`);
             if (!res.ok) throw new Error('Error al cargar pedidos');
             const data = await res.json();
             return data.orders || [];
