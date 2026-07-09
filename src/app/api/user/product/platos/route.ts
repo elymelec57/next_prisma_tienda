@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
 import { authorizeRequest } from '@/libs/auth'
 import { PlatoRepository } from '@/repositories/User/Plato/PlatoRepository';
-import { RestaurantRepository } from '@/repositories/RestaurantRepository';
 import { PlatoService } from '@/services/User/Plato/PlatoService';
 
 const platoRepository = new PlatoRepository();
-const restaurantRepository = new RestaurantRepository();
-const platoService = new PlatoService(platoRepository, restaurantRepository);
+const platoService = new PlatoService(platoRepository);
 
 export async function GET(request) {
     const user = await authorizeRequest(request)

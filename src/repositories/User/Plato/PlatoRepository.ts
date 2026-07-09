@@ -1,6 +1,7 @@
 import { prisma } from '@/libs/prisma';
+import { IPlato } from '@/interfaces/User/Platos/PlatoInterface';
 
-export class PlatoRepository {
+export class PlatoRepository implements IPlato {
     async findAllByRestaurantId(restaurantId) {
         return await prisma.plato.findMany({
             select: {
@@ -19,28 +20,28 @@ export class PlatoRepository {
         });
     }
 
-    async AllContornos(restaurantId) {
-        return await prisma.contornos.findMany({
-            select: {
-                id: true,
-                nombre: true,
-                price: true,
-            },
-            where: {
-                restaurantId: restaurantId
-            }
-        });
-    }
+    // async AllContornos(restaurantId) {
+    //     return await prisma.contornos.findMany({
+    //         select: {
+    //             id: true,
+    //             nombre: true,
+    //             price: true,
+    //         },
+    //         where: {
+    //             restaurantId: restaurantId
+    //         }
+    //     });
+    // }
 
-    async Allsucursales(restaurantId) {
-        return await prisma.sucursal.findMany({
-            where: { restaurantId: Number(restaurantId) },
-            select: {
-                id: true,
-                nombre: true,
-            }
-        });
-    }
+    // async Allsucursales(restaurantId) {
+    //     return await prisma.sucursal.findMany({
+    //         where: { restaurantId: Number(restaurantId) },
+    //         select: {
+    //             id: true,
+    //             nombre: true,
+    //         }
+    //     });
+    // }
 
     async findImagesByIds(imageIds) {
         return await prisma.image.findMany({
@@ -69,15 +70,15 @@ export class PlatoRepository {
         });
     }
 
-    async findCategoriesByRestaurantId(restaurantId) {
-        return await prisma.categoria.findMany({
-            where: {
-                platos: {
-                    some: {
-                        restaurantId: restaurantId
-                    }
-                }
-            }
-        });
-    }
+    // async findCategoriesByRestaurantId(restaurantId) {
+    //     return await prisma.categoria.findMany({
+    //         where: {
+    //             platos: {
+    //                 some: {
+    //                     restaurantId: restaurantId
+    //                 }
+    //             }
+    //         }
+    //     });
+    // }
 }

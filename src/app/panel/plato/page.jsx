@@ -33,8 +33,17 @@ export default function ListProduct() {
     const [productToDelete, setProductToDelete] = useState(null);
     const [productToEdit, setProductToEdit] = useState(null);
 
-    const { data: productData = { dataPlatos: [], currency: 'USD', categorias: [], contornos: [] }, isLoading: loading } = useQuery({
+    const { data: platos, isLoading: loadingPlato } = useQuery({
         queryKey: ['products'],
+        queryFn: async () => {
+            const res = await fetch(`/api/user/product/platos`);
+            if (!res.ok) throw new Error('Error al cargar platos');
+            return res.json();
+        }
+    });
+
+    const { data: Data = { currency: 'USD', categorias: [], contornos: [] }, isLoading: loading } = useQuery({
+        queryKey: ['data'],
         queryFn: async () => {
             const res = await fetch(`/api/user/product`);
             if (!res.ok) throw new Error('Error al cargar platos');
@@ -42,11 +51,12 @@ export default function ListProduct() {
         }
     });
 
-    const product = productData.dataPlatos || [];
-    const currency = productData.currency || 'USD';
-    const categories = productData.categorias || [];
-    const contornos = productData.contornos || [];
-    const sucursales = productData.sucursales || [];
+    const product = platos?.dataPlatos || [];
+
+    const currency = Data.currency || 'USD';
+    const categories = Data.categorias || [];
+    const contornos = Data.contornos || [];
+    const sucursales = Data.sucursales || [];
 
     const filteredProducts = product.filter(p => {
         const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -112,7 +122,7 @@ export default function ListProduct() {
         queryClient.invalidateQueries({ queryKey: ['products'] });
     }
 
-    if (loading) {
+    if (loadingPlato) {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -242,7 +252,7 @@ export default function ListProduct() {
                                             {p.descripcion}
                                         </td>
                                         <td className="p-4 align-middle font-medium">
-                                            {formatCurrency(p.precio, productData.currency)}
+                                            {formatCurrency(p.precio, Data.currency)}
                                         </td>
                                         <td className="p-4 align-middle">
                                             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm
