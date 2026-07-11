@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/libs/auth';
 import { IngredientRepository } from '@/repositories/User/Ingredient/IngredientRepository';
-import { RestaurantRepository } from '@/repositories/RestaurantRepository';
 import { IngredientService } from '@/services/User/Ingredient/IngredientService';
 
 const ingredientRepository = new IngredientRepository();
-const restaurantRepository = new RestaurantRepository();
-const ingredientService = new IngredientService(ingredientRepository, restaurantRepository);
+const ingredientService = new IngredientService(ingredientRepository);
 
 export async function GET(request) {
     const user = await authorizeRequest(request);
@@ -17,7 +15,7 @@ export async function GET(request) {
 
     try {
         const { searchParams } = new URL(request.url);
-        const sucursalId = searchParams.get('sucursalId');
+        const sucursalId = Number(searchParams.get('sucursalId'));
 
         const result = await ingredientService.getIngredientsByRestaurant(
             user.auth.restauranteId,

@@ -1,11 +1,10 @@
-export class IngredientService {
-    constructor(ingredientRepository, restaurantRepository) {
-        this.ingredientRepository = ingredientRepository;
-        this.restaurantRepository = restaurantRepository;
-    }
+import { IGetIngredient } from "@/interfaces/User/Ingredient/GetIngredientInterface";
 
-    async getIngredientsByRestaurant(restaurantId, sucursalId = null) {
-        const currency = await this.restaurantRepository.getCurrency(restaurantId);
+export class IngredientService {
+    constructor(private ingredientRepository: IGetIngredient) { }
+
+    async getIngredientsByRestaurant(restaurantId: number, sucursalId?: number | null) {
+        const currency = await this.ingredientRepository.getCurrency(restaurantId);
         const ingredients = await this.ingredientRepository.findAllByRestaurantId(restaurantId, sucursalId);
 
         const serialized = ingredients.map(ing => ({
