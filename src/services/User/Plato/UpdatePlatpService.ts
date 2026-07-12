@@ -1,9 +1,10 @@
+import { UpdatePlatoRepository } from "@/repositories/User/Plato/UpdatePlatoRepository";
+
 export class UpdatePlatoService {
-    constructor(platoRepository) {
-        this.platoRepository = platoRepository;
+    constructor(private platoRepository: UpdatePlatoRepository) {
     }
 
-    async execute(id, form) {
+    async execute(id: number, form: any) {
         const plato = await this.platoRepository.update(id, {
             nombre: form.name,
             descripcion: form.description,

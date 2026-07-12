@@ -5,16 +5,6 @@ import { UpdatePlatoService } from "@/services/User/Plato/UpdatePlatpService";
 import { DeletePlatoRepository } from "@/repositories/User/Plato/DeletePlatoRepository";
 import { DeletePlatoService } from "@/services/User/Plato/DeletePlatoService";
 
-// export async function GET(request, segmentData) {
-//     const params = await segmentData.params
-//     try {
-//         const plato = await platoService.getPlatoById(params.id);
-//         return NextResponse.json({ plato })
-//     } catch (error) {
-//         return NextResponse.json({ error: error.message }, { status: 500 })
-//     }
-// }
-
 export async function PUT(request, segmentData) {
     const params = await segmentData.params
     const { form } = await request.json()
