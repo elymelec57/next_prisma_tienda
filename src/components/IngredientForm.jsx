@@ -176,7 +176,7 @@ export default function IngredientForm({ ingredientId = null, sucursalId = null,
     const onSubmit = async (data) => {
         // Transform strings to numbers/dates if needed, though zod handles type validation, the form inputs are strings mostly.
         // react-hook-form valueAsNumber helps.
-        
+
         const payload = { ...data, sucursalId };
 
         if (ingredientId) {

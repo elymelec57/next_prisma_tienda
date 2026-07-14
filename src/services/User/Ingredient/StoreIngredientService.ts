@@ -1,9 +1,11 @@
-export class StoreIngredientService {
-    constructor(storeRepository) {
-        this.storeRepository = storeRepository;
-    }
+import { IStoreIngredient } from "@/interfaces/User/Ingredient/StoreIngredientInterface";
 
-    async execute(data, restaurantId) {
+export class StoreIngredientService {
+    constructor(
+        private storeRepository: IStoreIngredient
+    ) { }
+
+    async execute(data: any, restaurantId: number) {
         const ingredient = await this.storeRepository.create({
             nombre: data.nombre,
             categoria: data.categoria,

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/libs/auth';
 import { IngredientRepository } from '@/repositories/User/Ingredient/IngredientRepository';
-import { RestaurantRepository } from '@/repositories/RestaurantRepository';
 import { IngredientService } from '@/services/User/Ingredient/IngredientService';
 import { UpdateIngredientRepository } from '@/repositories/User/Ingredient/UpdateIngredientRepository';
 import { UpdateIngredientService } from '@/services/User/Ingredient/UpdateIngredientService';
@@ -17,8 +16,7 @@ export async function GET(request, segmentData) {
     const params = await segmentData.params;
     try {
         const ingredientRepository = new IngredientRepository();
-        const restaurantRepository = new RestaurantRepository();
-        const ingredientService = new IngredientService(ingredientRepository, restaurantRepository);
+        const ingredientService = new IngredientService(ingredientRepository);
 
         const result = await ingredientService.getIngredientById(params.id);
         return NextResponse.json(result);

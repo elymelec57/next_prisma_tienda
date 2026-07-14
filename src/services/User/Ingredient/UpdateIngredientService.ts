@@ -1,9 +1,11 @@
-export class UpdateIngredientService {
-    constructor(updateRepository) {
-        this.updateRepository = updateRepository;
-    }
+import { IUpdateIngredient } from "@/interfaces/User/Ingredient/UpdateIngredientInterface";
 
-    async execute(id, data) {
+export class UpdateIngredientService {
+    constructor(
+        private updateRepository: IUpdateIngredient
+    ) { }
+
+    async execute(id: number, data: any) {
         const ingredient = await this.updateRepository.update(id, {
             nombre: data.nombre,
             categoria: data.categoria,
