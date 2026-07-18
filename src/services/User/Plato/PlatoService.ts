@@ -3,8 +3,15 @@ import { IPlato } from "@/interfaces/User/Platos/PlatoInterface";
 export class PlatoService {
     constructor(private platoRepository: IPlato) { }
 
-    async getPlatosByRestaurant(restaurantId: number) {
-        const platos = await this.platoRepository.findAllByRestaurantId(restaurantId);
+    async getPlatosByRestaurant(restaurantId: number, sucursalId: number | string) {
+        let platos = [];
+        if (sucursalId === 'main') {
+            platos = await this.platoRepository.findAllByRestaurantId(restaurantId);
+        }
+        else {
+            platos = await this.platoRepository.findAllByRestaurantIdAndSucursalId(restaurantId, sucursalId);
+        }
+
         const imageIds = platos.map((p) => p.mainImageId).filter((id) => id !== null);
         if (imageIds.length === 0) {
             const dataPlatos = platos.map((p) => ({ ...p, mainImage: null }));

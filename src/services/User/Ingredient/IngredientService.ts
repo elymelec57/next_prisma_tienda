@@ -3,9 +3,13 @@ import { IGetIngredient } from "@/interfaces/User/Ingredient/GetIngredientInterf
 export class IngredientService {
     constructor(private ingredientRepository: IGetIngredient) { }
 
-    async getIngredientsByRestaurant(restaurantId: number, sucursalId?: number | null) {
-        const currency = await this.ingredientRepository.getCurrency(restaurantId);
-        const ingredients = await this.ingredientRepository.findAllByRestaurantId(restaurantId, sucursalId);
+    async getIngredientsByRestaurant(restaurantId: number, sucursalId?: number | string) {
+        let ingredients;
+        if (sucursalId == 'main') {
+            ingredients = await this.ingredientRepository.findAllByRestaurantId(restaurantId, null);
+        } else {
+            ingredients = await this.ingredientRepository.findAllByRestaurantAndSucursalId(restaurantId, Number(sucursalId));
+        }
 
         const serialized = ingredients.map(ing => ({
             ...ing,
@@ -15,7 +19,7 @@ export class IngredientService {
             stockMaximo: ing.stockMaximo ? Number(ing.stockMaximo) : null,
         }));
 
-        return { ingredients: serialized, currency };
+        return { ingredients: serialized };
     }
 
     async getIngredientById(id) {

@@ -29,13 +29,13 @@ export class RestaurantRepository {
         return restaurant?.id || null;
     }
 
-    async getCurrency(id) {
-        const restaurant = await prisma.restaurant.findUnique({
-            where: { id: Number(id) },
-            select: { currency: true }
-        });
-        return restaurant?.currency || 'USD';
-    }
+    // async getCurrency(id) {
+    //     const restaurant = await prisma.restaurant.findUnique({
+    //         where: { id: Number(id) },
+    //         select: { currency: true }
+    //     });
+    //     return restaurant?.currency || 'USD';
+    // }
 
     async findAll() {
         return await prisma.restaurant.findMany();

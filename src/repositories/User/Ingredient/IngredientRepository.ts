@@ -3,13 +3,17 @@ import { IGetIngredient } from '@/interfaces/User/Ingredient/GetIngredientInterf
 
 export class IngredientRepository implements IGetIngredient {
     async findAllByRestaurantId(restaurantId: number, sucursalId: number | null) {
-        let whereClause: any = { restaurantId: Number(restaurantId) };
+        let whereClause: any = { restaurantId: Number(restaurantId), sucursales: { none: {} } };
 
-        if (sucursalId) {
-            whereClause.sucursalId = Number(sucursalId);
-        } else {
-            whereClause.sucursalId = null;
-        }
+        return await prisma.ingredienteRestaurante.findMany({
+            where: whereClause,
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    async findAllByRestaurantAndSucursalId(restaurantId: number, sucursalId: number) {
+        let whereClause: any = { restaurantId: Number(restaurantId) };
+        whereClause.sucursalId = Number(sucursalId);
 
         return await prisma.ingredienteRestaurante.findMany({
             where: whereClause,
@@ -23,13 +27,5 @@ export class IngredientRepository implements IGetIngredient {
                 id: Number(id),
             },
         });
-    }
-
-    async getCurrency(id) {
-        const restaurant = await prisma.restaurant.findUnique({
-            where: { id: Number(id) },
-            select: { currency: true }
-        });
-        return restaurant?.currency || 'USD';
     }
 }

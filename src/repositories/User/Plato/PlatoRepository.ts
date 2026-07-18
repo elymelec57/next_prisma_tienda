@@ -15,7 +15,31 @@ export class PlatoRepository implements IPlato {
                 sucursales: true,
             },
             where: {
-                restaurantId: restaurantId
+                restaurantId: restaurantId,
+                sucursales: { none: {} }
+            },
+        });
+    }
+
+    async findAllByRestaurantIdAndSucursalId(restaurantId, sucursalId) {
+        return await prisma.plato.findMany({
+            select: {
+                id: true,
+                nombre: true,
+                descripcion: true,
+                precio: true,
+                disponible: true,
+                mainImageId: true,
+                categoriaId: true,
+                sucursales: true,
+            },
+            where: {
+                restaurantId: restaurantId,
+                sucursales: {
+                    some: {
+                        id: Number(sucursalId)
+                    }
+                }
             },
         });
     }

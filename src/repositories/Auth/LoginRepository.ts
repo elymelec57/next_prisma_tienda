@@ -30,4 +30,22 @@ export class LoginRepository implements LoginInterface {
             include: { rol: true }
         });
     }
+
+    async getCurrency(id: number) {
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { id: Number(id) },
+            select: { currency: true }
+        });
+        return restaurant?.currency || 'USD';
+    }
+
+    async findAllSucursalesByRestaurantId(restaurantId: number) {
+        return await prisma.sucursal.findMany({
+            where: { restaurantId: Number(restaurantId) },
+            select: {
+                id: true,
+                nombre: true,
+            },
+        });
+    }
 }

@@ -15,7 +15,7 @@ export class UpdatePlatoRepository {
                     set: data.contornos ? data.contornos.map(id => ({ id: Number(id) })) : []
                 },
                 sucursales: {
-                    set: data.sucursales ? data.sucursales.map(id => ({ id: Number(id) })) : []
+                    set: data.sucursales ? [{ id: Number(data.sucursales) }] : []
                 }
             }
         });

@@ -6,6 +6,7 @@ export class StoreIngredientService {
     ) { }
 
     async execute(data: any, restaurantId: number) {
+        console.log(restaurantId);
         const ingredient = await this.storeRepository.create({
             nombre: data.nombre,
             categoria: data.categoria,

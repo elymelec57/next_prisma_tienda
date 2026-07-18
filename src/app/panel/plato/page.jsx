@@ -8,7 +8,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { Plus, Pencil, Trash, Search, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
-
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import Modal from '@/components/Modal';
 import ProductForm from '@/components/ProductForm';
@@ -18,45 +17,42 @@ export default function ListProduct() {
     const params = useParams()
     const router = useRouter()
     const queryClient = useQueryClient();
-    const id = useAppSelector((state) => state.auth.auth.id)
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
-    const [selectedSucursal, setSelectedSucursal] = useState('all');
 
-    const restauranteId = useAppSelector((state) => state.auth.auth.restauranteId);
-
+    const auth = useAppSelector((state) => state.auth.auth);
+    //const restauranteId = auth.restauranteId;
+    const selectedSucursal = useAppSelector((state) => state.auth.selectedSucursal);
+    const currency = auth.currency || 'USD';
     // Modals state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState(null);
     const [productToEdit, setProductToEdit] = useState(null);
 
     const { data: platos, isLoading: loadingPlato } = useQuery({
-        queryKey: ['products'],
+        queryKey: ['products', selectedSucursal.id],
         queryFn: async () => {
-            const res = await fetch(`/api/user/product/platos`);
+            const res = await fetch(`/api/user/product/platos?sucursalId=${selectedSucursal.id}`);
             if (!res.ok) throw new Error('Error al cargar platos');
             return res.json();
         }
     });
 
-    const { data: Data = { currency: 'USD', categorias: [], contornos: [] }, isLoading: loading } = useQuery({
-        queryKey: ['data'],
+    const { data: Data = { categorias: [], contornos: [] }, isLoading: loading } = useQuery({
+        queryKey: ['data', selectedSucursal.id],
         queryFn: async () => {
-            const res = await fetch(`/api/user/product`);
+            const res = await fetch(`/api/user/product?sucursalId=${selectedSucursal.id}`);
             if (!res.ok) throw new Error('Error al cargar platos');
             return res.json();
         }
     });
 
     const product = platos?.dataPlatos || [];
-
-    const currency = Data.currency || 'USD';
     const categories = Data.categorias || [];
     const contornos = Data.contornos || [];
-    const sucursales = Data.sucursales || [];
 
     const filteredProducts = product.filter(p => {
         const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -64,14 +60,7 @@ export default function ListProduct() {
         const matchesStatus = selectedStatus === 'all' ||
             (selectedStatus === 'disponible' ? p.disponible : !p.disponible);
 
-        let matchesSucursal = true;
-        if (selectedSucursal === 'main') {
-            matchesSucursal = !p.sucursales || p.sucursales.length === 0;
-        } else if (selectedSucursal !== 'all') {
-            matchesSucursal = p.sucursales && p.sucursales.some(s => s.id === Number(selectedSucursal));
-        }
-
-        return matchesSearch && matchesCategory && matchesStatus && matchesSucursal;
+        return matchesSearch && matchesCategory && matchesStatus;
     });
 
 
@@ -138,6 +127,7 @@ export default function ListProduct() {
                     <p className="text-gray-500 dark:text-gray-400 mt-1">
                         Gestiona el menú de tu restaurante.
                     </p>
+                    {selectedSucursal.nombre}
                 </div>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
@@ -161,21 +151,6 @@ export default function ListProduct() {
                     />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
-                    {sucursales.length > 0 && (
-                        <div className="w-full sm:w-40">
-                            <select
-                                value={selectedSucursal}
-                                onChange={(e) => setSelectedSucursal(e.target.value)}
-                                className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50"
-                            >
-                                <option value="all">Todas las sedes</option>
-                                <option value="main">Rest. Principal</option>
-                                {sucursales.map((sucursal) => (
-                                    <option key={sucursal.id} value={sucursal.id}>{sucursal.nombre}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
                     <div className="w-full sm:w-48">
                         <select
                             value={selectedCategory}
@@ -252,7 +227,7 @@ export default function ListProduct() {
                                             {p.descripcion}
                                         </td>
                                         <td className="p-4 align-middle font-medium">
-                                            {formatCurrency(p.precio, Data.currency)}
+                                            {formatCurrency(p.precio, currency)}
                                         </td>
                                         <td className="p-4 align-middle">
                                             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm
@@ -309,7 +284,7 @@ export default function ListProduct() {
                         currency={currency}
                         categories={categories}
                         contornos={contornos}
-                        sucursales={sucursales}
+                    // sucursales={sucursales}
                     />
                 </div>
             </Modal>
@@ -329,7 +304,7 @@ export default function ListProduct() {
                         currency={currency}
                         categories={categories}
                         contornos={contornos}
-                        sucursales={sucursales}
+                    // sucursales={sucursales}
                     />
                 </div>
             </Modal>

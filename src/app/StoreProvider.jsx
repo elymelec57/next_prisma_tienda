@@ -1,25 +1,29 @@
 'use client'
 import { useRef } from 'react'
 import { Provider } from 'react-redux'
+import { PersistGate } from 'redux-persist/integration/react'
+import { persistStore } from 'redux-persist'
 import { makeStore } from '../lib/store'
 import TanstackProvider from '@/components/providers/TanstackProvider'
-// import {
-//   saludo
-// } from "../lib/features/auth/authSlice";
 
 export default function Providers({ children }) {
   const storeRef = useRef(null)
+  const persistorRef = useRef(null)
+
   if (!storeRef.current) {
-    // Create the store instance the first time this renders
-    storeRef.current = makeStore();
-    // storeRef.current.dispatch(saludo(saludoo))
+    // Se crea el store y el persistor una sola vez
+    storeRef.current = makeStore()
+    persistorRef.current = persistStore(storeRef.current)
   }
 
   return (
     <Provider store={storeRef.current}>
-      <TanstackProvider>
-        {children}
-      </TanstackProvider>
+      {/* PersistGate retrasa el renderizado hasta que el estado se rehidrate desde localStorage */}
+      <PersistGate loading={null} persistor={persistorRef.current}>
+        <TanstackProvider>
+          {children}
+        </TanstackProvider>
+      </PersistGate>
     </Provider>
   )
 }

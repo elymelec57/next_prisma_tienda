@@ -6,7 +6,7 @@ import { ViewPlatoRepository } from '@/repositories/User/Plato/ViewPlatoReposito
 const viewPlatoRepository = new ViewPlatoRepository();
 const viewPlatoService = new ViewPlatoService(viewPlatoRepository);
 
-export async function GET(request) {
+export async function GET(request: Request) {
     const user = await authorizeRequest(request)
 
     if (!user || !user.authorized) {
@@ -14,7 +14,9 @@ export async function GET(request) {
     }
 
     try {
-        const result = await viewPlatoService.getPlatosByRestaurant(user.auth.restauranteId);
+        const { searchParams } = new URL(request.url);
+        const sucursalId = searchParams.get('sucursalId');
+        const result = await viewPlatoService.getPlatosByRestaurant(user.auth.restaurantId, sucursalId);
         return NextResponse.json(result)
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })

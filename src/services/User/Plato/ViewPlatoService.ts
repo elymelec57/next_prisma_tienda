@@ -3,13 +3,17 @@ import { IViewPlato } from '@/interfaces/User/Platos/ViewPlatoInterface';
 export class ViewPlatoService {
     constructor(private viewPlatoRepository: IViewPlato) { }
 
-    async getPlatosByRestaurant(restaurantId: number) {
+    async getPlatosByRestaurant(restaurantId: number, sucursalId: number | string) {
         try {
-            const currency = await this.viewPlatoRepository.getCurrency(restaurantId);
             const categorias = await this.viewPlatoRepository.findCategoriesByRestaurantId(restaurantId);
-            const contornos = await this.viewPlatoRepository.AllContornos(restaurantId);
-            const sucursales = await this.viewPlatoRepository.Allsucursales(restaurantId);
-            return { categorias, currency, contornos, sucursales };
+            let contornos = [];
+            if (sucursalId === 'main') {
+                contornos = await this.viewPlatoRepository.AllContornos(restaurantId);
+            } else {
+                contornos = await this.viewPlatoRepository.AllContornosSucursalId(restaurantId, sucursalId);
+            }
+
+            return { categorias, contornos };
         } catch (error) {
             throw error;
         }

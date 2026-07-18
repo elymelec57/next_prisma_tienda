@@ -16,7 +16,7 @@ export async function GET(request) {
     }
 
     try {
-        const result = await contornoService.getContornosByRestaurant(user.auth.restauranteId);
+        const result = await contornoService.getContornosByRestaurant(user.auth.restaurantId);
         return NextResponse.json(result);
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

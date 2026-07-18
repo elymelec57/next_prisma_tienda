@@ -21,13 +21,17 @@ export class LoginService {
             const match = bcrypt.compareSync(password, user.password);
             if (match) {
                 const restauranteId = await this.loginRepository.findIdRestaurantByUserId(user.id);
+                const currency = await this.loginRepository.getCurrency(restauranteId);
+                const sucursales = await this.loginRepository.findAllSucursalesByRestaurantId(restauranteId);
 
                 userData = {
                     id: user.id,
                     name: user.name,
                     email: user.email,
                     role: user.roles[0]?.name || 'user',
-                    restauranteId: restauranteId
+                    restaurantId: restauranteId,
+                    currency: currency,
+                    sucursales: sucursales
                 };
             }
         }
@@ -39,12 +43,17 @@ export class LoginService {
             if (employee) {
                 const match = bcrypt.compareSync(password, employee.password);
                 if (match) {
+                    const restaurantId = employee.restaurantId;
+                    const currency = await this.loginRepository.getCurrency(restaurantId);
+                    const sucursales = await this.loginRepository.findAllSucursalesByRestaurantId(restaurantId);
                     userData = {
                         id: employee.id,
                         name: `${employee.nombre} ${employee.apellido}`,
                         email: employee.email,
                         role: employee.rol?.name || 'empleado',
-                        restauranteId: employee.restaurantId
+                        restaurantId: restaurantId,
+                        currency: currency,
+                        sucursales: sucursales
                     };
                 }
             }

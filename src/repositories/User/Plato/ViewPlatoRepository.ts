@@ -3,14 +3,6 @@ import { IViewPlato } from '@/interfaces/User/Platos/ViewPlatoInterface';
 
 export class ViewPlatoRepository implements IViewPlato {
 
-    async getCurrency(id: number) {
-        const restaurant = await prisma.restaurant.findUnique({
-            where: { id: Number(id) },
-            select: { currency: true }
-        });
-        return restaurant?.currency || 'USD';
-    }
-
     async AllContornos(restaurantId) {
         return await prisma.contornos.findMany({
             select: {
@@ -24,12 +16,16 @@ export class ViewPlatoRepository implements IViewPlato {
         });
     }
 
-    async Allsucursales(restaurantId) {
-        return await prisma.sucursal.findMany({
-            where: { restaurantId: Number(restaurantId) },
+    async AllContornosSucursalId(restaurantId, sucursalId) {
+        return await prisma.contornos.findMany({
             select: {
                 id: true,
                 nombre: true,
+                price: true,
+            },
+            where: {
+                restaurantId: restaurantId,
+                sucursalId: Number(sucursalId)
             }
         });
     }

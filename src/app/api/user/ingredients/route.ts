@@ -18,7 +18,7 @@ export async function GET(request) {
         const sucursalId = Number(searchParams.get('sucursalId'));
 
         const result = await ingredientService.getIngredientsByRestaurant(
-            user.auth.restauranteId,
+            user.auth.restaurantId,
             sucursalId
         );
         return NextResponse.json(result);

@@ -5,9 +5,8 @@ export class ContornoService {
     }
 
     async getContornosByRestaurant(restaurantId) {
-        const currency = await this.restaurantRepository.getCurrency(restaurantId);
         const contornos = await this.contornoRepository.findAllByRestaurantId(restaurantId);
-        return { contornos, currency };
+        return { contornos };
     }
 
     async getContornoById(id) {

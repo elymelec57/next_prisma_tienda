@@ -15,7 +15,7 @@ export async function POST(request) {
 
     try {
         const data = await request.json();
-        const result = await storeIngredientService.execute(data, user.auth.restauranteId);
+        const result = await storeIngredientService.execute(data, user.auth.restaurantId);
         return NextResponse.json(result, { status: 201 });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

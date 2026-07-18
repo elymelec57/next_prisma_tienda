@@ -11,15 +11,16 @@ import { plato } from '@/app/schemas/platoSchema';
 import { Camera, Save, X, Loader2 } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/utils/currency';
 
-export default function ProductForm({ productId = null, initialData = null, onSuccess, onCancel, categories, contornos, sucursales, currency }) {
+export default function ProductForm({ productId = null, initialData = null, onSuccess, onCancel, categories, contornos, currency }) {
 
     const router = useRouter()
     const queryClient = useQueryClient();
 
     // States
     const [selectedContornos, setSelectedContornos] = useState([]);
-    const [selectedSucursales, setSelectedSucursales] = useState([]);
+    //const [selectedSucursales, setSelectedSucursales] = useState([]);
     const userId = useAppSelector((state) => state.auth.auth.id);
+    const sucursalId = useAppSelector((state) => state.auth.selectedSucursal);
 
     const [image, setImage] = useState({
         mainImageId: null,
@@ -61,9 +62,9 @@ export default function ProductForm({ productId = null, initialData = null, onSu
             if (initialData.contornos) {
                 setSelectedContornos(initialData.contornos.map(c => c.id.toString()));
             }
-            if (initialData.sucursales) {
-                setSelectedSucursales(initialData.sucursales.map(s => s.id.toString()));
-            }
+            // if (initialData.sucursales) {
+            //     setSelectedSucursales(initialData.sucursales.map(s => s.id.toString()));
+            // }
         }
     }, [initialData, setValue]);
 
@@ -87,7 +88,7 @@ export default function ProductForm({ productId = null, initialData = null, onSu
                 const update = await fetch(`/api/user/product/${effectiveId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: selectedSucursales } })
+                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: sucursalId.id } })
                 });
 
                 const platoUpdate = await update.json()
@@ -105,7 +106,7 @@ export default function ProductForm({ productId = null, initialData = null, onSu
                 const res = await fetch(`/api/user/product/new`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: selectedSucursales }, user: userId })
+                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: sucursalId.id }, user: userId })
                 });
 
                 const plato = await res.json();
@@ -244,7 +245,7 @@ export default function ProductForm({ productId = null, initialData = null, onSu
                     </div>
                 </div>
 
-                {sucursales.length > 0 && (
+                {/* {sucursales.length > 0 && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">Disponibilidad en Sucursales</label>
                         <div className="grid grid-cols-2 gap-3 p-3 border border-gray-100 rounded-md max-h-40 overflow-y-auto dark:border-gray-800">
@@ -269,7 +270,7 @@ export default function ProductForm({ productId = null, initialData = null, onSu
                         </div>
                         <p className="text-xs text-gray-500 mt-1">Si no seleccionas ninguna, el producto sólo estará disponible en el restaurante principal.</p>
                     </div>
-                )}
+                )} */}
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">

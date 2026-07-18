@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils/currency';
+import SucursalSelectorAdmin from '@/components/SucursalSelectorAdmin';
 
 export default function Store() {
   const Authname = useAppSelector((state) => state.auth.auth.name);
@@ -77,6 +78,7 @@ export default function Store() {
           </p>
         </div>
         <div className="flex items-center gap-4 bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+          <SucursalSelectorAdmin />
           {restaurant.logo ? (
             <div className="h-10 w-10 relative overflow-hidden rounded-full border border-gray-200">
               <img src={`https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/${restaurant.logo}`} className="object-cover w-full h-full" alt="" />

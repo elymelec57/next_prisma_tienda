@@ -1,6 +1,6 @@
 import { prisma } from '@/libs/prisma';
-
-export class StorePlatoRepository {
+import { IStorePlato } from '@/interfaces/User/Platos/StorePlatoInterface';
+export class StorePlatoRepository implements IStorePlato {
     async RestaurantByUserId(userId) {
         return await prisma.restaurant.findUnique({
             where: { userId: Number(userId) },
@@ -42,7 +42,7 @@ export class StorePlatoRepository {
                     connect: data.contornos ? data.contornos.map(id => ({ id: Number(id) })) : []
                 },
                 sucursales: {
-                    connect: data.sucursales ? data.sucursales.map(id => ({ id: Number(id) })) : []
+                    connect: data.sucursales ? [{ id: Number(data.sucursales) }] : []
                 }
             },
             include: {

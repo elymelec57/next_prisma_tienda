@@ -1,9 +1,9 @@
-export class StorePlatoService {
-    constructor(storeRepository) {
-        this.storeRepository = storeRepository;
-    }
+import { IStorePlato } from "@/interfaces/User/Platos/StorePlatoInterface";
 
-    async execute(form, userId) {
+export class StorePlatoService {
+    constructor(private storeRepository: IStorePlato) { }
+
+    async execute(form: any, userId: number) {
         const rest = await this.storeRepository.RestaurantByUserId(userId);
 
         if (!rest) {

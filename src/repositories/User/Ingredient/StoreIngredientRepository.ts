@@ -19,7 +19,7 @@ export class StoreIngredientRepository implements IStoreIngredient {
                 stockMinimo: Number(data.stockMinimo) || 0,
                 stockMaximo: data.stockMaximo ? Number(data.stockMaximo) : null,
                 fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null,
-                sucursal: data.sucursalId ? {
+                sucursal: data.sucursalId && data.sucursalId !== 'main' ? {
                     connect: {
                         id: Number(data.sucursalId)
                     }
