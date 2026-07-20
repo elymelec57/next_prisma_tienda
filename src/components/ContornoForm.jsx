@@ -11,12 +11,11 @@ import { contorno } from '@/app/schemas/contonoSchema';
 import { Save, Loader2, X } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/utils/currency';
 
-export default function ContornoForm({ contornoId = null, onSuccess, onCancel }) {
+export default function ContornoForm({ contornoId = null, onSuccess, onCancel, currency, selectedSucursal }) {
 
     const router = useRouter()
     const queryClient = useQueryClient();
     const userId = useAppSelector((state) => state.auth.auth.id)
-    const [currency, setCurrency] = useState('');
 
     const {
         register,
@@ -38,7 +37,6 @@ export default function ContornoForm({ contornoId = null, onSuccess, onCancel })
             const res = await fetch(`/api/user/contornos/${contornoId}`);
             if (!res.ok) throw new Error('Error al cargar datos del contorno');
             const data = await res.json();
-            setCurrency(data.currency);
             return data.contorno;
         },
         enabled: !!contornoId,
@@ -55,7 +53,7 @@ export default function ContornoForm({ contornoId = null, onSuccess, onCancel })
         mutationFn: async (data) => {
             const url = contornoId ? `/api/user/contornos/${contornoId}` : `/api/user/contornos/new`;
             const method = contornoId ? 'PUT' : 'POST';
-            const body = contornoId ? { form: data } : { form: data, user: userId };
+            const body = contornoId ? { form: data, selectedSucursal } : { form: data, user: userId, selectedSucursal };
 
             const res = await fetch(url, {
                 method,
@@ -68,7 +66,7 @@ export default function ContornoForm({ contornoId = null, onSuccess, onCancel })
         onSuccess: (response) => {
             if (response.status) {
                 toast.success(response.message);
-                queryClient.invalidateQueries({ queryKey: ['contornos'] });
+                queryClient.invalidateQueries({ queryKey: ['contornos', selectedSucursal] });
                 if (contornoId) {
                     queryClient.invalidateQueries({ queryKey: ['contorno', contornoId] });
                 }

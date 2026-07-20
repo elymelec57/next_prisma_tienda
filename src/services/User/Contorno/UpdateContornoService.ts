@@ -1,9 +1,9 @@
-export class UpdateContornoService {
-    constructor(contornoRepository) {
-        this.contornoRepository = contornoRepository;
-    }
+import { IUpdateContorno } from "@/interfaces/User/Contornos/UpdateContornoInterface";
 
-    async execute(id, form) {
+export class UpdateContornoService {
+    constructor(private contornoRepository: IUpdateContorno) { }
+
+    async execute(id: number, form: any): Promise<any> {
         const contorno = await this.contornoRepository.update(id, {
             nombre: form.name,
             price: Number(form.price),

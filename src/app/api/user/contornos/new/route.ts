@@ -6,11 +6,11 @@ const storeContornoRepository = new StoreContornoRepository();
 const storeContornoService = new StoreContornoService(storeContornoRepository);
 
 export async function POST(request) {
-    const { form, user } = await request.json();
+    const { form, user, selectedSucursal } = await request.json();
     const userId = typeof user === 'object' ? user.auth.id : Number(user);
 
     try {
-        await storeContornoService.execute(form, userId);
+        await storeContornoService.execute(form, userId, selectedSucursal);
         return NextResponse.json({ status: true, message: 'Contorno creado correctamente' });
     } catch (error) {
         return NextResponse.json({ status: false, message: error.message });

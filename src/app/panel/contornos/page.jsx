@@ -14,22 +14,22 @@ import { formatCurrency } from '@/lib/utils/currency';
 
 export default function ListContorno() {
 
-    const id = useAppSelector((state) => state.auth.auth.id)
+    const auth = useAppSelector((state) => state.auth.auth)
+    const sucursal = useAppSelector((state) => state.auth.selectedSucursal)
+    const currency = auth.currency
     const queryClient = useQueryClient();
 
     // Modals state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [contornoToEdit, setContornoToEdit] = useState(null);
     const [contornoToDelete, setContornoToDelete] = useState(null);
-    const [currency, setCurrency] = useState('');
 
     const { data: contornos = [], isLoading: loading } = useQuery({
-        queryKey: ['contornos'],
+        queryKey: ['contornos', sucursal.id],
         queryFn: async () => {
-            const res = await fetch(`/api/user/contornos`);
+            const res = await fetch(`/api/user/contornos?sucursalId=${sucursal.id}`);
             if (!res.ok) throw new Error('Error al cargar contornos');
             const data = await res.json();
-            setCurrency(data.currency);
             return data.contornos || [];
         }
     });
@@ -182,6 +182,8 @@ export default function ListContorno() {
                         contornoId={contornoToEdit?.id}
                         onSuccess={handleSuccess}
                         onCancel={handleCloseModal}
+                        currency={currency}
+                        selectedSucursal={sucursal.id}
                     />
                 </div>
             </Modal>

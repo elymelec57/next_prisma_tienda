@@ -1,9 +1,9 @@
-export class DeleteContornoService {
-    constructor(contornoRepository) {
-        this.contornoRepository = contornoRepository;
-    }
+import { IDeleteContorno } from "@/interfaces/User/Contornos/DeleteContornoInterface";
 
-    async execute(id) {
+export class DeleteContornoService {
+    constructor(private contornoRepository: IDeleteContorno) { }
+
+    async execute(id: number) {
         const contorno = await this.contornoRepository.delete(id);
         if (!contorno) {
             throw new Error('Error al eliminar');

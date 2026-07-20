@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { ContornoRepository } from '@/repositories/User/Contorno/ContornoRepository';
-import { RestaurantRepository } from '@/repositories/RestaurantRepository';
 import { ContornoService } from '@/services/User/Contorno/ContornoService';
 import { UpdateContornoRepository } from '@/repositories/User/Contorno/UpdateContornoRepository';
 import { UpdateContornoService } from '@/services/User/Contorno/UpdateContornoService';
@@ -11,8 +10,7 @@ export async function GET(request, segmentData) {
     const params = await segmentData.params;
     try {
         const contornoRepository = new ContornoRepository();
-        const restaurantRepository = new RestaurantRepository();
-        const contornoService = new ContornoService(contornoRepository, restaurantRepository);
+        const contornoService = new ContornoService(contornoRepository);
 
         const result = await contornoService.getContornoById(params.id);
         return NextResponse.json(result);
