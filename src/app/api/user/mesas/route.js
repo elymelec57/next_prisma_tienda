@@ -18,7 +18,7 @@ export async function GET(request) {
   }
 
   try {
-    const mesas = await mesaService.getMesasByUserId(user.auth.restauranteId);
+    const mesas = await mesaService.getMesasByUserId(user.auth.restaurantId);
 
     if (mesas === null) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })

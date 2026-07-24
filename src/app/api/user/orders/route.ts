@@ -10,10 +10,13 @@ const allOrderOnlineService = new AllOrderOnlineService(allOrderOnlineRepository
 
 export async function GET(request) {
     const user = await authorizeRequest(request)
+    const sucursalId = request.nextUrl.searchParams.get('sucursalId')
+
     if (!user || !user.authorized) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
-    const orders = await allOrderOnlineService.execute(user.auth.restauranteId);
+
+    const orders = await allOrderOnlineService.execute(user.auth.restaurantId, sucursalId);
     return NextResponse.json({ status: true, orders })
 }
 
@@ -24,13 +27,14 @@ export async function POST(request) {
     }
 
     try {
-        const { restaurantId, clienteId, nombreCliente, total, estado, mesaId, items } = await request.json()
+        const { restaurantId, sucursalId, clienteId, nombreCliente, total, estado, mesaId, items } = await request.json()
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Crear el Pedido
             const order = await tx.pedido.create({
                 data: {
                     restaurantId: Number(restaurantId),
+                    sucursalId: Number(sucursalId) || null,
                     clienteId: clienteId ? Number(clienteId) : null,
                     nombreCliente: nombreCliente || null,
                     total: parseFloat(total),

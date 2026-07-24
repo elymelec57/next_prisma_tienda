@@ -32,15 +32,17 @@ export default function Orders() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('mesa'); // 'mesa' or 'delivery'
 
+    const sucursales = useAppSelector((state) => state.auth.selectedSucursal)
+
     const { data: orders = [], isLoading: loading } = useQuery({
-        queryKey: ['orders', user.restauranteId],
+        queryKey: ['orders', user.restaurantId, sucursales.id],
         queryFn: async () => {
-            const res = await fetch(`/api/user/orders`);
+            const res = await fetch(`/api/user/orders?sucursalId=${sucursales.id}`);
             if (!res.ok) throw new Error('Error al cargar pedidos');
             const data = await res.json();
             return data.orders || [];
         },
-        enabled: !!user.restauranteId,
+        enabled: !!user.restaurantId,
     });
 
     const orderDetailsMutation = useMutation({
@@ -249,7 +251,7 @@ export default function Orders() {
                                                 {o.nombreCliente || o.cliente?.nombre || 'Consumidor Final'}
                                             </td>
                                             <td className="p-4 align-middle font-black text-gray-900 dark:text-gray-100">
-                                                {formatCurrency(o.total, o.restaurant.currency)}
+                                                {formatCurrency(o.total, user.currency)}
                                             </td>
                                             <td className="p-4 align-middle">
                                                 {getStatusBadge(o.estado)}

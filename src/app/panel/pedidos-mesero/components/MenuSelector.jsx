@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Search, Utensils, Loader2, Plus, Info, LayoutGrid } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { formatCurrency } from '@/lib/utils/currency'
+import { useAppSelector } from '@/lib/hooks'
 
 export default function MenuSelector({ onAddItem, userId, currency }) {
     const [products, setProducts] = useState([])
@@ -12,6 +13,8 @@ export default function MenuSelector({ onAddItem, userId, currency }) {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('all')
 
+    const sucursales = useAppSelector((state) => state.auth.selectedSucursal)
+
     useEffect(() => {
         fetchData()
     }, [])
@@ -19,12 +22,12 @@ export default function MenuSelector({ onAddItem, userId, currency }) {
     const fetchData = async () => {
         try {
             const [prodRes] = await Promise.all([
-                fetch(`/api/user/product`)
+                fetch(`/api/user/product?sucursalId=${sucursales.id}`)
             ])
 
             if (prodRes.ok) {
                 const prodData = await prodRes.json()
-                setProducts(prodData.dataPlatos || [])
+                setProducts(prodData.platos || [])
                 setCategories(prodData.categorias || [])
             }
         } catch (err) {

@@ -57,19 +57,35 @@ export async function POST(request) {
         }
 
         // 3. Create Pedido (Delivery orders don't require a mesa)
-        const pedido = await prisma.pedido.create({
-            data: {
-                total: parseFloat(form.total),
-                subTotal: parseFloat(form.subtotal) || 0,
-                estado: "Pendiente",
-                cliente: { connect: { id: cliente.id } },
-                restaurant: { connect: { id: restaurant.id } },
-                sucursalId: form.sucursalId ? parseInt(form.sucursalId) : null,
-                direccion: form.direccion || null,
-                distancia: form.distancia ? parseFloat(form.distancia) : null,
-                deliveryFee: form.deliveryFee ? parseFloat(form.deliveryFee) : null,
-            }
-        })
+        let pedido;
+        if (form.sucursalId != null) {
+            pedido = await prisma.pedido.create({
+                data: {
+                    total: parseFloat(form.total),
+                    subTotal: parseFloat(form.subtotal) || 0,
+                    estado: "Pendiente",
+                    cliente: { connect: { id: cliente.id } },
+                    restaurant: { connect: { id: restaurant.id } },
+                    sucursal: { connect: { id: Number(form.sucursalId) } },
+                    direccion: form.direccion || null,
+                    distancia: form.distancia ? parseFloat(form.distancia) : null,
+                    deliveryFee: form.deliveryFee ? parseFloat(form.deliveryFee) : null,
+                }
+            })
+        } else {
+            pedido = await prisma.pedido.create({
+                data: {
+                    total: parseFloat(form.total),
+                    subTotal: parseFloat(form.subtotal) || 0,
+                    estado: "Pendiente",
+                    cliente: { connect: { id: cliente.id } },
+                    restaurant: { connect: { id: restaurant.id } },
+                    direccion: form.direccion || null,
+                    distancia: form.distancia ? parseFloat(form.distancia) : null,
+                    deliveryFee: form.deliveryFee ? parseFloat(form.deliveryFee) : null,
+                }
+            })
+        }
 
         // 5. Create Payment record
         let payment = null;
@@ -121,10 +137,10 @@ export async function POST(request) {
                         return c ? c.nombre : null;
                     }).filter(Boolean).sort().join(', '); // Sort for consistent grouping
 
-                    const key = unitExtraPrice > 0 
+                    const key = unitExtraPrice > 0
                         ? `${names || "Sin extras"} (+$${unitExtraPrice.toFixed(2)})`
                         : (names || "Sin extras");
-                        
+
                     configCounts[key] = (configCounts[key] || 0) + 1;
                 }
 

@@ -34,6 +34,8 @@ export default function PedidosMesero() {
     const currentAccount = accounts[currentAccountIndex]
     const currentOrder = currentAccount?.items || []
 
+    const sucursales = useAppSelector((state) => state.auth.selectedSucursal)
+
     const queryClient = useQueryClient();
     const handleSelectTable = (table) => {
         dispatch(setCurrentTable(table))
@@ -89,7 +91,8 @@ export default function PedidosMesero() {
     const sendOrderMutation = useMutation({
         mutationFn: async () => {
             const orderBody = {
-                restaurantId: user.restauranteId || 1,
+                restaurantId: user.restaurantId,
+                sucursalId: sucursales.id,
                 clienteId: null,
                 nombreCliente: currentAccount.name,
                 total: currentOrder.reduce((sum, item) => sum + (item.precio * item.quantity), 0),

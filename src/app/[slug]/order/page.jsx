@@ -268,7 +268,7 @@ export default function Buy() {
         orderList.forEach(element => {
             // Price of the base dish
             let elementTotal = Number(element.price) * element.count
-            
+
             // Add price of selected contornos
             if (element.selectedContornos && Array.isArray(element.selectedContornos)) {
                 element.selectedContornos.slice(0, element.count).forEach(unitSelection => {

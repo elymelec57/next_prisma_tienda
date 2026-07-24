@@ -16,7 +16,7 @@ export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         const sucursalId = searchParams.get('sucursalId');
-        const result = await platoService.getPlatosByRestaurant(user.auth.restauranteId, sucursalId);
+        const result = await platoService.getPlatosByRestaurant(user.auth.restaurantId, sucursalId);
         return NextResponse.json(result)
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
