@@ -1,14 +1,12 @@
-import { NextResponse } from "next/server"
-import { prisma } from '@/libs/prisma'
+import { NextResponse } from "next/server";
+import { IBuy } from "@/interfaces/Platform/BuyInterface";
 
-export async function POST(request) {
-    try {
-        const { form, pago } = await request.json()
+export class BuyService {
+    constructor(private buyRepository: IBuy) { }
 
-        // 1. Find Restaurant
-        const restaurant = await prisma.restaurant.findFirst({
-            where: { slug: form.slug }
-        })
+    async execute(form: any, pago: any) {
+        // find restaurant by slug
+        const restaurant = await this.buyRepository.findRestaurantBySlug(form.slug)
 
         if (!restaurant) {
             return NextResponse.json({ status: false, message: 'Restaurante no encontrado' })
@@ -21,17 +19,13 @@ export async function POST(request) {
         if (form.phone) conditions.push({ telefono: form.phone });
 
         if (conditions.length > 0) {
-            cliente = await prisma.cliente.findFirst({
-                where: {
-                    OR: conditions
-                }
-            });
+            cliente = await this.buyRepository.findClient(conditions);
         }
 
         if (!cliente) {
-            cliente = await prisma.cliente.create({
+            cliente = await this.buyRepository.createClient({
                 data: {
-                    nombre: form.name,
+                    nombre: String(form.name),
                     email: form.email || null,
                     telefono: form.phone || null,
                     restaurant: {
@@ -42,24 +36,20 @@ export async function POST(request) {
         } else {
             const updateData = {
                 nombre: form.name,
+                email: form.email || null,
+                telefono: form.phone || null,
                 restaurant: {
                     connect: { id: restaurant.id }
                 }
             };
-            // Update email/phone if they were missing but provided now
-            if (!cliente.email && form.email) updateData.email = form.email;
-            if (!cliente.telefono && form.phone) updateData.telefono = form.phone;
 
-            await prisma.cliente.update({
-                where: { id: cliente.id },
-                data: updateData
-            })
+            await this.buyRepository.updateClient(cliente.id, updateData);
         }
 
         // 3. Create Pedido (Delivery orders don't require a mesa)
         let pedido;
         if (form.sucursalId != null) {
-            pedido = await prisma.pedido.create({
+            pedido = await this.buyRepository.createPedido({
                 data: {
                     total: parseFloat(form.total),
                     subTotal: parseFloat(form.subtotal) || 0,
@@ -73,7 +63,7 @@ export async function POST(request) {
                 }
             })
         } else {
-            pedido = await prisma.pedido.create({
+            pedido = await this.buyRepository.createPedido({
                 data: {
                     total: parseFloat(form.total),
                     subTotal: parseFloat(form.subtotal) || 0,
@@ -90,7 +80,7 @@ export async function POST(request) {
         // 5. Create Payment record
         let payment = null;
         if (pago) {
-            payment = await prisma.payment.create({
+            payment = await this.buyRepository.createPayment({
                 data: {
                     monto: parseFloat(form.total),
                     status: "PENDING",
@@ -154,7 +144,7 @@ export async function POST(request) {
                         extraPrice = parseFloat(priceMatch[1]);
                     }
 
-                    await prisma.itemPedido.create({
+                    await this.buyRepository.createItemPedido({
                         data: {
                             cantidad: qty,
                             precioUnitario: parseFloat(item.price) + extraPrice,
@@ -167,10 +157,6 @@ export async function POST(request) {
             }
         }
 
-        return NextResponse.json({ status: true, message: 'Orden solicitada con exito', paymentId: payment.id })
-
-    } catch (error) {
-        console.error('Error creating order:', error);
-        return NextResponse.json({ status: false, message: 'Error al procesar la orden' })
+        return payment;
     }
 }
