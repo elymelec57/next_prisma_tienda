@@ -35,14 +35,14 @@ export default function Orders() {
     const sucursales = useAppSelector((state) => state.auth.selectedSucursal)
 
     const { data: orders = [], isLoading: loading } = useQuery({
-        queryKey: ['orders', user.restaurantId, sucursales.id],
+        queryKey: ['orders', sucursales.id],
         queryFn: async () => {
             const res = await fetch(`/api/user/orders?sucursalId=${sucursales.id}`);
             if (!res.ok) throw new Error('Error al cargar pedidos');
             const data = await res.json();
             return data.orders || [];
         },
-        enabled: !!user.restaurantId,
+        enabled: !!sucursales.id,
     });
 
     const orderDetailsMutation = useMutation({

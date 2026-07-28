@@ -44,9 +44,9 @@ export async function middleware(request) {
             if (verify.status) {
                 // Si el rol es 'user' (dueño), redirigir al Dashboard, si no al Perfil (seguro para todos)
                 if (verify.auth.role.toLowerCase() === 'user') {
-                    return NextResponse.redirect(new URL('/store', request.url))
+                    return NextResponse.redirect(new URL('/panel', request.url))
                 } else {
-                    return NextResponse.redirect(new URL('/store/profile', request.url))
+                    return NextResponse.redirect(new URL('/panel/profile', request.url))
                 }
             } else {
                 return NextResponse.next()
@@ -56,7 +56,7 @@ export async function middleware(request) {
         }
     }
 
-    if (pathname.startsWith('/store')) {
+    if (pathname.startsWith('/panel')) {
         if (request.cookies.has('token')) {
             const verify = await verifytoken(originNext, token, pathname)
             if (verify.status) {
@@ -67,7 +67,7 @@ export async function middleware(request) {
                         return NextResponse.redirect(new URL(referer, request.url))
                     }
                     // Si no hay referer válido, mandarlo a su perfil
-                    return NextResponse.redirect(new URL('/store/profile', request.url))
+                    return NextResponse.redirect(new URL('/panel/profile', request.url))
                 }
                 return NextResponse.next()
             } else {
@@ -90,6 +90,6 @@ export async function middleware(request) {
 }
 
 export const config = {
-    matcher: ['/login', '/register', '/store/:path*']
+    matcher: ['/login', '/register', '/panel/:path*']
     //matcher: ['/api/:path*']
 }

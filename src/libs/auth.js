@@ -1,21 +1,21 @@
 // src/libs/auth.js
 
 export const routeRoles = [
-  { href: '/store/admin/plans', roles: ['admin'] },
-  { href: '/store/admin/payments', roles: ['admin'] },
-  { href: '/store/plato', roles: ['user'] },
-  { href: '/store/ingredientes', roles: ['user'] },
-  { href: '/store/contornos', roles: ['user'] },
-  { href: '/store/orders', roles: ['user', 'cocina'] },
-  { href: '/store/pedidos-mesero', roles: ['user', 'mesero'] },
-  { href: '/store/caja', roles: ['user', 'caja'] },
-  { href: '/store/horarios', roles: ['mesero', 'caja', 'cocina'] },
-  { href: '/store/mesas', roles: ['user'] },
-  { href: '/store/clients', roles: ['user'] },
-  { href: '/store/business', roles: ['user'] },
-  { href: '/store/empleados', roles: ['user'] },
-  { href: '/store/profile', roles: ['user'] },
-  { href: '/store', roles: ['user'] },
+  { href: '/panel/admin/plans', roles: ['admin'] },
+  { href: '/panel/admin/payments', roles: ['admin'] },
+  { href: '/panel/plato', roles: ['user'] },
+  { href: '/panel/ingredientes', roles: ['user'] },
+  { href: '/panel/contornos', roles: ['user'] },
+  { href: '/panel/orders', roles: ['user', 'cocina'] },
+  { href: '/panel/pedidos-mesero', roles: ['user', 'mesero'] },
+  { href: '/panel/caja', roles: ['user', 'caja'] },
+  { href: '/panel/horarios', roles: ['mesero', 'caja', 'cocina'] },
+  { href: '/panel/mesas', roles: ['user'] },
+  { href: '/panel/clients', roles: ['user'] },
+  { href: '/panel/business', roles: ['user'] },
+  { href: '/panel/empleados', roles: ['user'] },
+  { href: '/panel/profile', roles: ['user'] },
+  { href: '/panel', roles: ['user'] },
 ];
 
 export function isAuthorized(userRole, pathname) {
