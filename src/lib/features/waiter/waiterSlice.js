@@ -174,6 +174,7 @@ export const waiterSlice = createAppSlice({
             const tableData = state.ordersByTable[tableId];
             if (tableData) {
                 const activeAcc = tableData.accounts[tableData.activeAccount];
+                activeAcc.name = `Cuenta 1`;
                 activeAcc.items = [];
                 activeAcc.activeOrderId = null;
             }

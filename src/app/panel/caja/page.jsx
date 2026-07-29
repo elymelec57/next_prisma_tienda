@@ -58,14 +58,14 @@ export default function CajaPage() {
     });
 
     const { data: paymentMethods = [], isLoading: loadingMethods } = useQuery({
-        queryKey: ['paymentMethods', user.restauranteId],
+        queryKey: ['paymentMethods', user.restaurantId],
         queryFn: async () => {
-            const res = await fetch(`/api/user/business/payment-methods?restaurantId=${user.restauranteId}`);
+            const res = await fetch(`/api/user/business/payment-methods?restaurantId=${user.restaurantId}`);
             if (!res.ok) throw new Error('Error al cargar métodos de pago');
             const data = await res.json();
             return data.data || [];
         },
-        enabled: !!user.restauranteId,
+        enabled: !!user.restaurantId,
     });
 
     const loading = loadingPending || loadingStats || loadingMethods;
@@ -372,7 +372,7 @@ export default function CajaPage() {
                                 <h3 className="text-5xl font-black tracking-tighter">
                                     {formatCurrency(selectedOrder.total, stats.currency)}
                                 </h3>
-                                
+
                                 <div className="mt-4 flex flex-col items-center gap-2">
                                     <div className="flex items-center gap-4 text-[10px] text-white/40 font-black uppercase tracking-widest">
                                         <span>Productos: {formatCurrency(selectedOrder.subTotal || 0, stats.currency)}</span>
@@ -531,7 +531,7 @@ export default function CajaPage() {
                             </div>
                             <div className="text-right">
                                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Mesa / Destino</h4>
-                                 <p className="text-sm font-black text-orange-600 uppercase tracking-tight">
+                                <p className="text-sm font-black text-orange-600 uppercase tracking-tight">
                                     {selectedOrder.mesa ? `MESA ${selectedOrder.mesa.numero}` : 'DOMICILIO'}
                                 </p>
                             </div>

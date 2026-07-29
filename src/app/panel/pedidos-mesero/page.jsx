@@ -91,7 +91,7 @@ export default function PedidosMesero() {
     const sendOrderMutation = useMutation({
         mutationFn: async () => {
             const orderBody = {
-                restaurantId: user.restaurantId,
+                //restaurantId: user.restaurantId,
                 sucursalId: sucursales.id,
                 clienteId: null,
                 nombreCliente: currentAccount.name,
