@@ -321,7 +321,7 @@ export default function Orders() {
                                             {['Pendiente', 'Preparando', 'Servido'].map((status) => (
                                                 <button
                                                     key={status}
-                                                    onClick={() => updateOrderStatus(order.id, status, order.mesa.id)}
+                                                    onClick={() => updateOrderStatus(order.id, status, order.mesa !== null ? order.mesa.id : undefined)}
                                                     className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap border-2 shadow-sm
                                                         ${order.estado === status
                                                             ? 'bg-orange-600 text-white border-orange-600 ring-2 ring-orange-500/20'

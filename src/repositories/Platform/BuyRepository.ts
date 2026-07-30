@@ -31,6 +31,24 @@ export class BuyRepository implements IBuy {
         return await prisma.pedido.create(input)
     }
 
+    async createImage(data: any) {
+        return await prisma.image.create({
+            data: {
+                url: data.blob.pathname,
+                modelId: String(data.id),
+                modelType: data.model,
+                altText: 'Imagen que pertenece al ' + data.model,
+            },
+        });
+    }
+
+    async updateImage(id: string, modelId: string) {
+        return await prisma.image.update({
+            where: { id },
+            data: { modelId }
+        });
+    }
+
     async createPayment(input: any) {
         return await prisma.payment.create(input)
     }

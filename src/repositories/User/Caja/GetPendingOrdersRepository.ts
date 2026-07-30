@@ -37,7 +37,7 @@ export class GetPendingOrdersRepository implements IGetPendingOrders {
                 }
             }
         }
-
+        console.log(orders);
         return orders;
     }
 }

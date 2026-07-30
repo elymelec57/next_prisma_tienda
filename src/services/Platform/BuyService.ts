@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { IBuy } from "@/interfaces/Platform/BuyInterface";
+import { SaveImageInterface } from "@/interfaces/Platform/File/SaveImageInterface";
 
 export class BuyService {
-    constructor(private buyRepository: IBuy) { }
+    constructor(private buyRepository: IBuy, private saveImage: SaveImageInterface) { }
 
-    async execute(form: any, pago: any) {
+    async execute(form: any, pago: any, comprobante: any) {
         // find restaurant by slug
         const restaurant = await this.buyRepository.findRestaurantBySlug(form.slug)
 
@@ -80,15 +81,39 @@ export class BuyService {
         // 5. Create Payment record
         let payment = null;
         if (pago) {
-            payment = await this.buyRepository.createPayment({
-                data: {
-                    monto: parseFloat(form.total),
-                    status: "PENDING",
-                    paymentMethod: { connect: { id: pago } }, // 'pago' contains the paymentMethodId
-                    pedido: { connect: { id: pedido.id } },
-                    restaurant: { connect: { id: restaurant.id } },
-                }
-            })
+            if (comprobante) {
+                // Guardar comprobante
+                const blob = await this.saveImage.saveImage('payment', comprobante);
+
+                const image = await this.buyRepository.createImage({
+                    blob: blob,
+                    id: 'Por_definir',
+                    model: "payment",
+                });
+
+                payment = await this.buyRepository.createPayment({
+                    data: {
+                        monto: parseFloat(form.total),
+                        status: "PENDING",
+                        paymentMethod: { connect: { id: pago } }, // 'pago' contains the paymentMethodId
+                        pedido: { connect: { id: pedido.id } },
+                        mainImageId: image.id,
+                        restaurant: { connect: { id: restaurant.id } },
+                    }
+                })
+
+                await this.buyRepository.updateImage(image.id, String(payment.id));
+            } else {
+                payment = await this.buyRepository.createPayment({
+                    data: {
+                        monto: parseFloat(form.total),
+                        status: "PENDING",
+                        paymentMethod: { connect: { id: pago } }, // 'pago' contains the paymentMethodId
+                        pedido: { connect: { id: pedido.id } },
+                        restaurant: { connect: { id: restaurant.id } },
+                    }
+                })
+            }
         }
 
         // 6. Create ItemPedido(s) with Consolidated Notes

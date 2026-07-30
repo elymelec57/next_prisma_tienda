@@ -314,28 +314,22 @@ export default function Buy() {
                 finalForm.direccion = null;
             }
 
+            const formData = new FormData();
+            formData.append('form', JSON.stringify(finalForm));
+            formData.append('pago', form.paymentMethodId);
+            if (comprobanteFile) {
+                formData.append('comprobante', comprobanteFile);
+            }
+
             const OrderSolicitud = await fetch('/api/buy/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form: finalForm, pago: form.paymentMethodId })
+                // IMPORTANTE: Al usar FormData, no debes establecer el header 'Content-Type'. 
+                // El navegador lo hace automáticamente y le agrega el 'boundary'.
+                body: formData
             })
 
             const res = await OrderSolicitud.json()
             if (res.status) {
-
-                if (comprobanteFile) {
-                    await fetch(`/api/avatar/upload?filename=${comprobanteFile.name}&model=payment&id=${res.paymentId}`,
-                        { method: 'POST', body: comprobanteFile },
-                    );
-
-                    // const uploadData = await uploadRes.json();
-                    // if (uploadData.status) {
-                    //     comprobanteUrl = uploadData.url;
-                    // } else {
-                    //     throw new Error("Error al subir el comprobante");
-                    // }
-                }
-
                 alert("Pedido realizado con éxito!");
                 dispatch(reset())
                 localStorage.removeItem('order');
