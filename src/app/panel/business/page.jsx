@@ -320,7 +320,7 @@ export default function Business() {
         if (businessData?.status && businessData.rest.restaurantHours) {
             const targetId = selectedSucursalIdForHours === 'main' ? null : Number(selectedSucursalIdForHours);
             const branchHours = businessData.rest.restaurantHours.filter(h => h.sucursalId === targetId);
-            
+
             if (branchHours.length > 0) {
                 const sortedHours = [...branchHours].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
                 setHours(sortedHours);
@@ -366,43 +366,31 @@ export default function Business() {
     const businessMutation = useMutation({
         mutationFn: async () => {
             if (!form.id) {
+                const formData = new FormData();
+                formData.append('form', JSON.stringify({ form }));
+                if (image.image) {
+                    formData.append('image', image.image);
+                }
                 const storeBusiness = await fetch(`/api/user/business`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form, userId, logo: image.image?.name })
+                    body: formData,
                 });
                 const rest = await storeBusiness.json()
-                if (rest.status) {
-                    if (image.image) {
-                        await fetch(
-                            `/api/avatar/upload?filename=${image.image.name}&model=restaurant&id=${rest.id}`,
-                            {
-                                method: 'POST',
-                                body: image.image,
-                            },
-                        );
-                    }
-                }
                 return rest;
             } else {
+                const formData = new FormData();
+                formData.append('form', JSON.stringify({ form }));
+                formData.append('mainImageId', image.mainImageId);
+                if (image.image) {
+                    formData.append('image', image.image);
+                }
+
                 const updateBusiness = await fetch(`/api/user/business/user/${userId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form })
+                    body: formData,
                 });
 
                 const rest = await updateBusiness.json()
-                if (rest.status) {
-                    if (image.image && image.image instanceof File) {
-                        await fetch(
-                            `/api/avatar/update?filename=${image.image.name}&model=restaurant&id=${rest.id}&mainImage=${rest.mainImage}`,
-                            {
-                                method: 'POST',
-                                body: image.image,
-                            },
-                        );
-                    }
-                }
                 return rest;
             }
         },
@@ -1381,7 +1369,7 @@ export default function Business() {
                                             required
                                         />
                                     </div>
-                                    
+
                                     <div className="md:col-span-2 space-y-2">
                                         <label className="text-sm font-medium flex items-center gap-2">
                                             <MapPin size={16} className="text-red-500" />
@@ -1403,37 +1391,37 @@ export default function Business() {
                                             <div className="p-3 rounded-xl border border-green-100 bg-green-50/30 grid md:grid-cols-2 gap-4 items-end">
                                                 <div className="space-y-1">
                                                     <label className="text-xs font-medium text-green-800">Distancia Gratis (Hasta km)</label>
-                                                    <input type="number" value={sucursalForm.deliveryFreeRange} onChange={(e) => setSucursalForm({...sucursalForm, deliveryFreeRange: e.target.value})} placeholder="Ej: 2" className="flex h-9 w-full rounded-md border border-green-200 bg-white px-3 py-1 text-sm" />
+                                                    <input type="number" value={sucursalForm.deliveryFreeRange} onChange={(e) => setSucursalForm({ ...sucursalForm, deliveryFreeRange: e.target.value })} placeholder="Ej: 2" className="flex h-9 w-full rounded-md border border-green-200 bg-white px-3 py-1 text-sm" />
                                                 </div>
                                             </div>
                                             <div className="p-3 rounded-xl border border-blue-100 bg-blue-50/30 grid md:grid-cols-2 gap-4">
                                                 <div className="space-y-1">
                                                     <label className="text-xs font-medium text-blue-800">Distancia Corta (km)</label>
-                                                    <input type="number" value={sucursalForm.deliveryShortRange} onChange={(e) => setSucursalForm({...sucursalForm, deliveryShortRange: e.target.value})} className="flex h-9 w-full rounded-md border border-blue-200 bg-white px-3 py-1 text-sm" />
+                                                    <input type="number" value={sucursalForm.deliveryShortRange} onChange={(e) => setSucursalForm({ ...sucursalForm, deliveryShortRange: e.target.value })} className="flex h-9 w-full rounded-md border border-blue-200 bg-white px-3 py-1 text-sm" />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-xs font-medium text-blue-800">Precio Corta</label>
-                                                    <input type="number" value={sucursalForm.deliveryShortPrice} onChange={(e) => setSucursalForm({...sucursalForm, deliveryShortPrice: e.target.value})} className="flex h-9 w-full rounded-md border border-blue-200 bg-white px-3 py-1 text-sm" />
+                                                    <input type="number" value={sucursalForm.deliveryShortPrice} onChange={(e) => setSucursalForm({ ...sucursalForm, deliveryShortPrice: e.target.value })} className="flex h-9 w-full rounded-md border border-blue-200 bg-white px-3 py-1 text-sm" />
                                                 </div>
                                             </div>
                                             <div className="p-3 rounded-xl border border-yellow-100 bg-yellow-50/30 grid md:grid-cols-2 gap-4">
                                                 <div className="space-y-1">
                                                     <label className="text-xs font-medium text-yellow-800">Distancia Mediana (km)</label>
-                                                    <input type="number" value={sucursalForm.deliveryMediumRange} onChange={(e) => setSucursalForm({...sucursalForm, deliveryMediumRange: e.target.value})} className="flex h-9 w-full rounded-md border border-yellow-200 bg-white px-3 py-1 text-sm" />
+                                                    <input type="number" value={sucursalForm.deliveryMediumRange} onChange={(e) => setSucursalForm({ ...sucursalForm, deliveryMediumRange: e.target.value })} className="flex h-9 w-full rounded-md border border-yellow-200 bg-white px-3 py-1 text-sm" />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-xs font-medium text-yellow-800">Precio Mediana</label>
-                                                    <input type="number" value={sucursalForm.deliveryMediumPrice} onChange={(e) => setSucursalForm({...sucursalForm, deliveryMediumPrice: e.target.value})} className="flex h-9 w-full rounded-md border border-yellow-200 bg-white px-3 py-1 text-sm" />
+                                                    <input type="number" value={sucursalForm.deliveryMediumPrice} onChange={(e) => setSucursalForm({ ...sucursalForm, deliveryMediumPrice: e.target.value })} className="flex h-9 w-full rounded-md border border-yellow-200 bg-white px-3 py-1 text-sm" />
                                                 </div>
                                             </div>
                                             <div className="p-3 rounded-xl border border-orange-100 bg-orange-50/30 grid md:grid-cols-2 gap-4">
                                                 <div className="space-y-1">
                                                     <label className="text-xs font-medium text-orange-800">Distancia Larga (Más de km)</label>
-                                                    <input type="number" value={sucursalForm.deliveryLongRange} onChange={(e) => setSucursalForm({...sucursalForm, deliveryLongRange: e.target.value})} className="flex h-9 w-full rounded-md border border-orange-200 bg-white px-3 py-1 text-sm" />
+                                                    <input type="number" value={sucursalForm.deliveryLongRange} onChange={(e) => setSucursalForm({ ...sucursalForm, deliveryLongRange: e.target.value })} className="flex h-9 w-full rounded-md border border-orange-200 bg-white px-3 py-1 text-sm" />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-xs font-medium text-orange-800">Precio Larga</label>
-                                                    <input type="number" value={sucursalForm.deliveryLongPrice} onChange={(e) => setSucursalForm({...sucursalForm, deliveryLongPrice: e.target.value})} className="flex h-9 w-full rounded-md border border-orange-200 bg-white px-3 py-1 text-sm" />
+                                                    <input type="number" value={sucursalForm.deliveryLongPrice} onChange={(e) => setSucursalForm({ ...sucursalForm, deliveryLongPrice: e.target.value })} className="flex h-9 w-full rounded-md border border-orange-200 bg-white px-3 py-1 text-sm" />
                                                 </div>
                                             </div>
                                         </div>
@@ -1547,7 +1535,7 @@ export default function Business() {
                                             ))}
                                         </select>
                                     </div>
-                                    
+
                                     <div className="md:col-span-2 flex justify-end gap-2 mt-2">
                                         {isEditingCaja && (
                                             <button
