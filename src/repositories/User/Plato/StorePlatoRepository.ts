@@ -42,13 +42,32 @@ export class StorePlatoRepository implements IStorePlato {
                     connect: data.contornos ? data.contornos.map(id => ({ id: Number(id) })) : []
                 },
                 sucursales: {
-                    connect: data.sucursales ? [{ id: Number(data.sucursales) }] : []
-                }
+                    connect: data.sucursales !== 'main' ? [{ id: Number(data.sucursales) }] : undefined
+                },
+                mainImageId: data.mainImageId,
             },
             include: {
                 restaurant: true,
                 categoria: true,
             },
+        });
+    }
+
+    async createImage(data) {
+        return await prisma.image.create({
+            data: {
+                url: data.blob.pathname,
+                modelId: String(data.id),
+                modelType: data.model,
+                altText: 'Imagen que pertenece al ' + data.model,
+            },
+        });
+    }
+
+    async updateImage(id: string, modelId: string) {
+        return await prisma.image.update({
+            where: { id },
+            data: { modelId }
         });
     }
 }

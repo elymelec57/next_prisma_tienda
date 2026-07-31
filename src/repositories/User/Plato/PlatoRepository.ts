@@ -44,36 +44,13 @@ export class PlatoRepository implements IPlato {
         });
     }
 
-    // async AllContornos(restaurantId) {
-    //     return await prisma.contornos.findMany({
-    //         select: {
-    //             id: true,
-    //             nombre: true,
-    //             price: true,
-    //         },
-    //         where: {
-    //             restaurantId: restaurantId
-    //         }
-    //     });
-    // }
-
-    // async Allsucursales(restaurantId) {
-    //     return await prisma.sucursal.findMany({
-    //         where: { restaurantId: Number(restaurantId) },
-    //         select: {
-    //             id: true,
-    //             nombre: true,
-    //         }
-    //     });
-    // }
-
     async findImagesByIds(imageIds) {
         return await prisma.image.findMany({
             where: {
                 id: {
                     in: imageIds,
                 },
-                modelType: 'plato',
+                modelType: 'platos',
             },
             select: {
                 id: true,
@@ -93,16 +70,4 @@ export class PlatoRepository implements IPlato {
             }
         });
     }
-
-    // async findCategoriesByRestaurantId(restaurantId) {
-    //     return await prisma.categoria.findMany({
-    //         where: {
-    //             platos: {
-    //                 some: {
-    //                     restaurantId: restaurantId
-    //                 }
-    //             }
-    //         }
-    //     });
-    // }
 }

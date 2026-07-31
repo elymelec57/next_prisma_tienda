@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { BuyService } from '@/services/Platform/BuyService'
 import { BuyRepository } from '@/repositories/Platform/BuyRepository'
-import { SaveImageVercelService } from "@/services/Platform/File/SaveImageVercelService";
+import { SaveImageVercelService } from "@/services/Shared/File/SaveImageVercelService";
 
 const buyRepository = new BuyRepository();
 const saveImageVercelService = new SaveImageVercelService();

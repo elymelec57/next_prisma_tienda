@@ -1,4 +1,4 @@
-import { SaveImageInterface } from "@/interfaces/Platform/File/SaveImageInterface";
+import { SaveImageInterface } from "@/interfaces/Shared/File/SaveImageInterface";
 import { put } from "@vercel/blob";
 
 export class SaveImageVercelService implements SaveImageInterface {

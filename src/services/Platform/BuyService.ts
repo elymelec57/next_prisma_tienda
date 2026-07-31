@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { IBuy } from "@/interfaces/Platform/BuyInterface";
-import { SaveImageInterface } from "@/interfaces/Platform/File/SaveImageInterface";
+import { SaveImageInterface } from "@/interfaces/Shared/File/SaveImageInterface";
 
 export class BuyService {
     constructor(private buyRepository: IBuy, private saveImage: SaveImageInterface) { }

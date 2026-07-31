@@ -103,22 +103,17 @@ export default function ProductForm({ productId = null, initialData = null, onSu
                 }
                 return platoUpdate;
             } else {
+                const formData = new FormData();
+                formData.append('form', JSON.stringify({ ...data, contornos: selectedContornos, sucursales: sucursalId.id }));
+
+                if (image.image) {
+                    formData.append('image', image.image);
+                }
                 const res = await fetch(`/api/user/product/new`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: sucursalId.id }, user: userId })
+                    body: formData
                 });
-
                 const plato = await res.json();
-
-                if (plato.status) {
-                    if (image.image) {
-                        await fetch(
-                            `/api/avatar/upload?filename=${image.image.name}&model=plato&id=${plato.id}`,
-                            { method: 'POST', body: image.image },
-                        );
-                    }
-                }
                 return plato;
             }
         },
