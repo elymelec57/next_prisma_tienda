@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         const sucursalId = searchParams.get('sucursalId');
         const result = await viewPlatoService.getPlatosByRestaurant(user.auth.restaurantId, sucursalId);
         const Platos = await platoService.getPlatosByRestaurant(user.auth.restaurantId, sucursalId);
-        return NextResponse.json({ platos: Platos.dataPlatos, categorias: result.categorias })
+        return NextResponse.json({ platos: Platos.dataPlatos, categorias: result.categorias, contornos: result.contornos })
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }

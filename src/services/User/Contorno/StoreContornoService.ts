@@ -11,7 +11,7 @@ export class StoreContornoService {
         }
 
         let contorno;
-        if (selectedSucursal === undefined) {
+        if (selectedSucursal === 'main') {
             contorno = await this.storeRepository.create({
                 nombre: form.name,
                 price: Number(form.price),

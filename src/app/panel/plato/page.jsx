@@ -53,7 +53,7 @@ export default function ListProduct() {
     const product = platos?.dataPlatos || [];
     const categories = Data.categorias || [];
     const contornos = Data.contornos || [];
-
+    console.log(contornos)
     const filteredProducts = product.filter(p => {
         const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'all' || p.categoriaId === parseInt(selectedCategory);
