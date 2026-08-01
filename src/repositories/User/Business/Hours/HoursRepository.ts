@@ -1,15 +1,11 @@
 import { prisma } from "@/libs/prisma";
-import { NextResponse } from "next/server";
+import { IHoursRepository, ISaveHoursData, IRestaurantHour } from "@/interfaces/User/Business/Hours/IHoursRepository";
 
-export async function POST(request) {
-    try {
-        const { restaurantId, sucursalId, hours } = await request.json();
+export class HoursRepository implements IHoursRepository {
+    async saveHours(data: ISaveHoursData): Promise<IRestaurantHour[]> {
+        const { restaurantId, sucursalId, hours } = data;
+        const results: IRestaurantHour[] = [];
 
-        if (!restaurantId || !hours || !Array.isArray(hours)) {
-            return NextResponse.json({ status: false, message: "Invalid data" }, { status: 400 });
-        }
-
-        const results = [];
         for (const hour of hours) {
             const existing = await prisma.restaurantHours.findFirst({
                 where: {
@@ -28,7 +24,7 @@ export async function POST(request) {
                         isOpen: hour.isOpen,
                     }
                 });
-                results.push(updated);
+                results.push(updated as IRestaurantHour);
             } else {
                 const created = await prisma.restaurantHours.create({
                     data: {
@@ -40,13 +36,10 @@ export async function POST(request) {
                         isOpen: hour.isOpen,
                     }
                 });
-                results.push(created);
+                results.push(created as IRestaurantHour);
             }
         }
 
-        return NextResponse.json({ status: true, message: "Hours updated successfully", results });
-    } catch (error) {
-        console.error("Error updating hours:", error);
-        return NextResponse.json({ status: false, message: error.message }, { status: 500 });
+        return results;
     }
 }
