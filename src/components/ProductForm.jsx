@@ -84,23 +84,20 @@ export default function ProductForm({ productId = null, initialData = null, onSu
     const mutation = useMutation({
         mutationFn: async (data) => {
             const effectiveId = productId ?? initialData?.id ?? null;
+            const formData = new FormData();
+            formData.append('mainImageId', image.mainImageId)
+            formData.append('form', JSON.stringify({ ...data, contornos: selectedContornos, sucursales: sucursalId.id }));
+
+            if (image.image) {
+                formData.append('image', image.image);
+            }
+
             if (effectiveId) {
                 const update = await fetch(`/api/user/product/${effectiveId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ form: { ...data, contornos: selectedContornos, sucursales: sucursalId.id } })
+                    body: formData
                 });
-
                 const platoUpdate = await update.json()
-
-                if (platoUpdate.status) {
-                    if (image.image && image.image instanceof File) {
-                        await fetch(
-                            `/api/avatar/update?filename=${image.image.name}&model=plato&id=${platoUpdate.id}&mainImage=${platoUpdate.mainImage}`,
-                            { method: 'POST', body: image.image },
-                        );
-                    }
-                }
                 return platoUpdate;
             } else {
                 const formData = new FormData();
