@@ -5,10 +5,10 @@ export async function authorizeAdmin(request) {
 
     // First, check the Authorization header
     let token = null;
-    const authHeader = request.headers.get('authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7);
-    }
+    // const authHeader = request.headers.get('authorization');
+    // if (authHeader && authHeader.startsWith('Bearer ')) {
+    //     token = authHeader.substring(7);
+    // }
 
     // Fall back to cookie if no Bearer token is provided
     if (!token) {

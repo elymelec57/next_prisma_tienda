@@ -5,8 +5,9 @@ import { CajaService } from "@/services/User/Business/Caja/CajaService";
 const cajaService = new CajaService(new CajaRepository());
 
 // Close a shift
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, segmentData: any) {
     try {
+        const params = await segmentData.params;
         const data = await request.json();
 
         if (data.montoCierre === undefined) {

@@ -5,8 +5,9 @@ import { SucursalService } from "@/services/User/Business/Sucursal/SucursalServi
 const sucursalRepository = new SucursalRepository();
 const sucursalService = new SucursalService(sucursalRepository);
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, segmentData: any) {
     try {
+        const params = await segmentData.params;
         const data = await request.json();
         const sucursal = await sucursalService.updateSucursal(params.id, data);
         return NextResponse.json({ status: true, data: sucursal });
@@ -16,8 +17,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, segmentData: any) {
     try {
+        const params = await segmentData.params;
         await sucursalService.deleteSucursal(params.id);
         return NextResponse.json({ status: true, message: "Sucursal eliminada" });
     } catch (error: any) {

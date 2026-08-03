@@ -8,7 +8,7 @@ import {
 export class PaymentMethodService {
     constructor(private readonly paymentMethodRepository: IPaymentMethodRepository) { }
 
-    async getPaymentMethodsByRestaurant(restaurantId: number | string): Promise<IPaymentMethod[]> {
+    async getPaymentMethodsByRestaurant(restaurantId: number): Promise<IPaymentMethod[]> {
         return await this.paymentMethodRepository.findAllByRestaurantId(restaurantId);
     }
 

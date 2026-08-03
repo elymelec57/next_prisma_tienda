@@ -2,7 +2,7 @@ import { prisma } from "@/libs/prisma";
 import { IPlanPaymentRepository, IPlanPayment } from "@/interfaces/User/Business/PlanPayment/IPlanPaymentRepository";
 
 export class PlanPaymentRepository implements IPlanPaymentRepository {
-    async findByUserId(userId: string): Promise<IPlanPayment[]> {
+    async findByUserId(userId: number): Promise<IPlanPayment[]> {
         const restaurant = await prisma.restaurant.findUnique({
             where: { userId },
         });

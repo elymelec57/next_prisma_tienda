@@ -21,13 +21,14 @@ export interface IPlan {
 }
 
 export interface ISubscribeData {
-    userId: string;
+    userId: number;
     planId: number;
     paymentMethod?: string;
     transactionId?: string;
+    newImage: any;
 }
 
 export interface ISubscriptionRepository {
-    findByUserId(userId: string): Promise<{ subscription: ISubscription | null; availablePlans: IPlan[] }>;
+    findByUserId(userId: number): Promise<{ subscription: ISubscription | null; availablePlans: IPlan[] }>;
     subscribe(data: ISubscribeData): Promise<{ subscription?: ISubscription; payment?: object; message?: string }>;
 }

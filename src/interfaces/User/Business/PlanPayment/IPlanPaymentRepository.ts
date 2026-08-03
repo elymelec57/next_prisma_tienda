@@ -17,9 +17,9 @@ export interface IPlanPayment {
 }
 
 export interface IFindPlanPaymentsByRestaurantData {
-    userId: string;
+    userId: number;
 }
 
 export interface IPlanPaymentRepository {
-    findByUserId(userId: string): Promise<IPlanPayment[]>;
+    findByUserId(userId: number): Promise<IPlanPayment[]>;
 }

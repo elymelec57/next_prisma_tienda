@@ -2,14 +2,14 @@ export interface IRestaurantHour {
     id: number;
     restaurantId: number;
     sucursalId?: number | null;
-    dayOfWeek: string;
+    dayOfWeek: number;
     openTime: string;
     closeTime: string;
     isOpen: boolean;
 }
 
 export interface IHourInput {
-    dayOfWeek: string;
+    dayOfWeek: number;
     openTime: string;
     closeTime: string;
     isOpen: boolean;

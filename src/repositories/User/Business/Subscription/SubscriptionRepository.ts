@@ -7,7 +7,7 @@ import {
 } from "@/interfaces/User/Business/Subscription/ISubscriptionRepository";
 
 export class SubscriptionRepository implements ISubscriptionRepository {
-    async findByUserId(userId: string): Promise<{ subscription: ISubscription | null; availablePlans: IPlan[] }> {
+    async findByUserId(userId: number): Promise<{ subscription: ISubscription | null; availablePlans: IPlan[] }> {
         const restaurant = await prisma.restaurant.findUnique({
             where: { userId },
             include: {
@@ -32,7 +32,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     }
 
     async subscribe(data: ISubscribeData): Promise<{ subscription?: ISubscription; payment?: object; message?: string }> {
-        const { userId, planId, paymentMethod, transactionId } = data;
+        const { userId, planId, paymentMethod, transactionId, newImage } = data;
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { userId },
@@ -49,6 +49,15 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         if (!plan) {
             throw new Error("Plan not found");
         }
+
+        const image = await prisma.image.create({
+            data: {
+                url: newImage.pathname,
+                modelId: 'Por_definir',
+                modelType: 'planPayment',
+                altText: 'Imagen de pago de plan',
+            },
+        });
 
         // If plan is free, activate immediately
         if (plan.price === 0) {
@@ -78,7 +87,13 @@ export class SubscriptionRepository implements ISubscriptionRepository {
                 paymentMethod: paymentMethod ?? 'unknown',
                 transactionId,
                 status: 'PENDING',
+                mainImageId: image.id
             },
+        });
+
+        await prisma.image.update({
+            where: { id: image.id },
+            data: { modelId: String(payment.id) }
         });
 
         return {

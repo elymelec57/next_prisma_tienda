@@ -18,8 +18,9 @@ export async function PUT(request: Request, segmentData: any) {
     }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, segmentData: any) {
     try {
+        const params = await segmentData.params;
         await paymentMethodService.deletePaymentMethod(params.id);
         return NextResponse.json({ status: true, message: "Payment method deleted" });
     } catch (error: any) {

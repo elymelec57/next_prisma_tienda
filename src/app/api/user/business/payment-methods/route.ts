@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get("restaurantId");
+    const restaurantId = user.auth.restaurantId;  //searchParams.get("restaurantId");
 
     if (!restaurantId) {
         return NextResponse.json({ status: false, message: "Restaurant ID required" }, { status: 400 });

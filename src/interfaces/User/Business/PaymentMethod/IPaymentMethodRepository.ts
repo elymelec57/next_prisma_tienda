@@ -1,7 +1,11 @@
+import { PaymentType } from "@/../generated/prisma";
+
+export { PaymentType };
+
 export interface IPaymentMethod {
     id: string;
     restaurantId: number;
-    type: string;
+    type: PaymentType;
     label: string;
     ownerName: string;
     ownerId?: string | null;
@@ -15,7 +19,7 @@ export interface IPaymentMethod {
 }
 
 export interface ICreatePaymentMethodData {
-    type: string;
+    type: PaymentType;
     label: string;
     ownerName: string;
     ownerId?: string;

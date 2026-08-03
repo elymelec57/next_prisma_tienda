@@ -44,27 +44,14 @@ export default function PlansTab({ userId }) {
 
     const subscribeMutation = useMutation({
         mutationFn: async ({ planId, paymentMethod, transactionId }) => {
+            const formData = new FormData();
+            formData.append('form', JSON.stringify({ planId, paymentMethod, transactionId }));
+            formData.append('image', upgradeForm.receipt);
             const res = await fetch('/api/user/business/subscription', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ planId, paymentMethod, transactionId })
+                body: formData
             });
-
             const data = await res.json();
-
-            if (data.status && upgradeForm.receipt && data.payment) {
-                const formData = new FormData();
-                formData.append('file', upgradeForm.receipt);
-
-                await fetch(
-                    `/api/avatar/upload?filename=${upgradeForm.receipt.name}&model=planPayment&id=${data.payment.id}`,
-                    {
-                        method: 'POST',
-                        body: formData, // the original had body: upgradeForm.receipt, let's keep it close to original if formData was not used, but formData is standard
-                    },
-                );
-            }
-
             return data;
         },
         onSuccess: (data) => {
