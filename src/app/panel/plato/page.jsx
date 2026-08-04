@@ -6,11 +6,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAppSelector } from "@/lib/hooks";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
-import { Plus, Pencil, Trash, Search, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash, Search, Image as ImageIcon, Loader2, FileUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import Modal from '@/components/Modal';
 import ProductForm from '@/components/ProductForm';
+import ImportPlatosModal from '@/components/ImportPlatosModal';
 
 export default function ListProduct() {
 
@@ -31,6 +32,7 @@ export default function ListProduct() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState(null);
     const [productToEdit, setProductToEdit] = useState(null);
+    const [isImportOpen, setIsImportOpen] = useState(false);
 
     const { data: platos, isLoading: loadingPlato } = useQuery({
         queryKey: ['products', selectedSucursal.id],
@@ -53,7 +55,7 @@ export default function ListProduct() {
     const product = platos?.dataPlatos || [];
     const categories = Data.categorias || [];
     const contornos = Data.contornos || [];
-    console.log(contornos)
+
     const filteredProducts = product.filter(p => {
         const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'all' || p.categoriaId === parseInt(selectedCategory);
@@ -129,13 +131,22 @@ export default function ListProduct() {
                     </p>
                     {selectedSucursal.nombre}
                 </div>
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-gray-50 hover:bg-gray-900/90 h-10 px-4 py-2 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90"
-                >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nuevo Producto
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsImportOpen(true)}
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 h-10 px-4 py-2 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800"
+                    >
+                        <FileUp className="mr-2 h-4 w-4" />
+                        Importar Excel
+                    </button>
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-gray-50 hover:bg-gray-900/90 h-10 px-4 py-2 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90"
+                    >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Nuevo Producto
+                    </button>
+                </div>
             </div>
 
             {/* Filters section */}
@@ -315,6 +326,14 @@ export default function ListProduct() {
                 onClose={handleCancelDelete}
                 onConfirm={handleConfirmDelete}
                 productName={productToDelete?.nombre}
+            />
+
+            {/* Modal for Bulk Import */}
+            <ImportPlatosModal
+                isOpen={isImportOpen}
+                onClose={() => setIsImportOpen(false)}
+                sucursalId={selectedSucursal.id}
+                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['products'] })}
             />
         </div>
     )

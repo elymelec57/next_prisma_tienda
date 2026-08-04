@@ -41,7 +41,7 @@ export class StoreBusinessService {
             if (businessCreate) {
                 await this.storeBusinessRepository.updateImage(newImage.id, String(businessCreate.id));
 
-                return { status: true, message: 'Business created', id: businessCreate.id };
+                return { status: true, message: 'Business created', id: businessCreate.id, restaurantId: businessCreate.id };
             }
 
             return { status: false, message: 'Business created error' };

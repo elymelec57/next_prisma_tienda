@@ -87,6 +87,7 @@ model Restaurant {
   subscription           Subscription?
   planPayments           PlanPayment[]
   cajas                  Caja[]
+  importJobs             ImportJob[]
 
   // Delivery configuration
   lat                 Float?
@@ -506,6 +507,25 @@ model EmpleadoHorario {
   startTime  DateTime
   endTime    DateTime
   empleado   Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model ImportJob {
+  id           String   @id @default(cuid())
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       Int
+  fileName     String
+  totalRows    Int      @default(0)
+  successCount Int      @default(0)
+  errorCount   Int      @default(0)
+  status       String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  data         Json? // Filas crudas del Excel
+  errors       Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  finishedAt   DateTime?
+
+  @@index([restaurantId, createdAt])
 }
 
 model Country {

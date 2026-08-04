@@ -3,6 +3,7 @@ import { StoreBusinessRepository } from "@/repositories/User/Business/StoreBusin
 import { StoreBusinessService } from "@/services/User/Business/StoreBusinessService";
 import { authorizeRequest } from '@/libs/auth';
 import { SaveImageVercelService } from "@/services/Shared/File/SaveImageVercelService";
+import jwt from "jsonwebtoken";
 
 const storeBusinessRepository = new StoreBusinessRepository();
 const saveImageVercelService = new SaveImageVercelService();
@@ -26,7 +27,29 @@ export async function POST(request: any) {
         const result = await storeBusinessService.execute(formData, userId, image);
 
         if (result.status) {
-            return NextResponse.json(result);
+            // Re-sign the JWT with the new restaurantId and update the cookie
+            const updatedUserData = {
+                ...user.auth,
+                restaurantId: result.restaurantId,
+            };
+
+            const newToken = jwt.sign(
+                {
+                    exp: Math.floor(Date.now() / 1000) + (60 * 60 * 8),
+                    data: updatedUserData,
+                },
+                process.env.JWT_TOKEN as string
+            );
+
+            const response = NextResponse.json(result);
+            response.cookies.set('token', newToken, {
+                httpOnly: true,
+                path: '/',
+                maxAge: 60 * 60 * 8, // 8 hours
+                sameSite: 'strict',
+            });
+
+            return response;
         }
 
         return NextResponse.json({ status: false, message: result.message }, { status: 400 });
