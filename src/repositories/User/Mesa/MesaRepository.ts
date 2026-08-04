@@ -1,6 +1,7 @@
 import { prisma } from '@/libs/prisma';
+import { MesaInterface } from '@/interfaces/User/Mesa/MesaInterface';
 
-export class MesaRepository {
+export class MesaRepository implements MesaInterface {
     async findRestaurantByUserId(userId) {
         return await prisma.restaurant.findUnique({
             where: { userId: Number(userId) }
@@ -15,7 +16,7 @@ export class MesaRepository {
                     where: {
                         estado: {
                             notIn: ['Pagado', 'Cancelado']
-                       }
+                        }
                     },
                     include: {
                         items: {

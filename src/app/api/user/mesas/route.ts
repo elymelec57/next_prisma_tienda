@@ -8,7 +8,7 @@ import { StoreMesaService } from '@/services/User/Mesa/StoreMesaService'
 const mesaRepository = new MesaRepository();
 const storeMesaRepository = new StoreMesaRepository();
 const mesaService = new MesaService(mesaRepository);
-const storeMesaService = new StoreMesaService(mesaRepository, storeMesaRepository);
+const storeMesaService = new StoreMesaService(storeMesaRepository);
 
 export async function GET(request) {
   const user = await authorizeRequest(request)
@@ -38,8 +38,8 @@ export async function POST(request) {
   }
 
   try {
-    const data = await request.json()
-    const newMesa = await storeMesaService.createMesa(user.auth.id, data);
+    const { data, selectedSucursal } = await request.json()
+    const newMesa = await storeMesaService.createMesa(user.auth.id, data, selectedSucursal);
 
     if (newMesa === null) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
@@ -47,6 +47,7 @@ export async function POST(request) {
 
     return NextResponse.json(newMesa)
   } catch (error) {
+    console.log(error)
     return NextResponse.json({ error: 'Error creating mesa' }, { status: 500 })
   }
 }

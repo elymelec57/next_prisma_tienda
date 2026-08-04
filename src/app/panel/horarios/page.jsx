@@ -23,7 +23,7 @@ export default function HorariosPage() {
     const { data: schedules = [], isLoading: loading } = useQuery({
         queryKey: ['employeeSchedules'],
         queryFn: async () => {
-            const res = await fetch('/api/user/employee/schedules');
+            const res = await fetch(`/api/user/employees/${user.id}/schedules`);
             if (!res.ok) throw new Error('Error al cargar cronograma');
             return res.json();
         }

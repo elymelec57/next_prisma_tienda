@@ -1,9 +1,9 @@
-export class MesaService {
-    constructor(mesaRepository) {
-        this.mesaRepository = mesaRepository;
-    }
+import { MesaInterface } from '@/interfaces/User/Mesa/MesaInterface';
 
-    async getMesasByUserId(userId) {
+export class MesaService {
+    constructor(private readonly mesaRepository: MesaInterface) { }
+
+    async getMesasByUserId(userId: number) {
         const restaurant = await this.mesaRepository.findRestaurantByUserId(userId);
         if (!restaurant) {
             return null;

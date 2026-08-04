@@ -20,6 +20,7 @@ import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
+import { useAppSelector } from '@/lib/hooks'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card'
 
 export default function TableManager() {
@@ -28,6 +29,8 @@ export default function TableManager() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedMesa, setSelectedMesa] = useState(null)
   const [mesaToDelete, setMesaToDelete] = useState(null)
+
+  const selectedSucursal = useAppSelector((state) => state.auth.selectedSucursal)
 
   const { data: mesas = [], isLoading: loading, error: queryError } = useQuery({
     queryKey: ['mesas'],
@@ -57,7 +60,7 @@ export default function TableManager() {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mesaData)
+        body: JSON.stringify({ data: mesaData, selectedSucursal })
       })
       if (!response.ok) throw new Error('Error al guardar la mesa');
       return response.json();
