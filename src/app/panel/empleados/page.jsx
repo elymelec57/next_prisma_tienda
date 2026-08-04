@@ -10,12 +10,15 @@ import EmployeeList from '@/components/employees/EmployeeList';
 import EmployeeForm from '@/components/employees/EmployeeForm';
 import EmployeeSchedule from '@/components/employees/EmployeeSchedule';
 import Modal from '@/components/Modal';
+import { useAppSelector } from "@/lib/hooks";
 
 export default function EmployeeManagementPage() {
   const queryClient = useQueryClient();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const selectedSucursal = useAppSelector((state) => state.auth.selectedSucursal)
 
   const { data: employees = [], isLoading: loading } = useQuery({
     queryKey: ['employees'],
@@ -196,6 +199,7 @@ export default function EmployeeManagementPage() {
         <div className="max-h-[80vh] overflow-y-auto px-1 pr-2">
           <EmployeeForm
             employee={selectedEmployee}
+            sucursalId={selectedSucursal}
             onSave={handleSave}
             onCancel={handleCancel}
           />

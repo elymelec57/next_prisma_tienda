@@ -10,7 +10,7 @@ async function getRestaurantId() {
   if (!token) return null
   try {
     const decoded = jwt.verify(token, process.env.JWT_TOKEN);
-    return decoded.data.restauranteId
+    return decoded.data.restaurantId
   } catch (err) {
     return null
   }

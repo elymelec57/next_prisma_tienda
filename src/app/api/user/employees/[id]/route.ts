@@ -11,7 +11,7 @@ async function getRestaurantId() {
   if (!token) return null
   try {
     const decoded = jwt.verify(token, process.env.JWT_TOKEN);
-    return decoded.data.restauranteId
+    return decoded.data.restaurantId
   } catch (err) {
     return null
   }
@@ -25,7 +25,8 @@ export async function GET(request, { params }) {
 
     const employee = await prisma.empleado.findUnique({
       where: { id: parseInt(id), restaurantId },
-      include: { rol: true, shifts: true }
+      include: { rol: true }
+      //include: { rol: true, shifts: true }
     });
 
     if (!employee) return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
@@ -51,6 +52,7 @@ export async function PUT(request, { params }) {
       telefono,
       email,
       rolId,
+      password,
     };
 
     if (password) {

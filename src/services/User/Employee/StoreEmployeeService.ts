@@ -1,11 +1,10 @@
 import bcrypt from 'bcryptjs';
+import { IStoreEmployeeRepository, IDataEmployee } from '@/interfaces/User/Employees/StoreEmployeesInterface';
 
 export class StoreEmployeeService {
-    constructor(storeEmployeeRepository) {
-        this.storeEmployeeRepository = storeEmployeeRepository;
-    }
+    constructor(private storeEmployeeRepository: IStoreEmployeeRepository) { }
 
-    async execute(data, userId, restaurantId) {
+    async execute(data: IDataEmployee, userId: number, restaurantId: number) {
         const hashedPassword = bcrypt.hashSync(data.password, 10);
         return await this.storeEmployeeRepository.create({
             ...data,
