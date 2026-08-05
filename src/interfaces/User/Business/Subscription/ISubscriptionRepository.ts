@@ -25,6 +25,7 @@ export interface ISubscribeData {
     planId: number;
     paymentMethod?: string;
     transactionId?: string;
+    idpotencia?: string;
     newImage: any;
 }
 

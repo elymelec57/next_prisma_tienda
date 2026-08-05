@@ -1,12 +1,20 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { CreditCard, Plus, Camera, CheckCircle2, RefreshCw } from "lucide-react";
 
 export default function PlansTab({ userId }) {
     const queryClient = useQueryClient();
+
+    const idpotenciaRef = useRef(null);
+    const generateIdpotencia = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return `idp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    };
 
     const [planToUpgrade, setPlanToUpgrade] = useState(null);
     const [upgradeForm, setUpgradeForm] = useState({
@@ -43,9 +51,9 @@ export default function PlansTab({ userId }) {
     });
 
     const subscribeMutation = useMutation({
-        mutationFn: async ({ planId, paymentMethod, transactionId }) => {
+        mutationFn: async ({ planId, paymentMethod, transactionId, idpotencia }) => {
             const formData = new FormData();
-            formData.append('form', JSON.stringify({ planId, paymentMethod, transactionId }));
+            formData.append('form', JSON.stringify({ planId, paymentMethod, transactionId, idpotencia }));
             formData.append('image', upgradeForm.receipt);
             const res = await fetch('/api/user/business/subscription', {
                 method: 'POST',
@@ -57,6 +65,7 @@ export default function PlansTab({ userId }) {
         onSuccess: (data) => {
             if (data.status) {
                 toast.success(data.message || "Suscripción actualizada");
+                idpotenciaRef.current = null;
                 queryClient.invalidateQueries({ queryKey: ['subscription', userId] });
                 queryClient.invalidateQueries({ queryKey: ['planPayments', userId] });
                 setPlanToUpgrade(null);
@@ -202,7 +211,8 @@ export default function PlansTab({ userId }) {
                                 onClick={() => subscribeMutation.mutate({
                                     planId: planToUpgrade.id,
                                     paymentMethod: upgradeForm.paymentMethod,
-                                    transactionId: upgradeForm.transactionId
+                                    transactionId: upgradeForm.transactionId,
+                                    idpotencia: idpotenciaRef.current || generateIdpotencia()
                                 })}
                                 className="flex-1 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                             >
@@ -232,8 +242,10 @@ export default function PlansTab({ userId }) {
                             <button
                                 onClick={() => {
                                     if (plan.price === 0) {
-                                        subscribeMutation.mutate({ planId: plan.id });
+                                        if (!idpotenciaRef.current) idpotenciaRef.current = generateIdpotencia();
+                                        subscribeMutation.mutate({ planId: plan.id, idpotencia: idpotenciaRef.current });
                                     } else {
+                                        idpotenciaRef.current = generateIdpotencia();
                                         setPlanToUpgrade(plan);
                                     }
                                 }}

@@ -38,11 +38,12 @@ export default function CajaPage() {
     const [activeTab, setActiveTab] = useState('mesa') // 'mesa' or 'delivery'
 
     const user = useAppSelector((state) => state.auth.auth)
+    const sucursalId = useAppSelector((state) => state.auth.selectedSucursal)
 
     const { data: pendingOrders = [], isLoading: loadingPending } = useQuery({
-        queryKey: ['cajaPending'],
+        queryKey: ['cajaPending', sucursalId.id],
         queryFn: async () => {
-            const res = await fetch('/api/user/caja/pending');
+            const res = await fetch(`/api/user/caja/pending?sucursalId=${sucursalId.id}`);
             if (!res.ok) throw new Error('Error al cargar pedidos pendientes');
             return res.json();
         }

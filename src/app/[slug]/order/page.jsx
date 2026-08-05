@@ -12,8 +12,8 @@ export default function Buy() {
     const dispatch = useAppDispatch()
     const params = useParams()
     const router = useRouter()
-    const searchParams = useSearchParams();
-    const sucursalId = searchParams.get('sucursal');
+
+    const sucursalId = useAppSelector((state) => state.auth.selectedSucursalBuy);
 
     const [restaurant, setRestaurant] = useState(null);
     const [sucursal, setSucursal] = useState(null);
@@ -40,8 +40,21 @@ export default function Buy() {
         direccion: '',
         distancia: 0,
         deliveryFee: 0,
-        sucursalId: sucursalId || null
+        sucursalId: sucursalId?.id || null
     });
+
+    const [idpotencia, setIdpotencia] = useState(null);
+
+    const generateIdpotencia = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return `idp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    };
+
+    useEffect(() => {
+        setIdpotencia(generateIdpotencia());
+    }, []);
 
     useEffect(() => {
         fetchRestaurant();
@@ -309,7 +322,7 @@ export default function Buy() {
         form.order = orderList
 
         try {
-            const finalForm = { ...form };
+            const finalForm = { ...form, idpotencia };
             if (!isDelivery) {
                 finalForm.direccion = null;
             }
@@ -334,7 +347,8 @@ export default function Buy() {
                 dispatch(reset())
                 localStorage.removeItem('order');
                 localStorage.removeItem('count');
-                router.push(`/${params.slug}${sucursalId ? `?sucursal=${sucursalId}` : ''}`)
+                setIdpotencia(generateIdpotencia());
+                router.push(`/${params.slug}`)
             } else {
                 alert(res.message)
             }

@@ -1,6 +1,6 @@
 
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -37,6 +37,15 @@ export default function PedidosMesero() {
     const sucursales = useAppSelector((state) => state.auth.selectedSucursal)
 
     const queryClient = useQueryClient();
+
+    const idpotenciaRef = useRef(null);
+    const generateIdpotencia = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return `idp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    };
+
     const handleSelectTable = (table) => {
         dispatch(setCurrentTable(table))
     }
@@ -90,6 +99,10 @@ export default function PedidosMesero() {
 
     const sendOrderMutation = useMutation({
         mutationFn: async () => {
+            if (!currentAccount.activeOrderId && !idpotenciaRef.current) {
+                idpotenciaRef.current = generateIdpotencia();
+            }
+
             const orderBody = {
                 //restaurantId: user.restaurantId,
                 sucursalId: sucursales.id,
@@ -98,6 +111,7 @@ export default function PedidosMesero() {
                 total: currentOrder.reduce((sum, item) => sum + (item.precio * item.quantity), 0),
                 estado: 'Pendiente',
                 mesaId: currentTable.id,
+                idpotencia: currentAccount.activeOrderId ? null : idpotenciaRef.current,
                 items: currentOrder.flatMap(item => {
                     const noteGroups = item.notes.reduce((acc, note) => {
                         acc[note] = (acc[note] || 0) + 1;
@@ -127,6 +141,7 @@ export default function PedidosMesero() {
         },
         onSuccess: () => {
             toast.success(`Cuenta "${currentAccount.name}" enviada a cocina`)
+            idpotenciaRef.current = null
             dispatch(clearActiveAccount(currentTable.id))
         },
         onError: (err) => {

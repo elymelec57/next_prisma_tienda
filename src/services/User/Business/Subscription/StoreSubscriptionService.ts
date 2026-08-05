@@ -16,7 +16,8 @@ export class StoreSubscriptionService {
         planId: number,
         paymentMethod?: string,
         transactionId?: string,
-        image?: File
+        image?: File,
+        idpotencia?: string
     ): Promise<{ subscription?: ISubscription; payment?: object; message?: string }> {
         if (!userId || !planId || !image) {
             throw new Error("userId and planId are required");
@@ -27,6 +28,6 @@ export class StoreSubscriptionService {
             throw new Error("Image not uploaded");
         }
 
-        return await this.subscriptionRepository.subscribe({ userId, planId, paymentMethod, transactionId, newImage });
+        return await this.subscriptionRepository.subscribe({ userId, planId, paymentMethod, transactionId, idpotencia, newImage });
     }
 }

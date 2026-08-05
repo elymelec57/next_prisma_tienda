@@ -13,6 +13,14 @@ export class BuyService {
             return NextResponse.json({ status: false, message: 'Restaurante no encontrado' })
         }
 
+        // Idempotencia: si ya existe un pedido con este idpotencia, no duplicar
+        if (form.idpotencia) {
+            const existing = await this.buyRepository.findPedidoByIdPotencia(form.idpotencia, restaurant.id)
+            if (existing) {
+                return existing.Payment;
+            }
+        }
+
         // 2. Upsert Cliente
         let cliente;
         const conditions = [];
@@ -49,12 +57,13 @@ export class BuyService {
 
         // 3. Create Pedido (Delivery orders don't require a mesa)
         let pedido;
-        if (form.sucursalId != null) {
+        if (form.sucursalId !== 'main') {
             pedido = await this.buyRepository.createPedido({
                 data: {
                     total: parseFloat(form.total),
                     subTotal: parseFloat(form.subtotal) || 0,
                     estado: "Pendiente",
+                    idpotencia: form.idpotencia || null,
                     cliente: { connect: { id: cliente.id } },
                     restaurant: { connect: { id: restaurant.id } },
                     sucursal: { connect: { id: Number(form.sucursalId) } },
@@ -69,6 +78,7 @@ export class BuyService {
                     total: parseFloat(form.total),
                     subTotal: parseFloat(form.subtotal) || 0,
                     estado: "Pendiente",
+                    idpotencia: form.idpotencia || null,
                     cliente: { connect: { id: cliente.id } },
                     restaurant: { connect: { id: restaurant.id } },
                     direccion: form.direccion || null,

@@ -31,7 +31,7 @@ export async function POST(request) {
     }
 
     try {
-        const { sucursalId, clienteId, nombreCliente, total, estado, mesaId, items } = await request.json()
+        const { sucursalId, clienteId, nombreCliente, total, estado, mesaId, items, idpotencia } = await request.json()
         const order = await createOrderService.execute({
             restaurantId: Number(user.auth.restaurantId),
             sucursalId: Number(sucursalId) || null,
@@ -41,6 +41,7 @@ export async function POST(request) {
             estado: estado || 'Pendiente',
             mesaId: Number(mesaId),
             empleadoId: user.auth.role !== 'user' ? Number(user.auth.id) : null,
+            idpotencia: idpotencia || null,
             items: items.map((item) => ({
                 platoId: Number(item.platoId),
                 cantidad: Number(item.cantidad),

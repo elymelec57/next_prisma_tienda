@@ -32,7 +32,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     }
 
     async subscribe(data: ISubscribeData): Promise<{ subscription?: ISubscription; payment?: object; message?: string }> {
-        const { userId, planId, paymentMethod, transactionId, newImage } = data;
+        const { userId, planId, paymentMethod, transactionId, idpotencia, newImage } = data;
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { userId },
@@ -40,6 +40,20 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
         if (!restaurant) {
             throw new Error("Restaurant not found");
+        }
+
+        // Idempotencia: si ya existe un pago de plan con este idpotencia, no duplicar
+        if (idpotencia) {
+            const existing = await prisma.planPayment.findFirst({
+                where: { idpotencia, restaurantId: restaurant.id },
+            });
+
+            if (existing) {
+                return {
+                    payment: existing,
+                    message: 'Pago ya registrado.',
+                };
+            }
         }
 
         const plan = await prisma.plan.findUnique({
@@ -86,6 +100,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
                 amount: plan.price,
                 paymentMethod: paymentMethod ?? 'unknown',
                 transactionId,
+                idpotencia: idpotencia ?? null,
                 status: 'PENDING',
                 mainImageId: image.id
             },

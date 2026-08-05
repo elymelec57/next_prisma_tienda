@@ -16,15 +16,17 @@ async function getRestaurantId(): Promise<number | null> {
     }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const sucursalId = searchParams.get('sucursalId');
         const restaurantId = await getRestaurantId();
         if (!restaurantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         const repository = new GetPendingOrdersRepository();
         const service = new GetPendingOrdersService(repository);
 
-        const orders = await service.execute(restaurantId);
+        const orders = await service.execute(restaurantId, sucursalId);
 
         return NextResponse.json(orders);
     } catch (error: any) {

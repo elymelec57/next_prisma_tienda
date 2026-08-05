@@ -8,6 +8,13 @@ export class BuyRepository implements IBuy {
         })
     }
 
+    async findPedidoByIdPotencia(idpotencia: string, restaurantId: number) {
+        return await prisma.pedido.findFirst({
+            where: { idpotencia, restaurantId },
+            include: { Payment: true }
+        })
+    }
+
     async findClient(conditions: any) {
         return await prisma.cliente.findFirst({
             where: {

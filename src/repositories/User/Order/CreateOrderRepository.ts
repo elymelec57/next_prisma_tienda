@@ -4,6 +4,18 @@ import { prisma } from '@/libs/prisma';
 export class CreateOrderRepository implements ICreateOrder {
     async createOrder(data: CreateOrderData): Promise<any> {
         const result = await prisma.$transaction(async (tx) => {
+            // 0. Idempotencia: si ya existe un pedido con este idpotencia, no duplicar
+            if (data.idpotencia) {
+                const existing = await tx.pedido.findFirst({
+                    where: { idpotencia: data.idpotencia, restaurantId: data.restaurantId },
+                    include: { items: true },
+                });
+
+                if (existing) {
+                    return { ...existing, _idempotent: true };
+                }
+            }
+
             // 1. Crear el Pedido
             const order = await tx.pedido.create({
                 data: {
@@ -15,6 +27,7 @@ export class CreateOrderRepository implements ICreateOrder {
                     estado: data.estado ?? 'Pendiente',
                     mesaId: data.mesaId,
                     empleadoId: data.empleadoId ?? null,
+                    idpotencia: data.idpotencia ?? null,
                 },
             });
 

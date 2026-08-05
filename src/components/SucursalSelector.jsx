@@ -1,32 +1,23 @@
 'use client'
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useAppSelector, useAppDispatch } from "@/lib/hooks";
+import { authSlice } from "@/lib/features/auth/authSlice";
 
 export default function SucursalSelector({ sucursales }) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const pathname = usePathname();
+    const dispatch = useAppDispatch();
     const [selectedSucursal, setSelectedSucursal] = useState('');
 
+    const selectSucursal = useAppSelector((state) => state.auth.selectedSucursalBuy);
     useEffect(() => {
-        const sucursalId = searchParams.get('sucursal');
-        if (sucursalId) {
-            setSelectedSucursal(sucursalId);
-        } else {
-            setSelectedSucursal('');
+        if (selectSucursal) {
+            setSelectedSucursal(selectSucursal);
         }
-    }, [searchParams]);
+    }, [selectSucursal]);
 
     const handleSelect = (e) => {
-        const id = e.target.value;
-        const params = new URLSearchParams(searchParams.toString());
-        if (id) {
-            params.set('sucursal', id);
-        } else {
-            params.delete('sucursal');
-        }
-        router.push(`${pathname}?${params.toString()}`);
+        setSelectedSucursal(e.target.value);
+        dispatch(authSlice.actions.selectedSucursalBuy(e.target.value));
     };
 
     if (!sucursales || sucursales.length === 0) return null;
@@ -40,9 +31,10 @@ export default function SucursalSelector({ sucursales }) {
                     onChange={handleSelect}
                     className="appearance-none bg-transparent pr-8 text-sm font-medium text-slate-700 focus:outline-none cursor-pointer"
                 >
-                    <option value="">Todas las sucursales</option>
+                    <option value="">Elige una sucursal</option>
+                    <option value={JSON.stringify({ id: 'main', nombre: 'Rest. Principal' })}>Rest. Principal</option>
                     {sucursales.map((sucursal) => (
-                        <option key={sucursal.id} value={sucursal.id}>
+                        <option key={sucursal.id} value={JSON.stringify({ id: sucursal.id, nombre: sucursal.nombre })}>
                             {sucursal.nombre}
                         </option>
                     ))}

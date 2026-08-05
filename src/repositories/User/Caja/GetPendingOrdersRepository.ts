@@ -2,11 +2,12 @@ import { IGetPendingOrders } from '@/interfaces/User/Caja/GetPendingOrdersInterf
 import { prisma } from '@/libs/prisma';
 
 export class GetPendingOrdersRepository implements IGetPendingOrders {
-    async getPendingOrders(restaurantId: number): Promise<any[]> {
+    async getPendingOrders(restaurantId: number, sucursalId: number | string): Promise<any[]> {
         const orders = await prisma.pedido.findMany({
             where: {
                 restaurantId,
-                estado: { not: 'Pagado' },
+                sucursalId: sucursalId !== 'main' ? Number(sucursalId) : null,
+                estado: 'Pendiente',
             },
             include: {
                 cliente: true,
@@ -37,7 +38,6 @@ export class GetPendingOrdersRepository implements IGetPendingOrders {
                 }
             }
         }
-        console.log(orders);
         return orders;
     }
 }

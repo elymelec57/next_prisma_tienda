@@ -36,9 +36,9 @@ export async function POST(request) {
     const formData = await request.formData();
     const form = JSON.parse(formData.get('form'));
     const image = formData.get('image');
-    const { planId, paymentMethod, transactionId } = form;
+    const { planId, paymentMethod, transactionId, idpotencia } = form;
 
-    const { subscription, payment, message } = await storeSubscriptionService.execute(user.auth.id, planId, paymentMethod, transactionId, image);
+    const { subscription, payment, message } = await storeSubscriptionService.execute(user.auth.id, planId, paymentMethod, transactionId, image, idpotencia);
 
     return NextResponse.json({ status: true, payment, message });
 }

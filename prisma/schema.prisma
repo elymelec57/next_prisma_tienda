@@ -132,6 +132,7 @@ model Subscription {
 
 model PlanPayment {
   id            Int        @id @default(autoincrement())
+  idpotencia    String?    @unique
   restaurantId  Int
   restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
   planId        Int
@@ -285,6 +286,7 @@ model Cliente {
 
 model Pedido {
   id            Int          @id @default(autoincrement())
+  idpotencia    String?      @unique
   fechaHora     DateTime     @default(now())
   estado        String       @default("Pendiente") // Ej: "Pendiente", "Preparando", "Servido", "Pagado", "Cancelado"
   total         Float        @default(0.0)

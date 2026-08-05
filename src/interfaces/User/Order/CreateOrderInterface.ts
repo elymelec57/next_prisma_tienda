@@ -14,6 +14,7 @@ export interface CreateOrderData {
     estado?: string;
     mesaId: number;
     empleadoId?: number | null;
+    idpotencia?: string | null;
     items: CreateOrderItemData[];
 }
 

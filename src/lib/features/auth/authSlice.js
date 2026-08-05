@@ -3,7 +3,8 @@ import { createAppSlice } from '../../createAppSlice'
 const initialState = {
   value: 0,
   auth: {},
-  selectedSucursal: { id: 'main', nombre: 'Restaurante Principal' }
+  selectedSucursal: { id: 'main', nombre: 'Restaurante Principal' },
+  selectedSucursalBuy: { id: 'main', nombre: 'Restaurante Principal' }
 }
 
 export const authSlice = createAppSlice({
@@ -28,6 +29,9 @@ export const authSlice = createAppSlice({
     },
     selectedSucursal: (state, action) => {
       state.selectedSucursal = JSON.parse(action.payload)
+    },
+    selectedSucursalBuy: (state, action) => {
+      state.selectedSucursalBuy = JSON.parse(action.payload)
     }
   },
   // You can define your selectors here. These selectors receive the slice
@@ -39,6 +43,6 @@ export const authSlice = createAppSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { increment, decrement, incrementByAmount, auth, selectedSucursal } = authSlice.actions
+export const { increment, decrement, incrementByAmount, auth, selectedSucursal, selectedSucursalBuy } = authSlice.actions
 //export const { selectCount, selectStatus } = counterSlice.selectors;
 export default authSlice.reducer;
