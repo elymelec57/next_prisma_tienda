@@ -27,6 +27,41 @@ export const authSlice = createAppSlice({
     auth: (state, action) => {
       state.auth = action.payload
     },
+    addSucursalInAuth: (state, action) => {
+      if (state.auth) {
+        if (!Array.isArray(state.auth.sucursales)) {
+          state.auth.sucursales = []
+        }
+        const existsIndex = state.auth.sucursales.findIndex(s => String(s.id) === String(action.payload.id))
+        const sucursalObj = { id: action.payload.id, nombre: action.payload.nombre }
+        if (existsIndex >= 0) {
+          state.auth.sucursales[existsIndex] = sucursalObj
+        } else {
+          state.auth.sucursales.push(sucursalObj)
+        }
+      }
+    },
+    updateSucursalInAuth: (state, action) => {
+      if (state.auth && Array.isArray(state.auth.sucursales)) {
+        state.auth.sucursales = state.auth.sucursales.map(s => {
+          if (String(s.id) === String(action.payload.id)) {
+            return { ...s, nombre: action.payload.nombre }
+          }
+          return s
+        })
+      }
+      if (state.selectedSucursal && String(state.selectedSucursal.id) === String(action.payload.id)) {
+        state.selectedSucursal.nombre = action.payload.nombre
+      }
+    },
+    removeSucursalFromAuth: (state, action) => {
+      if (state.auth && Array.isArray(state.auth.sucursales)) {
+        state.auth.sucursales = state.auth.sucursales.filter(s => String(s.id) !== String(action.payload))
+      }
+      if (state.selectedSucursal && String(state.selectedSucursal.id) === String(action.payload)) {
+        state.selectedSucursal = { id: 'main', nombre: 'Restaurante Principal' }
+      }
+    },
     selectedSucursal: (state, action) => {
       state.selectedSucursal = JSON.parse(action.payload)
     },
@@ -43,6 +78,16 @@ export const authSlice = createAppSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { increment, decrement, incrementByAmount, auth, selectedSucursal, selectedSucursalBuy } = authSlice.actions
+export const {
+  increment,
+  decrement,
+  incrementByAmount,
+  auth,
+  addSucursalInAuth,
+  updateSucursalInAuth,
+  removeSucursalFromAuth,
+  selectedSucursal,
+  selectedSucursalBuy
+} = authSlice.actions
 //export const { selectCount, selectStatus } = counterSlice.selectors;
 export default authSlice.reducer;

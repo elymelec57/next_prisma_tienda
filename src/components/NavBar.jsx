@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation";
 import { auth } from "../lib/features/auth/authSlice";
-import { useAppDispatch } from "@/lib/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import {
     LayoutDashboard,
     Utensils,
@@ -20,17 +20,19 @@ import {
     Banknote,
     Calendar,
 } from 'lucide-react';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function NavBar({ data }) {
     const router = useRouter()
     const pathname = usePathname()
     const dispatch = useAppDispatch()
+    const currentAuth = useAppSelector((state) => state.auth.auth);
 
-    // Dispatch auth data if needed (keeping original logic)
-    if (data) {
-        dispatch(auth(data))
-    }
+    useEffect(() => {
+        if (data && (!currentAuth?.id || currentAuth.id !== data.id)) {
+            dispatch(auth(data));
+        }
+    }, [data, currentAuth?.id, dispatch]);
 
     const [isOpen, setIsOpen] = useState(false);
 

@@ -5,6 +5,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from 'react-toastify';
 import { Edit2, Plus, MapPin, Truck, Save, Building2, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useAppDispatch } from "@/lib/hooks";
+import { addSucursalInAuth, updateSucursalInAuth, removeSucursalFromAuth } from "@/lib/features/auth/authSlice";
 
 const MapPicker = dynamic(() => import("@/components/MapPicker"), {
     ssr: false,
@@ -13,6 +15,7 @@ const MapPicker = dynamic(() => import("@/components/MapPicker"), {
 
 export default function SucursalesTab({ businessData, sucursalesData }) {
     const queryClient = useQueryClient();
+    const dispatch = useAppDispatch();
 
     const [isEditingSucursal, setIsEditingSucursal] = useState(null);
     const [sucursalForm, setSucursalForm] = useState({
@@ -50,6 +53,13 @@ export default function SucursalesTab({ businessData, sucursalesData }) {
         onSuccess: (data) => {
             if (data.status) {
                 toast.success(isEditingSucursal ? "Sucursal actualizada" : "Sucursal agregada");
+                if (data.data) {
+                    if (isEditingSucursal) {
+                        dispatch(updateSucursalInAuth({ id: data.data.id, nombre: data.data.nombre }));
+                    } else {
+                        dispatch(addSucursalInAuth({ id: data.data.id, nombre: data.data.nombre }));
+                    }
+                }
                 setSucursalForm({ nombre: '', direccion: '', telefono: '', lat: null, lng: null, deliveryFreeRange: '', deliveryShortRange: '', deliveryShortPrice: '', deliveryMediumRange: '', deliveryMediumPrice: '', deliveryLongRange: '', deliveryLongPrice: '' });
                 setIsEditingSucursal(null);
                 queryClient.invalidateQueries({ queryKey: ['sucursales', businessData?.rest?.id] });
@@ -73,9 +83,10 @@ export default function SucursalesTab({ businessData, sucursalesData }) {
             const res = await fetch(`/api/user/business/sucursales/${id}`, { method: 'DELETE' });
             return res.json();
         },
-        onSuccess: (data) => {
+        onSuccess: (data, id) => {
             if (data.status) {
                 toast.success("Sucursal eliminada");
+                dispatch(removeSucursalFromAuth(id));
                 queryClient.invalidateQueries({ queryKey: ['sucursales', businessData?.rest?.id] });
             } else {
                 toast.error(data.message);
