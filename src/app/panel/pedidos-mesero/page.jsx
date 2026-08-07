@@ -198,7 +198,7 @@ export default function PedidosMesero() {
 
             <div className="flex-1 overflow-hidden">
                 {!currentTable ? (
-                    <TableSelector onSelectTable={handleSelectTable} />
+                    <TableSelector onSelectTable={handleSelectTable} sucursalId={sucursales.id} />
                 ) : (
                     <div className="max-w-4xl mx-auto space-y-8 pb-20">
                         {/* Volver button and Table Info */}

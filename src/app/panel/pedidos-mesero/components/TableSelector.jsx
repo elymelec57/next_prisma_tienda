@@ -4,11 +4,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Loader2, LayoutGrid, CheckCircle2, Clock, XCircle, Users } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 
-export default function TableSelector({ onSelectTable }) {
+export default function TableSelector({ onSelectTable, sucursalId }) {
     const { data: mesas = [], isLoading: loading } = useQuery({
-        queryKey: ['mesas'],
+        queryKey: ['mesas', sucursalId],
         queryFn: async () => {
-            const response = await fetch('/api/user/mesas');
+            const response = await fetch(`/api/user/mesas?sucursalId=${sucursalId}`);
             if (!response.ok) throw new Error('Error al cargar mesas');
             return response.json();
         }

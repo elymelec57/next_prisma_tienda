@@ -7,7 +7,7 @@ export class GetPendingOrdersRepository implements IGetPendingOrders {
             where: {
                 restaurantId,
                 sucursalId: sucursalId !== 'main' ? Number(sucursalId) : null,
-                estado: 'Pendiente',
+                estado: { not: 'Pagado' },
             },
             include: {
                 cliente: true,

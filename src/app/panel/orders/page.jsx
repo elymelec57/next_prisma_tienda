@@ -134,28 +134,33 @@ export default function Orders() {
         });
 
         if (activeTab === 'mesa') {
-            const groups = {};
+            const activeGroups = {};
+            const closedOrders = [];
+
             filtered.forEach(o => {
-                const key = o.mesaId;
-                if (!groups[key]) {
-                    groups[key] = {
-                        ...o,
-                        subOrders: [o],
-                        total: Number(o.total || 0),
-                        // Preservamos la fecha más antigua para mostrar cuánto tiempo llevan
-                        fechaHora: o.fechaHora
-                    };
+                const isClosed = o.estado === 'Pagado' || o.estado === 'Cancelado';
+                if (isClosed) {
+                    closedOrders.push(o);
                 } else {
-                    groups[key].subOrders.push(o);
-                    groups[key].total += Number(o.total || 0);
-                    // Si encontramos una orden mas vieja en la misma mesa, actualizamos la fecha del grupo
-                    if (new Date(o.fechaHora) < new Date(groups[key].fechaHora)) {
-                        groups[key].fechaHora = o.fechaHora;
+                    const key = o.mesaId;
+                    if (!activeGroups[key]) {
+                        activeGroups[key] = {
+                            ...o,
+                            subOrders: [o],
+                            total: Number(o.total || 0),
+                            fechaHora: o.fechaHora
+                        };
+                    } else {
+                        activeGroups[key].subOrders.push(o);
+                        activeGroups[key].total += Number(o.total || 0);
+                        if (new Date(o.fechaHora) < new Date(activeGroups[key].fechaHora)) {
+                            activeGroups[key].fechaHora = o.fechaHora;
+                        }
                     }
                 }
             });
-            // Marcamos las que tienen cuentas separadas
-            return Object.values(groups).map(g => {
+
+            const groupedActive = Object.values(activeGroups).map(g => {
                 if (g.subOrders.length > 1) {
                     return {
                         ...g,
@@ -164,6 +169,8 @@ export default function Orders() {
                 }
                 return g;
             });
+
+            return [...groupedActive, ...closedOrders].sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora));
         }
 
         return filtered;

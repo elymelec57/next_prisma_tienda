@@ -10,7 +10,40 @@ export class MesaRepository implements MesaInterface {
 
     async findAllByRestaurantId(restaurantId) {
         return await prisma.mesa.findMany({
-            where: { restaurantId: Number(restaurantId) },
+            where: {
+                restaurantId: Number(restaurantId),
+                sucursalId: null
+            },
+            include: {
+                pedidos: {
+                    where: {
+                        estado: {
+                            notIn: ['Pagado', 'Cancelado']
+                        }
+                    },
+                    include: {
+                        items: {
+                            include: {
+                                plato: true
+                            }
+                        }
+                    }
+                },
+                restaurant: {
+                    select: {
+                        currency: true
+                    }
+                }
+            }
+        });
+    }
+
+    async findAllByRestaurantIdAndSucursalId(restaurantId, sucursalId) {
+        return await prisma.mesa.findMany({
+            where: {
+                restaurantId: Number(restaurantId),
+                sucursalId: Number(sucursalId)
+            },
             include: {
                 pedidos: {
                     where: {

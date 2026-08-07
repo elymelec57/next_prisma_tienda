@@ -33,9 +33,9 @@ export default function TableManager() {
   const selectedSucursal = useAppSelector((state) => state.auth.selectedSucursal)
 
   const { data: mesas = [], isLoading: loading, error: queryError } = useQuery({
-    queryKey: ['mesas'],
+    queryKey: ['mesas', selectedSucursal?.id],
     queryFn: async () => {
-      const response = await fetch('/api/user/mesas');
+      const response = await fetch(`/api/user/mesas?sucursalId=${selectedSucursal?.id}`);
       if (!response.ok) throw new Error('Error al cargar las mesas');
       return response.json();
     }
