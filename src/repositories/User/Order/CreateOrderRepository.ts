@@ -1,5 +1,6 @@
 import { ICreateOrder, CreateOrderData } from '@/interfaces/User/Order/CreateOrderInterface';
 import { prisma } from '@/libs/prisma';
+import { getNextOrderCode } from '@/libs/orderCode';
 
 export class CreateOrderRepository implements ICreateOrder {
     async createOrder(data: CreateOrderData): Promise<any> {
@@ -16,9 +17,11 @@ export class CreateOrderRepository implements ICreateOrder {
                 }
             }
 
-            // 1. Crear el Pedido
+            // 1. Generar el codigo y crear el Pedido
+            const codigo = await getNextOrderCode(tx, data.restaurantId, data.sucursalId ?? null);
             const order = await tx.pedido.create({
                 data: {
+                    codigo,
                     restaurantId: data.restaurantId,
                     sucursalId: data.sucursalId ?? null,
                     clienteId: data.clienteId ?? null,

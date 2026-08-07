@@ -286,6 +286,7 @@ model Cliente {
 
 model Pedido {
   id            Int          @id @default(autoincrement())
+  codigo        String?      @unique
   idpotencia    String?      @unique
   fechaHora     DateTime     @default(now())
   estado        String       @default("Pendiente") // Ej: "Pendiente", "Preparando", "Servido", "Pagado", "Cancelado"
