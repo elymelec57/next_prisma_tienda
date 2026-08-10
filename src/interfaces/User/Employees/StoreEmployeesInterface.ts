@@ -7,9 +7,8 @@ export interface IDataEmployee {
     rolId: number;
     userId: number;
     restaurantId: number;
-    sucursalId?: any;
 }
 
 export interface IStoreEmployeeRepository {
-    create(data: IDataEmployee): Promise<any>;
+    create(data: any): Promise<any>;
 }

@@ -4,13 +4,14 @@ import { IStoreEmployeeRepository, IDataEmployee } from '@/interfaces/User/Emplo
 export class StoreEmployeeService {
     constructor(private storeEmployeeRepository: IStoreEmployeeRepository) { }
 
-    async execute(data: IDataEmployee, userId: number, restaurantId: number) {
+    async execute(data: IDataEmployee, userId: number, restaurantId: number, sucursalId: number | string) {
         const hashedPassword = bcrypt.hashSync(data.password, 10);
         return await this.storeEmployeeRepository.create({
             ...data,
             password: hashedPassword,
             userId: userId,
-            restaurantId: restaurantId
+            restaurantId: restaurantId,
+            sucursalId: sucursalId === 'main' ? undefined : sucursalId,
         });
     }
 }

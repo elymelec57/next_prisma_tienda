@@ -16,7 +16,7 @@ const employeeSchema = z.object({
   rolId: z.number().int().positive('El rol es requerido'),
 });
 
-export default function EmployeeForm({ employee, sucursalId, onSave, onCancel }) {
+export default function EmployeeForm({ employee, onSave, onCancel }) {
   const [roles, setRoles] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
@@ -29,7 +29,6 @@ export default function EmployeeForm({ employee, sucursalId, onSave, onCancel })
       email: '',
       password: '',
       rolId: '',
-      sucursalId: sucursalId
     },
   });
 
@@ -41,7 +40,6 @@ export default function EmployeeForm({ employee, sucursalId, onSave, onCancel })
       email: '',
       password: '',
       rolId: '',
-      sucursalId: sucursalId
     });
   }, [employee, reset]);
 

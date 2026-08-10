@@ -1,3 +1,3 @@
 export interface IGetEmployeesRepository {
-    findRestaurantByUserId(id: number): Promise<any>;
+    findRestaurantByUserId(id: number, sucursalId: number | string): Promise<any>;
 }

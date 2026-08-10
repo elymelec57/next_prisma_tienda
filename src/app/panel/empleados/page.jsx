@@ -21,9 +21,9 @@ export default function EmployeeManagementPage() {
   const selectedSucursal = useAppSelector((state) => state.auth.selectedSucursal)
 
   const { data: employees = [], isLoading: loading } = useQuery({
-    queryKey: ['employees'],
+    queryKey: ['employees', selectedSucursal.id],
     queryFn: async () => {
-      const response = await fetch('/api/user/employees');
+      const response = await fetch('/api/user/employees?sucursalId=' + selectedSucursal.id);
       if (!response.ok) throw new Error('Error al cargar empleados');
       return response.json();
     }
@@ -72,7 +72,7 @@ export default function EmployeeManagementPage() {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ data, sucursalId: selectedSucursal.id }),
       });
       if (!response.ok) throw new Error('Error al guardar empleado');
       return response.json();
@@ -199,7 +199,6 @@ export default function EmployeeManagementPage() {
         <div className="max-h-[80vh] overflow-y-auto px-1 pr-2">
           <EmployeeForm
             employee={selectedEmployee}
-            sucursalId={selectedSucursal}
             onSave={handleSave}
             onCancel={handleCancel}
           />

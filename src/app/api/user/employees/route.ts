@@ -17,7 +17,9 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const employees = await employeeService.getEmployeesByRestaurant(user.auth.restaurantId);
+    const urlParams = new URL(request.url)
+    const sucursalId = urlParams.searchParams.get('sucursalId')
+    const employees = await employeeService.getEmployeesByRestaurant(user.auth.restaurantId, sucursalId);
     return NextResponse.json(employees);
   } catch (error) {
     console.error(error);
@@ -32,8 +34,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const data = await request.json();
-    const newEmployee = await storeEmployeeService.execute(data, user.auth.id, user.auth.restaurantId);
+    const { data, sucursalId } = await request.json();
+    const newEmployee = await storeEmployeeService.execute(data, user.auth.id, user.auth.restaurantId, sucursalId);
 
     return NextResponse.json(newEmployee, { status: 201 });
   } catch (error) {
