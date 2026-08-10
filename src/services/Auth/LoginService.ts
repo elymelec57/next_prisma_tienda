@@ -45,7 +45,7 @@ export class LoginService {
                 if (match) {
                     const restaurantId = employee.restaurantId;
                     const currency = await this.loginRepository.getCurrency(restaurantId);
-                    const sucursales = await this.loginRepository.findAllSucursalesByRestaurantId(restaurantId);
+                    //const sucursales = await this.loginRepository.findAllSucursalesByRestaurantId(restaurantId);
                     userData = {
                         id: employee.id,
                         name: `${employee.nombre} ${employee.apellido}`,
@@ -53,7 +53,7 @@ export class LoginService {
                         role: employee.rol?.name || 'empleado',
                         restaurantId: restaurantId,
                         currency: currency,
-                        sucursales: sucursales
+                        sucursales: employee.sucursal
                     };
                 }
             }

@@ -1,7 +1,7 @@
 'use client'
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation";
-import { auth } from "../lib/features/auth/authSlice";
+import { auth, selectedSucursal } from "../lib/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import {
     LayoutDashboard,
@@ -31,6 +31,10 @@ export default function NavBar({ data }) {
     useEffect(() => {
         if (data && (!currentAuth?.id || currentAuth.id !== data.id)) {
             dispatch(auth(data));
+        }
+
+        if (data.sucursales !== null && data.role !== "User") {
+            dispatch(selectedSucursal(JSON.stringify({ id: data.sucursales.id, nombre: data.sucursales.nombre })));
         }
     }, [data, currentAuth?.id, dispatch]);
 

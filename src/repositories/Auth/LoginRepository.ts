@@ -27,7 +27,10 @@ export class LoginRepository implements LoginInterface {
     async findEmployeeByEmail(email: string) {
         return await prisma.empleado.findUnique({
             where: { email },
-            include: { rol: true }
+            include: {
+                rol: true,
+                sucursal: true
+            }
         });
     }
 

@@ -513,19 +513,19 @@ model EmpleadoHorario {
 }
 
 model ImportJob {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   restaurantId Int
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   userId       Int
   fileName     String
-  totalRows    Int      @default(0)
-  successCount Int      @default(0)
-  errorCount   Int      @default(0)
-  status       String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  totalRows    Int        @default(0)
+  successCount Int        @default(0)
+  errorCount   Int        @default(0)
+  status       String     @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
   data         Json? // Filas crudas del Excel
   errors       Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   finishedAt   DateTime?
 
   @@index([restaurantId, createdAt])
