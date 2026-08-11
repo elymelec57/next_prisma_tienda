@@ -1,9 +1,6 @@
 import NavBar from "@/components/NavBar";
-import 'react-toastify/dist/ReactToastify.css';
-
 import { cookies } from 'next/headers'
 import jwt from "jsonwebtoken";
-import { ToastContainer } from 'react-toastify';
 
 export default async function LayoutDashboard({ children }) {
 
@@ -27,7 +24,6 @@ export default async function LayoutDashboard({ children }) {
                     {children}
                 </div>
             </main>
-            <ToastContainer />
         </div>
     );
 }

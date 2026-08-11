@@ -1,16 +1,17 @@
 'use client'
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../schemas/authSchema';
 import { Mail, Lock, Loader2 } from 'lucide-react';
-import { useMutation } from "@tanstack/react-query";
+import { useState, useTransition } from 'react';
+import { loginAction } from './actions';
 
 export default function Login() {
-    const router = useRouter();
+    const [serverError, setServerError] = useState('');
+    const [isPending, startTransition] = useTransition();
 
     const {
         register,
@@ -24,44 +25,19 @@ export default function Login() {
         },
     });
 
-    const loginMutation = useMutation({
-        mutationFn: async (data) => {
-            const res = await fetch('/api/user/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ form: data })
-            });
-            return res.json();
-        },
-        onSuccess: (login) => {
-            if (login.status) {
-                if (login.auth.role === 'User') {
-                    router.push('/panel');
-                } else {
-                    if (login.auth.role === 'Mesero') {
-                        router.push('/panel/pedidos-mesero');
-                    }
-                    if (login.auth.role === 'Caja') {
-                        router.push('/panel/caja');
-                    }
-                    if (login.auth.role === 'Cocina') {
-                        router.push('/panel/orders');
-                    }
-                }
-            } else {
-                alert(login.message);
-            }
-        },
-        onError: (error) => {
-            alert("Error al intentar iniciar sesión: " + error.message);
-        }
-    });
-
     const onSubmit = (data) => {
-        loginMutation.mutate(data);
+        setServerError('');
+        startTransition(async () => {
+            const result = await loginAction(data.email, data.password);
+            // Si el server action retorna un objeto, significa que hubo un error.
+            // Si el login fue exitoso, el servidor emite un redirect y result nunca llega aquí.
+            if (result?.error) {
+                setServerError(result.error);
+            }
+        });
     };
 
-    const isLoading = loginMutation.isPending;
+    const isLoading = isPending;
 
     return (
         <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
@@ -85,7 +61,7 @@ export default function Login() {
                                 <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
                                 <input
                                     id="email"
-                                    type="email"
+                                    type="text"
                                     placeholder="name@example.com"
                                     {...register('email')}
                                     className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 pl-9 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-950 dark:border-gray-800 dark:text-gray-50 dark:placeholder-gray-400 dark:focus:ring-white transition-all duration-200"
@@ -120,6 +96,13 @@ export default function Login() {
                             {errors.password && <p className="text-sm font-medium text-red-500">{errors.password.message}</p>}
                         </div>
 
+                        {/* Error del servidor (credenciales inválidas, etc.) */}
+                        {serverError && (
+                            <p className="text-sm font-medium text-red-500 text-center">
+                                {serverError}
+                            </p>
+                        )}
+
                         <button
                             type="submit"
                             disabled={isLoading}
@@ -135,7 +118,7 @@ export default function Login() {
                             <span className="w-full border-t border-gray-200 dark:border-gray-800" />
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground bg-white dark:bg-gray-900 text-gray-500">
+                            <span className="px-2 text-muted-foreground bg-white dark:bg-gray-900 text-gray-500">
                                 Or continue with
                             </span>
                         </div>

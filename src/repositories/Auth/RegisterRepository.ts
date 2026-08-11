@@ -15,4 +15,10 @@ export class RegisterRepository implements RegisterInterface {
             },
         });
     }
+
+    async exist(email: string) {
+        return await prisma.user.findUnique({
+            where: { email },
+        });
+    }
 }

@@ -45,7 +45,7 @@ export default function Register() {
             }
         },
         onError: (error) => {
-            toast.error("Error al registrar: " + error.message);
+            toast.error(error.message);
         }
     });
 
@@ -106,7 +106,7 @@ export default function Register() {
                                 <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
                                 <input
                                     id="email"
-                                    type="email"
+                                    type="text"
                                     placeholder="name@example.com"
                                     {...register('email')}
                                     className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 pl-9 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-950 dark:border-gray-800 dark:text-gray-50 dark:placeholder-gray-400 dark:focus:ring-white transition-all duration-200"
@@ -167,7 +167,7 @@ export default function Register() {
                             <span className="w-full border-t border-gray-200 dark:border-gray-800" />
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground bg-white dark:bg-gray-900 text-gray-500">
+                            <span className="px-2 text-muted-foreground bg-white dark:bg-gray-900 text-gray-500">
                                 Or continue with
                             </span>
                         </div>

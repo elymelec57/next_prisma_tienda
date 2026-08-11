@@ -1,6 +1,7 @@
 
 export interface RegisterInterface {
     create(data: CreateUserParams): Promise<any>;
+    exist(email: string): Promise<any>;
 }
 
 export type CreateUserParams = {

@@ -9,7 +9,12 @@ export class RegisterService {
     async execute(data: CreateUserParams) {
         const parsed = registerSchema.safeParse(data);
         if (!parsed.success) {
-            throw new Error(parsed.error?.message);
+            return { 'status': false, 'message': parsed.error?.issues[0]?.message, user: null };
+        }
+
+        const existingUser = await this.registerRepository.exist(data.email);
+        if (existingUser) {
+            return { 'status': false, 'message': 'El email ya está registrado', user: null };
         }
 
         const salt = bcrypt.genSaltSync(10);
@@ -22,10 +27,6 @@ export class RegisterService {
             confirm_password: hash
         });
 
-        if (!user || !user.id) {
-            throw new Error('Error creating User');
-        }
-
-        return user;
+        return { 'status': true, 'message': 'Usuario creado exitosamente', user: user };
     }
 }

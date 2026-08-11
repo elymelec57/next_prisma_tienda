@@ -5,6 +5,8 @@ import { PersistGate } from 'redux-persist/integration/react'
 import { persistStore } from 'redux-persist'
 import { makeStore } from '../lib/store'
 import TanstackProvider from '@/components/providers/TanstackProvider'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 export default function Providers({ children }) {
   const storeRef = useRef(null)
@@ -22,6 +24,7 @@ export default function Providers({ children }) {
       <PersistGate loading={null} persistor={persistorRef.current}>
         <TanstackProvider>
           {children}
+          <ToastContainer />
         </TanstackProvider>
       </PersistGate>
     </Provider>
