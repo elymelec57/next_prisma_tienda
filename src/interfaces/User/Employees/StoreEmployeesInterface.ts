@@ -7,6 +7,7 @@ export interface IDataEmployee {
     rolId: number;
     userId: number;
     restaurantId: number;
+    sucursalId?: number | 'main';
 }
 
 export interface IStoreEmployeeRepository {
