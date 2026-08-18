@@ -17,6 +17,7 @@ export default function EmployeeManagementPage() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roles, setRoles] = useState([]);
 
   const selectedSucursal = useAppSelector((state) => state.auth.selectedSucursal)
 
@@ -25,7 +26,9 @@ export default function EmployeeManagementPage() {
     queryFn: async () => {
       const response = await fetch('/api/user/employees?sucursalId=' + selectedSucursal.id);
       if (!response.ok) throw new Error('Error al cargar empleados');
-      return response.json();
+      const data = await response.json();
+      setRoles(data.roles);
+      return data.employees;
     }
   });
 
@@ -199,6 +202,7 @@ export default function EmployeeManagementPage() {
         <div className="max-h-[80vh] overflow-y-auto px-1 pr-2">
           <EmployeeForm
             employee={selectedEmployee}
+            roles={roles}
             onSave={handleSave}
             onCancel={handleCancel}
           />

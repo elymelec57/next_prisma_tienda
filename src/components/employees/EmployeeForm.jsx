@@ -16,8 +16,7 @@ const employeeSchema = z.object({
   rolId: z.number().int().positive('El rol es requerido'),
 });
 
-export default function EmployeeForm({ employee, onSave, onCancel }) {
-  const [roles, setRoles] = useState([]);
+export default function EmployeeForm({ employee, roles, onSave, onCancel }) {
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
@@ -42,21 +41,6 @@ export default function EmployeeForm({ employee, onSave, onCancel }) {
       rolId: '',
     });
   }, [employee, reset]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const rolesRes = await fetch('/api/roles');
-        if (rolesRes.ok) setRoles(await rolesRes.json());
-      } catch (error) {
-        console.error('Error fetching form options:', error);
-      } finally {
-        setLoadingOptions(false);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   return (
     <form onSubmit={handleSubmit(onSave)} className="space-y-6">

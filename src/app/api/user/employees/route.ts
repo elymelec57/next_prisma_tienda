@@ -19,8 +19,8 @@ export async function GET(request) {
 
     const urlParams = new URL(request.url)
     const sucursalId = urlParams.searchParams.get('sucursalId')
-    const employees = await employeeService.getEmployeesByRestaurant(user.auth.restaurantId, sucursalId);
-    return NextResponse.json(employees);
+    const { roles, employees } = await employeeService.getEmployeesByRestaurant(user.auth.restaurantId, sucursalId);
+    return NextResponse.json({ employees, roles });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

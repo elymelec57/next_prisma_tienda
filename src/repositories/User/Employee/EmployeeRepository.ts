@@ -14,4 +14,8 @@ export class EmployeeRepository implements IGetEmployeesRepository {
             orderBy: { nombre: 'asc' }
         });
     }
+
+    async getAllRoles(): Promise<any> {
+        return await prisma.rol.findMany();
+    }
 }

@@ -5,6 +5,8 @@ export class EmployeeService {
     }
 
     async getEmployeesByRestaurant(restaurantId: number, sucursalId: number | string) {
-        return await this.employeeRepository.findRestaurantByUserId(restaurantId, sucursalId);
+        const roles = await this.employeeRepository.getAllRoles();
+        const employees = await this.employeeRepository.findRestaurantByUserId(restaurantId, sucursalId);
+        return { roles, employees };
     }
 }
