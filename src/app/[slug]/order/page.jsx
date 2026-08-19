@@ -62,7 +62,7 @@ export default function Buy() {
 
     const fetchRestaurant = async () => {
         try {
-            const res = await fetch(`/api/restaurants/${params.slug}`);
+            const res = await fetch(`/api/platform/restaurants/${params.slug}`);
             const data = await res.json();
             if (data.status) {
                 setRestaurant(data.restaurant);
@@ -192,7 +192,7 @@ export default function Buy() {
         if (!searchIdentifier) return;
         setIsSearching(true);
         try {
-            const res = await fetch(`/api/clients/search?slug=${params.slug}&identifier=${searchIdentifier}`);
+            const res = await fetch(`/api/platform/clients/search?slug=${params.slug}&identifier=${searchIdentifier}`);
             const data = await res.json();
             if (data.status && data.client) {
                 setForm(prev => ({
@@ -334,7 +334,7 @@ export default function Buy() {
                 formData.append('comprobante', comprobanteFile);
             }
 
-            const OrderSolicitud = await fetch('/api/buy/', {
+            const OrderSolicitud = await fetch('/api/platform/buy/', {
                 method: 'POST',
                 // IMPORTANTE: Al usar FormData, no debes establecer el header 'Content-Type'. 
                 // El navegador lo hace automáticamente y le agrega el 'boundary'.

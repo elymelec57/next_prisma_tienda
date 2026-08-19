@@ -38,7 +38,7 @@ export default function Cart({ products, currency, restaurantId, categoryId }) {
     } = useInfiniteQuery({
         queryKey: ['products-store', restaurantId, categoryId, sucursalId],
         queryFn: async ({ pageParam = 0 }) => {
-            const url = `/api/products-store?id=${restaurantId}&skip=${pageParam}&take=6${categoryId ? `&categoryId=${categoryId}` : ''}${sucursalId ? `&sucursalId=${sucursalId}` : ''}`;
+            const url = `/api/platform/products-store?id=${restaurantId}&skip=${pageParam}&take=6${categoryId ? `&categoryId=${categoryId}` : ''}${sucursalId ? `&sucursalId=${sucursalId}` : ''}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
@@ -99,7 +99,7 @@ export default function Cart({ products, currency, restaurantId, categoryId }) {
                     </div>
                 </div>
             ))}
-            
+
             {hasNextPage && (
                 <div className="col-span-full flex justify-center mt-12 mb-8">
                     <button

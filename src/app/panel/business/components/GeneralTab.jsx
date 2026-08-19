@@ -48,7 +48,7 @@ export default function GeneralTab({ userId, businessData }) {
     const { data: allCategories } = useQuery({
         queryKey: ['allRestaurantCategories'],
         queryFn: async () => {
-            const res = await fetch('/api/admin/categoria-restaurant');
+            const res = await fetch('/api/platform/restaurant-category');
             const data = await res.json();
             return data.categorias || [];
         },
@@ -57,7 +57,7 @@ export default function GeneralTab({ userId, businessData }) {
     const { data: locationsData } = useQuery({
         queryKey: ['locations'],
         queryFn: async () => {
-            const res = await fetch('/api/locations');
+            const res = await fetch('/api/user/locations');
             const data = await res.json();
             return data.data || [];
         },

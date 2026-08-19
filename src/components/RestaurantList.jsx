@@ -11,7 +11,7 @@ export default function RestaurantList({ categoryId }) {
         async function fetchData() {
             setLoading(true);
             try {
-                const url = categoryId ? `/api/restaurants?categoryId=${categoryId}` : '/api/restaurants';
+                const url = categoryId ? `/api/platform/restaurants?categoryId=${categoryId}` : '/api/platform/restaurants';
                 const res = await fetch(url);
                 const data = await res.json();
                 setDataRest(data);

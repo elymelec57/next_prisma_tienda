@@ -19,7 +19,12 @@ export const BusinessData = cache(async (slug) => {
         }
       },
       restaurantHours: true,
-      sucursales: true
+      sucursales: {
+        select: {
+          id: true,
+          nombre: true
+        }
+      }
     }
   });
 

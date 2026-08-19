@@ -12,7 +12,7 @@ export default function LandingPage() {
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/categoria-restaurant');
+      const res = await fetch('/api/platform/restaurant-category');
       const data = await res.json();
       if (data.status) {
         return data.categorias;

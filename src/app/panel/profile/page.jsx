@@ -20,7 +20,7 @@ export default function Profile() {
     const { data: userData, isLoading: isLoadingUser } = useQuery({
         queryKey: ['userProfile'],
         queryFn: async () => {
-            const res = await fetch(`/api/verifyToken2`, {
+            const res = await fetch(`/api/user/verifyToken2`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
             });

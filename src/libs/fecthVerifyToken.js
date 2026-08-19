@@ -1,5 +1,5 @@
-export default async function verifytoken(origin,token, pathname) {
-    const res = await fetch(`${origin}/api/verifyToken`, {
+export default async function verifytoken(origin, token, pathname) {
+    const res = await fetch(`${origin}/api/user/verifyToken`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json' // Important for JSON data

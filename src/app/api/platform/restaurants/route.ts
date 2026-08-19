@@ -6,7 +6,7 @@ export async function GET(request) {
         const { searchParams } = new URL(request.url);
         const categoryId = searchParams.get('categoryId');
 
-        const where = {};
+        const where: any = {};
         if (categoryId) {
             where.categoriaRestaurant = {
                 some: {
