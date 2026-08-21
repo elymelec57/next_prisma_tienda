@@ -22,8 +22,7 @@ export class GetCajaStatsRepository implements IGetCajaStats {
                 paymentMethod: true,
             },
         });
-        console.log(startOfDay, endOfDay);
-        console.log(payments);
+
         const totalIncome = payments.reduce((sum, p) => sum + p.monto, 0);
 
         const byMethod = payments.reduce<{ [key: string]: number }>((acc, p) => {
