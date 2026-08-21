@@ -3,6 +3,14 @@ const isProd = process.env.DEPLOY === 'production';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+
+  experimental: {
+    outputFileTracingIncludes: {
+      'api/**/*': ['./node_modules/.prisma/client/**/*'],
+      'app/**/*': ['./node_modules/.prisma/client/**/*'],
+    },
+  },
+
   images: {
     remotePatterns: [
       new URL('https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/**'),
