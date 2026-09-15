@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "PaymentType" AS ENUM ('PAGO_MOVIL', 'TRANSFERENCIA', 'ZELLE', 'EFECTIVO', 'ZINLI', 'PAYPAL');
+CREATE TYPE "PaymentType" AS ENUM ('PAGO_MOVIL', 'TRANSFERENCIA', 'ZELLE', 'EFECTIVO', 'ZINLI', 'PAYPAL', 'PUNTO_DE_VENTA');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'CONFIRMED', 'REJECTED');
@@ -97,6 +97,7 @@ CREATE TABLE "Subscription" (
 -- CreateTable
 CREATE TABLE "PlanPayment" (
     "id" SERIAL NOT NULL,
+    "idpotencia" TEXT,
     "restaurantId" INTEGER NOT NULL,
     "planId" INTEGER NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
@@ -222,6 +223,8 @@ CREATE TABLE "Cliente" (
 -- CreateTable
 CREATE TABLE "Pedido" (
     "id" SERIAL NOT NULL,
+    "codigo" TEXT,
+    "idpotencia" TEXT,
     "fechaHora" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "estado" TEXT NOT NULL DEFAULT 'Pendiente',
     "total" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
@@ -380,6 +383,25 @@ CREATE TABLE "EmpleadoHorario" (
 );
 
 -- CreateTable
+CREATE TABLE "ImportJob" (
+    "id" TEXT NOT NULL,
+    "restaurantId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "fileName" TEXT NOT NULL,
+    "totalRows" INTEGER NOT NULL DEFAULT 0,
+    "successCount" INTEGER NOT NULL DEFAULT 0,
+    "errorCount" INTEGER NOT NULL DEFAULT 0,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "data" JSONB,
+    "errors" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "finishedAt" TIMESTAMP(3),
+
+    CONSTRAINT "ImportJob_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Country" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
@@ -464,6 +486,9 @@ CREATE UNIQUE INDEX "Plan_name_key" ON "Plan"("name");
 CREATE UNIQUE INDEX "Subscription_restaurantId_key" ON "Subscription"("restaurantId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PlanPayment_idpotencia_key" ON "PlanPayment"("idpotencia");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "RestaurantHours_restaurantId_sucursalId_dayOfWeek_key" ON "RestaurantHours"("restaurantId", "sucursalId", "dayOfWeek");
 
 -- CreateIndex
@@ -485,6 +510,12 @@ CREATE UNIQUE INDEX "Cliente_telefono_key" ON "Cliente"("telefono");
 CREATE UNIQUE INDEX "Cliente_email_key" ON "Cliente"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Pedido_codigo_key" ON "Pedido"("codigo");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Pedido_idpotencia_key" ON "Pedido"("idpotencia");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Payment_pedidoId_key" ON "Payment"("pedidoId");
 
 -- CreateIndex
@@ -498,6 +529,9 @@ CREATE UNIQUE INDEX "Empleado_telefono_key" ON "Empleado"("telefono");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Empleado_email_key" ON "Empleado"("email");
+
+-- CreateIndex
+CREATE INDEX "ImportJob_restaurantId_createdAt_idx" ON "ImportJob"("restaurantId", "createdAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Country_name_key" ON "Country"("name");
@@ -645,6 +679,9 @@ ALTER TABLE "TurnoCaja" ADD CONSTRAINT "TurnoCaja_empleadoId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "EmpleadoHorario" ADD CONSTRAINT "EmpleadoHorario_empleadoId_fkey" FOREIGN KEY ("empleadoId") REFERENCES "Empleado"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ImportJob" ADD CONSTRAINT "ImportJob_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "State" ADD CONSTRAINT "State_countryId_fkey" FOREIGN KEY ("countryId") REFERENCES "Country"("id") ON DELETE CASCADE ON UPDATE CASCADE;

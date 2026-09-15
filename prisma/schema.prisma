@@ -336,6 +336,7 @@ enum PaymentType {
   EFECTIVO
   ZINLI
   PAYPAL
+  PUNTO_DE_VENTA
 }
 
 model PaymentMethod {

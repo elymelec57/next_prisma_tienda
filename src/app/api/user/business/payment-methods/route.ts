@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ status: true, message: "Payment method created", data: newPaymentMethod });
     } catch (error: any) {
-        console.error("Error creating payment method:", error);
-        return NextResponse.json({ status: false, message: error.message }, { status: 500 });
+        console.error("Error creating payment method:", error.message);
+        return NextResponse.json({ status: false, message: "Error al crear el metodo de pago" }, { status: 500 });
     }
 }

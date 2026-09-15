@@ -7,6 +7,7 @@ import { CreditCard, Plus, Trash2, Edit2, Save } from "lucide-react";
 
 const PAYMENT_TYPES = [
     { value: 'PAGO_MOVIL', label: 'Pago Móvil' },
+    { value: 'PUNTO_DE_VENTA', label: 'Punto de venta' },
     { value: 'TRANSFERENCIA', label: 'Transferencia' },
     { value: 'ZELLE', label: 'Zelle' },
     { value: 'EFECTIVO', label: 'Efectivo' },
