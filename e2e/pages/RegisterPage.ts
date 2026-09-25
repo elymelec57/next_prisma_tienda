@@ -21,6 +21,7 @@ export class RegisterPage {
     // ─── Actions ─────────────────────────────────────────────────────────────
     async goto() {
         await this.page.goto(this.url);
+        await this.nameInput.waitFor({ state: 'visible' });
     }
 
     async fillName(name: string) {
