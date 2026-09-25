@@ -70,10 +70,10 @@ export default defineConfig({
     /* Playwright can start the Next.js dev server automatically.
      * Uncomment this block if you prefer it over running `npm run dev` manually.
      */
-    // webServer: {
-    //     command: 'npm run dev',
-    //     url: 'http://localhost:3000',
-    //     reuseExistingServer: !process.env.CI,
-    //     timeout: 120_000,
-    // },
+    webServer: {
+        command: process.env.CI ? 'npm run start' : 'npm run dev',
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+    },
 });
