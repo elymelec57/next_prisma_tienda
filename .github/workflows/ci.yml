@@ -104,9 +104,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: . # Declara explícitamente la raíz del proyecto
           file: . # Ajusta aquí la ruta si tu Dockerfile está dentro de alguna subcarpeta (ej: ./docker/Dockerfile)
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/next_prisma_tienda:latest
+          tags: ghrc.io/elymelec57/next_prisma_tienda:latest
