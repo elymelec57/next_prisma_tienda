@@ -5,6 +5,11 @@ on:
     branches: [ master, main ]
   pull_request:
     branches: [ master, main ]
+
+  permissions:
+    contents: read
+    package: write
+
   workflow_dispatch:
 
 # Cancela ejecuciones anteriores si se hace un nuevo push a la misma rama/PR
@@ -94,3 +99,14 @@ jobs:
           name: playwright-report
           path: e2e/playwright-report/
           retention-days: 14
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          push: true
+          tags: ghrc.io/elymelec57/next_prisma_tienda:latest
