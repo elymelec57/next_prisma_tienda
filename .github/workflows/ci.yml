@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: read
-  package: write
+  packages: write
 
   workflow_dispatch:
 
