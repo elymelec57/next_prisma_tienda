@@ -107,6 +107,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: . # Declara explícitamente la raíz del proyecto
-          file: ./Dockerfile # Ajusta aquí la ruta si tu Dockerfile está dentro de alguna subcarpeta (ej: ./docker/Dockerfile)
+          file: . # Ajusta aquí la ruta si tu Dockerfile está dentro de alguna subcarpeta (ej: ./docker/Dockerfile)
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/next_prisma_tienda:latest
