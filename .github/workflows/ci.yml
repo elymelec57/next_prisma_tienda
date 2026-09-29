@@ -106,5 +106,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
+          context: . # Declara explícitamente la raíz del proyecto
+          file: ./Dockerfile # Ajusta aquí la ruta si tu Dockerfile está dentro de alguna subcarpeta (ej: ./docker/Dockerfile)
           push: true
           tags: ghrc.io/elymelec57/next_prisma_tienda:latest
