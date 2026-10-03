@@ -59,7 +59,7 @@ export default async function page({ params, searchParams }) {
       <div className="relative h-[400px] w-full md:h-[600px] overflow-hidden bg-slate-900 flex items-center justify-center">
         <div className="absolute inset-0 z-0">
           <Image
-            src="/images/bg-hero.png" // Usamos una imagen genérica de alta calidad de fondo
+            src="https://duavmk3fx3tdpyi9.public.blob.vercel-storage.com/public/bg-hero.png"
             alt="Fondo Restaurante"
             fill
             className="object-cover opacity-50"

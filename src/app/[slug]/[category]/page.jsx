@@ -11,6 +11,13 @@ import SucursalSelector from '@/components/SucursalSelector';
 export async function generateMetadata({ params }) {
     const { slug } = await params
     const business = await BusinessData(slug)
+
+    if (!business) {
+        return {
+            title: 'Restaurante no encontrado',
+        }
+    }
+
     return {
         title: business.name,
         description: business.slogan,
@@ -130,7 +137,7 @@ export default async function page({ params, searchParams }) {
                             </div>
                         ) : (
                             <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                                <img src="/images/empty-menu.svg" alt="Sin platos" className="w-32 h-32 mx-auto mb-4 opacity-20" />
+                                <UtensilsCrossed className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                                 <p className="text-slate-500 text-lg">No se encontraron productos en esta categoría.</p>
                                 <Link 
                                     href={`/${slug}${sucursal ? `?sucursal=${sucursal}` : ''}`}
